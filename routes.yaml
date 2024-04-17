@@ -1,0 +1,1288 @@
+openapi: 3.0.0
+info:
+  title: CE Boostup XII - OpenAPI 3.0
+  description: API documentation for CE Boostup XII event website
+  version: 0.0.1
+servers:
+  - url: https://api.ceboostup.com
+paths:
+  /auth/login:
+    post:
+      tags:
+        - auth
+      summary: Login
+      description: Login with username and password and get access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "67010001@kmitl.ac.th"
+                password:
+                  type: string
+                  example: "password"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJlbWFpbCI6IjY3MDEwMDFAa21pdGwuYWMudGgiLCJpYXQiOjE2MjYwNjIwMzcsImV4cCI6MTYyNjA2NTYzN30.7Z6"
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invalid email or password"
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Validation error"
+                  errors:
+                    type: object
+                    properties:
+                      email:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The email field is required."]
+                      password:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The password field is required."]
+  /auth/request-account-creation:
+    post:
+      tags:
+        - auth
+      summary: Request account creation
+      description: "Request account creation with email, email will be sent with a link to create an account with the following format: `$(siteUrl)/auth/create-account?token=$(token)`"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "67010001@kmitl.ac.th"
+                siteUrl:
+                  type: string
+                  format: uri
+                  example: "https://www.ceboostup.com"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Account creation email has been sent"
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invalid email"
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Validation error"
+                  errors:
+                    type: object
+                    properties:
+                      email:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The email field is required."] 
+                      siteUrl:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The site url field is required."]
+  /auth/create-account:
+    post:
+      tags:
+        - auth
+      summary: Create account
+      description: Create account with email, password, and token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                displayName:
+                  type: string
+                  example: "John Doe"
+                password: 
+                  type: string
+                  example: "password"
+                token:
+                  type: string
+                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Account has been created"
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invalid token or displayName"
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Validation error"
+                  errors:
+                    type: object
+                    properties:
+                      displayName:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The display name field is required.", "Display name must be at least 3 characters.", "Display name must be at most 16 characters."]
+                      password:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The password field is required."]
+                      token:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The token field is required."]
+  /auth/request-password-reset:
+    post:
+      tags:
+        - auth
+      summary: Request password reset
+      description: "Request password reset with email, email will be sent with a link to reset password with the following format: `$(siteUrl)/auth/reset-password?token=$(token)`"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "67010001@kmitl.ac.th"
+                siteUrl:
+                  type: string
+                  format: uri
+                  example: "https://www.ceboostup.com"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Password reset email has been sent"
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invalid email"
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Validation error"
+                  errors:
+                    type: object
+                    properties:
+                      email:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The email field is required."] 
+                      siteUrl:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The site url field is required."]
+  /auth/reset-password:
+    post:
+      tags:
+        - auth
+      summary: Reset password
+      description: Reset password with email, password, and token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password: 
+                  type: string
+                  example: "password" 
+                token:
+                  type: string
+                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Password has been reset"
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invalid token"
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Validation error"
+                  errors:
+                    type: object
+                    properties:
+                      password:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The password field is required."]
+                      token:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The token field is required."]
+  /users/{id}:
+    get:
+      tags:
+        - users
+      summary: Get user
+      description: Get user by id
+      parameters:
+        - name: id
+          in: path
+          description: User id
+          required: true
+          schema:
+            type: string
+            example: "uuid4"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User not found"
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Validation error"
+                  errors:
+                    type: object
+                    properties:
+                      id:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The id field must be a string."]
+    patch:
+      tags:
+        - users
+      summary: Update user
+      description: Update user by id
+      parameters:
+        - name: id
+          in: path
+          description: User id
+          required: true
+          schema:
+            type: string
+            example: "uuid4"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                displayName:
+                  type: string
+                  example: "John Doe"
+                group:
+                  type: string
+                  example: "uuid4"
+                password: 
+                  type: string
+                  example: "newPassword"
+                oldPassword:
+                  type: string
+                  example: "oldPassword"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User has been updated"
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User not found"
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Validation error"
+                  errors:
+                    type: object
+                    properties:
+                      displayName:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The display name field is required.", "Display name must be at least 3 characters.", "Display name must be at most 16 characters."]
+                      group:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The group field must be a string."]
+                      password:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The password field is required."]
+                      oldPassword:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The old password field is required."]
+  /compile/compile-and-run:
+    post:
+      tags:
+        - compile
+      summary: Compile and execute code
+      description: Compile and execute code with language, code and input
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                language:
+                  type: string
+                  example: "C11"
+                  enum: ["C99", "C11", "C17", "C++11", "C++14", "C++17", "C++20", "C++23", "GNU99", "GNU11", "GNU17", "GNU++11", "GNU++14", "GNU++17", "GNU++20", "GNU++23"]
+                code:
+                  type: string
+                  example: "#include <stdio.h>\nint main() {\n   printf(\"Hello, World!\");\n   return 0;\n}"
+                inputs:
+                  type: array
+                  items:
+                    type: string
+                  example: ["12 5\n4", "4 8\n3"]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  runtime:
+                    type: number
+                    example: 0.01
+                  output:
+                    type: array
+                    items:
+                      type: string
+                    example: ["74", "12"]
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Compilation error"
+                  errors:
+                    type: array
+                    items:
+                      type: string
+                    example: ["error: expected ';' before '}' token"]
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Validation error"
+                  errors:
+                    type: object
+                    properties:
+                      language:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The language field is required.", "The selected language is invalid."]
+                      code:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The code field is required."]
+                      inputs:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The inputs field is required."]
+  /problems:
+    get:
+      tags:
+        - problems
+      summary: Get problems
+      description: Get problems with pagination
+      parameters:
+        - name: page
+          in: query
+          description: Page number
+          required: false
+          schema:
+            type: integer
+            example: 1
+        - name: perPage
+          in: query
+          description: Number of problems per page
+          required: false
+          schema:
+            type: integer
+            example: 10
+        - name: sortBy
+          in: query
+          description: Sort by field
+          required: false
+          schema:
+            type: string
+            example: "createdAt"
+            enum: ["number", "title", "difficulty", "createdAt", "updatedAt"]
+        - name: sortOrder
+          in: query
+          description: Sort order
+          required: false
+          schema:
+            type: string
+            example: "asc"
+            enum: ["asc", "desc"]
+        - name: search
+          in: query
+          description: Search keyword
+          required: false
+          schema:
+            type: string
+            example: "A+B"
+        - name: tags
+          in: query
+          description: Tags
+          required: false
+          schema:
+            type: string
+            example: "math,implementation"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  problems:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Problem'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Validation error"
+                  errors:
+                    type: object
+                    properties:
+                      page:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The page field must be an integer."]
+                      perPage:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The per page field must be an integer."]
+                      sortBy:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The selected sortBy is invalid."]
+                      sortOrder:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The selected sortOrder is invalid."]
+                      search:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The search field must be a string."]
+                      tags:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The tags field must be a string."]
+    post:
+      tags:
+        - problems
+      summary: Create problem
+      description: Create problem title, description, input, output, sampleTests, allowedHeaders, bannedFunctions, timeLimit, memoryLimit, difficulty, tags
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: "A+B Problem"
+                description:
+                  type: string
+                  example: "Given two integers A and B, your task is to calculate the sum of A and B."
+                input:
+                  type: string
+                  example: "The input consists of a single line containing two integers A and B (1 ≤ A, B ≤ 1000)."
+                output:
+                  type: string
+                  example: "Output a single integer representing the sum of A and B."
+                sampleTests:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      input:
+                        type: string
+                        example: "1 1"
+                      output:
+                        type: string
+                        example: "2"
+                  example: [{"input": "1 1", "output": "2"}, {"input": "2 3", "output": "5"}]
+                allowedHeaders:
+                  type: array
+                  items:
+                    type: string
+                  example: ["stdio.h", "iostream"]
+                bannedFunctions:
+                  type: array
+                  items:
+                    type: string
+                  example: ["system", "for"]
+                timeLimit:
+                  type: number
+                  example: 1
+                memoryLimit:
+                  type: number
+                  example: 256
+                difficulty:
+                  type: integer
+                  example: 1
+                  enum: [1, 2, 3, 4, 5]
+                attachments:
+                  type: array
+                  items:
+                    type: string
+                  example: ["https://api.ceboostup.com/files/attachment.pdf"]
+                tags:
+                  type: array
+                  items:
+                    type: string
+                  example: ["math", "implementation"]
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Problem has been created"
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Validation error"
+                  errors:
+                    type: object
+                    properties:
+                      title:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The title field is required."]
+                      description:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The description field is required."]
+                      difficulty:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The difficulty field is required."]
+                      tags:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The tags field is required."]
+                      attachments:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The attachments field must be a string."]
+  /problems/{id}:
+    put:
+      tags:
+        - problems
+      summary: Update problem
+      description: Update problem by id
+      parameters:
+        - name: id
+          in: path
+          description: Problem id
+          required: true
+          schema:
+            type: string
+            example: "uuid4"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: "A+B Problem"
+                description:
+                  type: string
+                  example: "Given two integers A and B, your task is to calculate the sum of A and B."
+                input:
+                  type: string
+                  example: "The input consists of a single line containing two integers A and B (1 ≤ A, B ≤ 1000)."
+                output:
+                  type: string
+                  example: "Output a single integer representing the sum of A and B."
+                sampleTests:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      input:
+                        type: string
+                        example: "1 1"
+                      output:
+                        type: string
+                        example: "2"
+                  example: [{"input": "1 1", "output": "2"}, {"input": "2 3", "output": "5"}]
+                allowedHeaders:
+                  type: array
+                  items:
+                    type: string
+                  example: ["stdio.h", "iostream"]
+                bannedFunctions:
+                  type: array
+                  items:
+                    type: string
+                  example: ["system", "for"]
+                timeLimit:
+                  type: number
+                  example: 1
+                memoryLimit:
+                  type: number
+                  example: 256
+                difficulty:
+                  type: integer
+                  example: 1
+                  enum: [1, 2, 3, 4, 5]
+                attachments:
+                  type: array
+                  items:
+                    type: string
+                  example: ["https://api.ceboostup.com/files/attachment.pdf"]
+                tags:
+                  type: array
+                  items:
+                    type: string
+                  example: ["math", "implementation"]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Problem has been updated"
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Problem not found"
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Validation error"
+                  errors:
+                    type: object
+                    properties:
+                      title:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The title field is required."]
+                      description:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The description field is required."]
+                      difficulty:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The difficulty field is required."]
+                      tags:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The tags field is required."]
+                      attachments:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The attachments field must be a string."]
+    patch:
+      tags:
+        - problems
+      summary: Save code
+      description: Save code for problem by id
+      parameters:
+        - name: id
+          in: path
+          description: Problem id
+          required: true
+          schema:
+            type: string
+            example: "uuid4"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                  example: "#include <stdio.h>\nint main() {\n   int a, b;\n   scanf(\"%d %d\", &a, &b);\n   printf(\"%d\", a + b);\n   return 0;\n}"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Code has been saved"
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Problem not found"
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Validation error"
+                  errors:
+                    type: object
+                    properties:
+                      code:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The code field is required."]
+    delete:
+      tags:
+        - problems
+      summary: Delete problem
+      description: Delete problem by id
+      parameters:
+        - name: id
+          in: path
+          description: Problem id
+          required: true
+          schema:
+            type: string
+            example: "uuid4"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Problem has been deleted"
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Problem not found"
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Validation error"
+                  errors:
+                    type: object
+                    properties:
+                      id:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The id field must be a string."]
+    get:
+      tags:
+        - problems
+      summary: Get problem
+      description: Get problem by id
+      parameters:
+        - name: id
+          in: path
+          description: Problem id
+          required: true
+          schema:
+            type: string
+            example: "uuid4"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Problem not found"
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Validation error"
+                  errors:
+                    type: object
+                    properties:
+                      id:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The id field must be a string."]
+  /problems/{id}/submit:
+    post:
+      tags:
+        - problems
+      summary: Submit problem
+      description: Submit problem by id with code
+      parameters:
+        - name: id
+          in: path
+          description: Problem id
+          required: true
+          schema:
+            type: string
+            example: "uuid4"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                  example: "#include <stdio.h>\nint main() {\n   int a, b;\n   scanf(\"%d %d\", &a, &b);\n   printf(\"%d\", a + b);\n   return 0;\n}"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Problem has been submitted"
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Compilation error"
+                  errors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        testcase#1:
+                          type: array
+                          items:
+                            type: string
+                          example: ["expected ; before }", "Banned function 'system' used"]
+                        testcase#2:
+                          type: array
+                          items:
+                            type: string
+                          example: ["Wrong answer", "Time limit exceeded"]
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Problem not found"
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Validation error"
+                  errors:
+                    type: object
+                    properties:
+                      code:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The code field is required."]
+
+components:
+  schemas:
+    Group:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "uuid4"
+        name:
+          type: string
+          example: "Group A"
+        logo:
+          type: string
+          format: uri
+          example: "https://api.ceboostup.com/files/logo.png"
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "uuid4"
+        displayName:
+          type: string
+          example: "John Doe"
+        email:
+          type: string
+          format: email
+          example: "67010001@kmitl.ac.th"
+        group:
+          $ref: '#/components/schemas/Group'
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        perPage:
+          type: integer
+          example: 10
+        total:
+          type: integer
+          example: 100
+    Problem:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "uuid4"
+        number:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: "A+B Problem"
+        description:
+          type: string
+          example: "Given two integers A and B, your task is to calculate the sum of A and B."
+        input:
+          type: string
+          example: "The input consists of a single line containing two integers A and B (1 ≤ A, B ≤ 1000)."
+        output:
+          type: string
+          example: "Output a single integer representing the sum of A and B."
+        sampleTests:
+          type: array
+          items:
+            type: object
+            properties:
+              input:
+                type: string
+                example: "1 1"
+              output:
+                type: string
+                example: "2"
+        allowedHeaders:
+          type: array
+          items:
+            type: string
+          example: ["stdio.h", "iostream"]
+        bannedFunctions:
+          type: array
+          items:
+            type: string
+          example: ["system", "for"]
+        timeLimit:
+          type: number
+          example: 1
+        memoryLimit:
+          type: number
+          example: 256
+        difficulty:
+          type: integer
+          example: 1
+          enum: [1, 2, 3, 4, 5]
+        attachments:
+          type: array
+          items:
+            type: string
+          example: ["https://api.ceboostup.com/files/attachment.pdf"]
+        createdAt:
+          type: string
+          format: date-time
+          example: "2021-07-01T00:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2021-07-01T00:00:00Z"
+        craetor:
+          type: string
+          example: "John Doe"
+        tags:
+          type: array
+          items:
+            type: string
+          example: ["math", "implementation"]
+        passed:
+          type: integer
+          example: 10
+        completionStatus:
+          type: string
+          example: "Attempted"
+          enum: ["Unattempted", "Attempted", "Solved"]
+        savedCode:
+          type: string
+          example: "#include <stdio.h>\nint main() {\n   int a, b;\n   scanf(\"%d %d\", &a, &b);\n   printf(\"%d\", a + b);\n   return 0;\n}"
