@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: CE Boostup XII - OpenAPI 3.0
-  description: API documentation for CE Boostup XII event website
+  description: Swagger UI for CE Boostup XII API
   version: 0.0.1
 servers:
   - url: https://api.ceboostup.com
@@ -340,6 +340,9 @@ paths:
         - users
       summary: Get user
       description: Get user by id
+      security:
+        - OAuth2:
+          - user
       parameters:
         - name: id
           in: path
@@ -347,7 +350,7 @@ paths:
           required: true
           schema:
             type: string
-            example: "uuid4"
+            example: "5a69dc5d-ece7-414a-8e89-f7a31741423f"
       responses:
         '200':
           description: OK
@@ -388,6 +391,9 @@ paths:
         - users
       summary: Update user
       description: Update user by id
+      security:
+        - OAuth2:
+          - user
       parameters:
         - name: id
           in: path
@@ -395,7 +401,7 @@ paths:
           required: true
           schema:
             type: string
-            example: "uuid4"
+            example: "5a69dc5d-ece7-414a-8e89-f7a31741423f"
       requestBody:
         required: true
         content:
@@ -408,7 +414,7 @@ paths:
                   example: "John Doe"
                 group:
                   type: string
-                  example: "uuid4"
+                  example: "5a69dc5d-ece7-414a-8e89-f7a31741423f"
                 password: 
                   type: string
                   example: "newPassword"
@@ -475,6 +481,9 @@ paths:
         - compile
       summary: Compile and execute code
       description: Compile and execute code with language, code and input
+      security:
+        - OAuth2:
+          - user
       requestBody:
         required: true
         content:
@@ -486,6 +495,10 @@ paths:
                   type: string
                   example: "C11"
                   enum: ["C99", "C11", "C17", "C++11", "C++14", "C++17", "C++20", "C++23", "GNU99", "GNU11", "GNU17", "GNU++11", "GNU++14", "GNU++17", "GNU++20", "GNU++23"]
+                warningLevel:
+                  type: string
+                  example: "extra"
+                  enum: ["default", "all", "extra", "pedantic"]
                 code:
                   type: string
                   example: "#include <stdio.h>\nint main() {\n   printf(\"Hello, World!\");\n   return 0;\n}"
@@ -508,8 +521,8 @@ paths:
                   output:
                     type: array
                     items:
-                      type: string
-                    example: ["74", "12"]
+                      type: object
+                    example: [{"complilerOutput": "Compilation successful", "runtimeOutput": "Hello, World!"}, {"complilerOutput": "Compilation successful", "runtimeOutput": "Hello, World!"}]
         '400':
           description: Bad Request
           content:
@@ -559,6 +572,9 @@ paths:
         - problems
       summary: Get problems
       description: Get problems with pagination
+      security:
+        - OAuth2:
+          - user
       parameters:
         - name: page
           in: query
@@ -615,7 +631,7 @@ paths:
                   problems:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Problem'
+                      $ref: '#/components/schemas/ProblemInfo'
                   pagination:
                     $ref: '#/components/schemas/Pagination'
         '422':
@@ -666,6 +682,9 @@ paths:
         - problems
       summary: Create problem
       description: Create problem title, description, input, output, sampleTests, allowedHeaders, bannedFunctions, timeLimit, memoryLimit, difficulty, tags
+      security:
+        - OAuth2:
+          - staff
       requestBody:
         required: true
         content:
@@ -721,7 +740,7 @@ paths:
                   type: array
                   items:
                     type: string
-                  example: ["https://api.ceboostup.com/files/attachment.pdf"]
+                  example: ["https://api.ceboostup.com/attachments/49c9e215-5df6-4121-88f9-44f79559e912/attachment.pdf"]
                 tags:
                   type: array
                   items:
@@ -777,11 +796,14 @@ paths:
                           type: string
                         example: ["The attachments field must be a string."]
   /problems/{id}:
-    put:
+    patch:
       tags:
         - problems
       summary: Update problem
       description: Update problem by id
+      security:
+        - OAuth2:
+          - staff
       parameters:
         - name: id
           in: path
@@ -789,7 +811,7 @@ paths:
           required: true
           schema:
             type: string
-            example: "uuid4"
+            example: "5a69dc5d-ece7-414a-8e89-f7a31741423f"
       requestBody:
         required: true
         content:
@@ -845,7 +867,11 @@ paths:
                   type: array
                   items:
                     type: string
-                  example: ["https://api.ceboostup.com/files/attachment.pdf"]
+                  example: ["https://api.ceboostup.com/attachments/49c9e215-5df6-4121-88f9-44f79559e912/attachment.pdf"]
+                publicationStatus:
+                  type: string
+                  example: "Published"
+                  enum: ["Draft", "AwaitingApproval", "Approved", "Published", "Rejected", "Archived"]
                 tags:
                   type: array
                   items:
@@ -910,73 +936,14 @@ paths:
                         items:
                           type: string
                         example: ["The attachments field must be a string."]
-    patch:
-      tags:
-        - problems
-      summary: Save code
-      description: Save code for problem by id
-      parameters:
-        - name: id
-          in: path
-          description: Problem id
-          required: true
-          schema:
-            type: string
-            example: "uuid4"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                code:
-                  type: string
-                  example: "#include <stdio.h>\nint main() {\n   int a, b;\n   scanf(\"%d %d\", &a, &b);\n   printf(\"%d\", a + b);\n   return 0;\n}"
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Code has been saved"
-        '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Problem not found"
-        '422':
-          description: Unprocessable Entity
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Validation error"
-                  errors:
-                    type: object
-                    properties:
-                      code:
-                        type: array
-                        items:
-                          type: string
-                        example: ["The code field is required."]
     delete:
       tags:
         - problems
       summary: Delete problem
       description: Delete problem by id
+      security:
+        - OAuth2:
+          - staff
       parameters:
         - name: id
           in: path
@@ -984,7 +951,7 @@ paths:
           required: true
           schema:
             type: string
-            example: "uuid4"
+            example: "5a69dc5d-ece7-414a-8e89-f7a31741423f"
       responses:
         '200':
           description: OK
@@ -1029,6 +996,9 @@ paths:
         - problems
       summary: Get problem
       description: Get problem by id
+      security:
+        - OAuth2:
+          - user
       parameters:
         - name: id
           in: path
@@ -1036,7 +1006,7 @@ paths:
           required: true
           schema:
             type: string
-            example: "uuid4"
+            example: "5a69dc5d-ece7-414a-8e89-f7a31741423f"
       responses:
         '200':
           description: OK
@@ -1078,6 +1048,9 @@ paths:
         - problems
       summary: Submit problem
       description: Submit problem by id with code
+      security:
+        - OAuth2:
+          - user
       parameters:
         - name: id
           in: path
@@ -1085,7 +1058,7 @@ paths:
           required: true
           schema:
             type: string
-            example: "uuid4"
+            example: "5a69dc5d-ece7-414a-8e89-f7a31741423f"
       requestBody:
         required: true
         content:
@@ -1160,28 +1133,358 @@ paths:
                         items:
                           type: string
                         example: ["The code field is required."]
+  /problems/{id}/save:
+    get:
+      tags:
+        - problems
+      summary: Get saved code for problem
+      description: Get saved code for problem by id
+      security:
+        - OAuth2:
+          - user
+      parameters:
+        - name: id
+          in: path
+          description: Problem id
+          required: true
+          schema:
+            type: string
+            example: "5a69dc5d-ece7-414a-8e89-f7a31741423f"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: "#include <stdio.h>\nint main() {\n   int a, b;\n   scanf(\"%d %d\", &a, &b);\n   printf(\"%d\", a + b);\n   return 0;\n}"
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Problem not found"
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Validation error"
+                  errors:
+                    type: object
+                    properties:
+                      id:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The id field must be a string."]
+    put:
+      tags:
+        - problems
+      summary: Save code for problem
+      description: Save code for problem by id
+      security:
+        - OAuth2:
+          - user
+      parameters:
+        - name: id
+          in: path
+          description: Problem id
+          required: true
+          schema:
+            type: string
+            example: "5a69dc5d-ece7-414a-8e89-f7a31741423f"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                  example: "#include <stdio.h>\nint main() {\n   int a, b;\n   scanf(\"%d %d\", &a, &b);\n   printf(\"%d\", a + b);\n   return 0;\n}"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Code has been updated"
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Code has been saved"
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Problem not found"
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Validation error"
+                  errors:
+                    type: object
+                    properties:
+                      code:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The code field is required."]
+  /attachments:
+    post:
+      tags:
+        - attachments
+      summary: Upload attachment
+      description: Upload attachment with file
+      security:
+        - OAuth2:
+          - staff
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                name:
+                  type: string
+                  example: "attachment.pdf"
+                type:
+                  type: string
+                  example: "application/pdf"
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Attachment has been uploaded"
+                  url:
+                    type: string
+                    format: uri
+                    example: "https://api.ceboostup.com/attachments/49c9e215-5df6-4121-88f9-44f79559e912/attachment.pdf"
+        '413':
+          description: Payload Too Large
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "File is too large"
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Validation error"
+                  errors:
+                    type: object
+                    properties:
+                      file:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The file field is required."]
+                      type:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The type field is required."]
+  /attachments/{id}:
+    get:
+      tags:
+        - attachments
+      summary: Get attachment information
+      description: Get attachment information by id
+      parameters:
+        - name: id
+          in: path
+          description: Attachment id
+          required: true
+          schema:
+            type: string
+            example: "5a69dc5d-ece7-414a-8e89-f7a31741423f"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attachment'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Attachment not found"
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Validation error"
+                  errors:
+                    type: object
+                    properties:
+                      id:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The id field must be a string."]
+  /attachments/{id}/{name}:
+    get:
+      tags:
+        - attachments
+      summary: Get attachment
+      description: Get attachment by id and name, name will be use for download and does not have to match original name
+      parameters:
+        - name: id
+          in: path
+          description: Attachment id
+          required: true
+          schema:
+            type: string
+            example: "5a69dc5d-ece7-414a-8e89-f7a31741423f"
+        - name: name
+          in: path
+          description: Attachment name
+          required: true
+          schema:
+            type: string
+            example: "attachment.pdf"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Attachment not found"
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Validation error"
+                  errors:
+                    type: object
+                    properties:
+                      id:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The id field must be a string."]
+                      name:
+                        type: array
+                        items:
+                          type: string
+                        example: ["The name field must be a string."]
 
 components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+    OAuth2:
+      type: oauth2
+      flows:
+        password:
+          tokenUrl: https://api.ceboostup.com/auth/login
+          scopes:
+            user: User access, only access needed to use the website
+            staff: Staff access, access to manage problems
+            reviewer: Reviewer access, access to review and approve/reject problems
+            admin: Admin access, all access, some restrictions
+            owner: Owner access, all access, no restriction
   schemas:
     Group:
       type: object
       properties:
         id:
           type: string
-          example: "uuid4"
+          example: "5a69dc5d-ece7-414a-8e89-f7a31741423f"
         name:
           type: string
-          example: "Group A"
+          example: "Penguin"
         logo:
           type: string
           format: uri
-          example: "https://api.ceboostup.com/files/logo.png"
+          example: "https://api.ceboostup.com/static/logo.png"
     User:
       type: object
       properties:
         id:
           type: string
-          example: "uuid4"
+          example: "5a69dc5d-ece7-414a-8e89-f7a31741423f"
         displayName:
           type: string
           example: "John Doe"
@@ -1208,7 +1511,7 @@ components:
       properties:
         id:
           type: string
-          example: "uuid4"
+          example: "5a69dc5d-ece7-414a-8e89-f7a31741423f"
         number:
           type: integer
           example: 1
@@ -1259,7 +1562,7 @@ components:
           type: array
           items:
             type: string
-          example: ["https://api.ceboostup.com/files/attachment.pdf"]
+          example: ["https://api.ceboostup.com/attachments/49c9e215-5df6-4121-88f9-44f79559e912/attachment.pdf"]
         createdAt:
           type: string
           format: date-time
@@ -1279,6 +1582,10 @@ components:
         passed:
           type: integer
           example: 10
+        plubicationStatus:
+          type: string
+          example: "Published"
+          enum: ["Draft", "AwaitingApproval", "Approved", "Published", "Rejected", "Archived"]
         completionStatus:
           type: string
           example: "Attempted"
@@ -1286,3 +1593,115 @@ components:
         savedCode:
           type: string
           example: "#include <stdio.h>\nint main() {\n   int a, b;\n   scanf(\"%d %d\", &a, &b);\n   printf(\"%d\", a + b);\n   return 0;\n}"
+    ProblemInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "5a69dc5d-ece7-414a-8e89-f7a31741423f"
+        number:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: "A+B Problem"
+        description:
+          type: string
+          example: "Given two integers A and B, your task is to calculate the sum of A and B."
+        input:
+          type: string
+          example: "The input consists of a single line containing two integers A and B (1 ≤ A, B ≤ 1000)."
+        output:
+          type: string
+          example: "Output a single integer representing the sum of A and B."
+        sampleTests:
+          type: array
+          items:
+            type: object
+            properties:
+              input:
+                type: string
+                example: "1 1"
+              output:
+                type: string
+                example: "2"
+        allowedHeaders:
+          type: array
+          items:
+            type: string
+          example: ["stdio.h", "iostream"]
+        bannedFunctions:
+          type: array
+          items:
+            type: string
+          example: ["system", "for"]
+        timeLimit:
+          type: number
+          example: 1
+        memoryLimit:
+          type: number
+          example: 256
+        difficulty:
+          type: integer
+          example: 1
+          enum: [1, 2, 3, 4, 5]
+        attachments:
+          type: array
+          items:
+            type: string
+          example: ["https://api.ceboostup.com/attachments/49c9e215-5df6-4121-88f9-44f79559e912/attachment.pdf"]
+        createdAt:
+          type: string
+          format: date-time
+          example: "2021-07-01T00:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2021-07-01T00:00:00Z"
+        craetor:
+          type: string
+          example: "John Doe"
+        tags:
+          type: array
+          items:
+            type: string
+          example: ["math", "implementation"]
+        passed:
+          type: integer
+          example: 10
+        plubicationStatus:
+          type: string
+          example: "Published"
+          enum: ["Draft", "AwaitingApproval", "Approved", "Published", "Rejected", "Archived"]
+        completionStatus:
+          type: string
+          example: "Attempted"
+          enum: ["Unattempted", "Attempted", "Solved"]
+        savedCode:
+          type: string
+          example: "#include <stdio.h>\nint main() {\n   int a, b;\n   scanf(\"%d %d\", &a, &b);\n   printf(\"%d\", a + b);\n   return 0;\n}"
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "5a69dc5d-ece7-414a-8e89-f7a31741423f"
+        url:
+          type: string
+          format: uri
+          example: "https://api.ceboostup.com/attachments/49c9e215-5df6-4121-88f9-44f79559e912/attachment.pdf"
+        type:
+          type: string
+          example: "application/pdf"
+          enum: ["application/pdf", "image/png", "image/jpeg"]
+        size:
+          type: number
+          example: 1024
+        createdAt:
+          type: string
+          format: date-time
+          example: "2021-07-01T00:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2021-07-01T00:00:00Z"
