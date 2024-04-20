@@ -339,6 +339,63 @@ paths:
                         items:
                           type: string
                         example: ['The token field is required.']
+  /users:
+    post:
+      tags:
+        - users
+      summary: Create user
+      description: Create user with email and group
+      security:
+        - OAuth2:
+            - staff
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: '67010001@kmitl.ac.th'
+                groupId:
+                  type: string
+                  example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'User has been created'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Validation error'
+                  errors:
+                    type: object
+                    properties:
+                      email:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The email field is required.']
+                      groupId:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The group id field is required.']
   /users/{id}:
     get:
       tags:
@@ -485,6 +542,317 @@ paths:
                         items:
                           type: string
                         example: ['The old password field is required.']
+    delete:
+      tags:
+        - users
+      summary: Delete user
+      description: Delete user by id
+      security:
+        - OAuth2:
+            - staff
+      parameters:
+        - name: id
+          in: path
+          description: User id
+          required: true
+          schema:
+            type: string
+            example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'User has been deleted'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'User not found'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Validation error'
+                  errors:
+                    type: object
+                    properties:
+                      id:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The id field must be a string.']
+  /groups:
+    post:
+      tags:
+        - groups
+      summary: Create group
+      description: Create group with name and logo attachment
+      security:
+        - OAuth2:
+            - staff
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: 'Foxes'
+                logoAttachment:
+                  type: string
+                  example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Group has been created'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Validation error'
+                  errors:
+                    type: object
+                    properties:
+                      name:
+                        type: array
+                        items:
+                          type: string
+                        example:
+                          [
+                            'The name field is required.',
+                            'Name must be at least 3 characters.',
+                            'Name must be at most 16 characters.',
+                          ]
+    get:
+      tags:
+        - groups
+      summary: Get groups
+      description: Get groups
+      security:
+        - OAuth2:
+            - user
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  groups:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Group'
+  /groups/{id}:
+    get:
+      tags:
+        - groups
+      summary: Get group
+      description: Get group by id
+      security:
+        - OAuth2:
+            - user
+      parameters:
+        - name: id
+          in: path
+          description: Group id
+          required: true
+          schema:
+            type: string
+            example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Group not found'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Validation error'
+                  errors:
+                    type: object
+                    properties:
+                      id:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The id field must be a string.']
+    patch:
+      tags:
+        - groups
+      summary: Update group
+      description: Update group by id
+      security:
+        - OAuth2:
+            - staff
+      parameters:
+        - name: id
+          in: path
+          description: Group id
+          required: true
+          schema:
+            type: string
+            example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: 'Staff'
+                logoAttachment:
+                  type: string
+                  example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Group has been updated'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Group not found'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Validation error'
+                  errors:
+                    type: object
+                    properties:
+                      name:
+                        type: array
+                        items:
+                          type: string
+                        example:
+                          [
+                            'The name field is required.',
+                            'Name must be at least 3 characters.',
+                            'Name must be at most 16 characters.',
+                          ]
+    delete:
+      tags:
+        - groups
+      summary: Delete group
+      description: Delete group by id
+      security:
+        - OAuth2:
+            - staff
+      parameters:
+        - name: id
+          in: path
+          description: Group id
+          required: true
+          schema:
+            type: string
+            example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Group has been deleted'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Group not found'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Validation error'
+                  errors:
+                    type: object
+                    properties:
+                      id:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The id field must be a string.']
   /compile/compile-and-run:
     post:
       tags:
@@ -1428,6 +1796,169 @@ paths:
                         items:
                           type: string
                         example: ['The code field is required.']
+  /submissions:
+    get:
+      tags:
+        - submissions
+      summary: Get submissions
+      description: Get submissions for problem by id
+      security:
+        - OAuth2:
+            - user
+      parameters:
+        - name: problemId
+          in: query
+          description: Problem id
+          required: true
+          schema:
+            type: string
+            example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
+        - name: userId
+          in: query
+          description: User id
+          required: false
+          schema:
+            type: string
+            example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
+        - name: page
+          in: query
+          description: Page number
+          required: false
+          schema:
+            type: integer
+            example: 1
+        - name: perPage
+          in: query
+          description: Number of submissions per page
+          required: false
+          schema:
+            type: integer
+            example: 10
+        - name: sortBy
+          in: query
+          description: Sort by field
+          required: false
+          schema:
+            type: string
+            example: 'createdAt'
+            enum: ['submittedAt', 'executionTime']
+        - name: sortOrder
+          in: query
+          description: Sort order
+          required: false
+          schema:
+            type: string
+            example: 'asc'
+            enum: ['asc', 'desc']
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  submissions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Submission'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Validation error'
+                  errors:
+                    type: object
+                    properties:
+                      id:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The id field must be a string.']
+                      allUsers:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The all users field must be a boolean.']
+                      page:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The page field must be an integer.']
+                      perPage:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The per page field must be an integer.']
+                      sortBy:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The selected sortBy is invalid.']
+                      sortOrder:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The selected sortOrder is invalid.']
+  /submissions/{id}:
+    get:
+      tags:
+        - submissions
+      summary: Get submission
+      description: Get submission id and submission id
+      security:
+        - OAuth2:
+            - user
+      parameters:
+        - name: id
+          in: path
+          description: Submission id
+          required: true
+          schema:
+            type: string
+            example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Submission'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Submission not found'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Validation error'
+                  errors:
+                    type: object
+                    properties:
+                      id:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The id field must be a string.']
   /attachments:
     post:
       tags:
@@ -1672,6 +2203,61 @@ paths:
                         items:
                           type: string
                         example: ['The name field must be a string.']
+    delete:
+      tags:
+        - attachments
+      summary: Delete attachment
+      description: Delete attachment by id
+      security:
+        - OAuth2:
+            - staff
+      parameters:
+        - name: id
+          in: path
+          description: Attachment id
+          required: true
+          schema:
+            type: string
+            example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Attachment has been deleted'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Attachment not found'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Validation error'
+                  errors:
+                    type: object
+                    properties:
+                      id:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The id field must be a string.']
 
 components:
   securitySchemes:
@@ -1699,10 +2285,9 @@ components:
         name:
           type: string
           example: 'Penguin'
-        logo:
+        logoAttachment:
           type: string
-          format: uri
-          example: 'https://api.ceboostup.com/static/logo.png'
+          example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
     User:
       type: object
       properties:
@@ -1959,6 +2544,38 @@ components:
           type: string
           example: 'Attempted'
           enum: ['Unattempted', 'Attempted', 'Solved']
+    Submission:
+      type: object
+      properties:
+        id:
+          type: string
+          example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
+        code:
+          type: string
+          example: "#include <stdio.h>\nint main() {\n   int a, b;\n   scanf(\"%d %d\", &a, &b);\n   printf(\"%d\", a + b);\n   return 0;\n}"
+        status:
+          type: string
+          example: 'AC'
+          enum: ['AC', 'WA', 'TLE', 'MLE', 'CE']
+        accepted:
+          type: boolean
+          example: false
+        compilationTime:
+          type: number
+          example: 0.1
+        executionTime:
+          type: number
+          example: 0.001
+        submittedAt:
+          type: string
+          format: date-time
+          example: '2021-07-01T00:00:00Z'
+        problemId:
+          type: string
+          example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
+        userId:
+          type: string
+          example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
     Attachment:
       type: object
       properties:
