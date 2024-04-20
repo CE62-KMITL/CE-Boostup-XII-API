@@ -598,6 +598,26 @@ paths:
                           type: string
                         example: ['The id field must be a string.']
   /groups:
+    get:
+      tags:
+        - groups
+      summary: Get groups
+      description: Get groups
+      security:
+        - OAuth2:
+            - user
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  groups:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Group'
     post:
       tags:
         - groups
@@ -653,26 +673,6 @@ paths:
                             'Name must be at least 3 characters.',
                             'Name must be at most 16 characters.',
                           ]
-    get:
-      tags:
-        - groups
-      summary: Get groups
-      description: Get groups
-      security:
-        - OAuth2:
-            - user
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  groups:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Group'
   /groups/{id}:
     get:
       tags:
@@ -1266,6 +1266,57 @@ paths:
                           type: string
                         example: ['The attachments field must be a string.']
   /problems/{id}:
+    get:
+      tags:
+        - problems
+      summary: Get problem
+      description: Get problem by id
+      security:
+        - OAuth2:
+            - user
+      parameters:
+        - name: id
+          in: path
+          description: Problem id
+          required: true
+          schema:
+            type: string
+            example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Problem not found'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Validation error'
+                  errors:
+                    type: object
+                    properties:
+                      id:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The id field must be a string.']
     patch:
       tags:
         - problems
@@ -1468,57 +1519,6 @@ paths:
                         items:
                           type: string
                         example: ['The id field must be a string.']
-    get:
-      tags:
-        - problems
-      summary: Get problem
-      description: Get problem by id
-      security:
-        - OAuth2:
-            - user
-      parameters:
-        - name: id
-          in: path
-          description: Problem id
-          required: true
-          schema:
-            type: string
-            example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: 'Problem not found'
-        '422':
-          description: Unprocessable Entity
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: 'Validation error'
-                  errors:
-                    type: object
-                    properties:
-                      id:
-                        type: array
-                        items:
-                          type: string
-                        example: ['The id field must be a string.']
   /problems/{id}/hint:
     post:
       tags:
@@ -1575,119 +1575,60 @@ paths:
                         items:
                           type: string
                         example: ['The id field must be a string.']
-  /problems/{id}/submit:
-    post:
-      tags:
-        - problems
-      summary: Submit problem
-      description: Submit problem by id with code
-      security:
-        - OAuth2:
-            - user
-      parameters:
-        - name: id
-          in: path
-          description: Problem id
-          required: true
-          schema:
-            type: string
-            example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                code:
-                  type: string
-                  example: "#include <stdio.h>\nint main() {\n   int a, b;\n   scanf(\"%d %d\", &a, &b);\n   printf(\"%d\", a + b);\n   return 0;\n}"
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: 'Problem has been submitted successfully'
-                  outputCodes:
-                    type: array
-                    items:
-                      type: string
-                    example: ['AC', 'AC', 'AC']
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: 'Compilation error'
-                  errors:
-                    type: array
-                    items:
-                      type: string
-                    example:
-                      [
-                        'error: Testcase 1: Wrong answer',
-                        'error: Testcase 2: Time limit exceeded',
-                        'error: Testcase 3: Memory limit exceeded',
-                      ]
-                  outputCodes:
-                    type: array
-                    items:
-                      type: string
-                    example: ['WA', 'TLE', 'MLE']
-        '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: 'Problem not found'
-        '422':
-          description: Unprocessable Entity
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: 'Validation error'
-                  errors:
-                    type: object
-                    properties:
-                      code:
-                        type: array
-                        items:
-                          type: string
-                        example: ['The code field is required.']
-  /problems/{id}/save:
+  /saves:
     get:
       tags:
-        - problems
-      summary: Get saved code for problem
-      description: Get saved code for problem by id
+        - saves
+      summary: Get saves
+      description: Get saves for problem by id
       security:
         - OAuth2:
             - user
       parameters:
-        - name: id
-          in: path
+        - name: problemId
+          in: query
           description: Problem id
-          required: true
+          required: false
           schema:
             type: string
             example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
+        - name: userId
+          in: query
+          description: User id
+          required: false
+          schema:
+            type: string
+            example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
+        - name: page
+          in: query
+          description: Page number
+          required: false
+          schema:
+            type: integer
+            example: 1
+        - name: perPage
+          in: query
+          description: Number of saves per page
+          required: false
+          schema:
+            type: integer
+            example: 10
+        - name: sortBy
+          in: query
+          description: Sort by field
+          required: false
+          schema:
+            type: string
+            example: 'updatedAt'
+            enum: ['createdAt', 'updatedAt']
+        - name: sortOrder
+          in: query
+          description: Sort order
+          required: false
+          schema:
+            type: string
+            example: 'desc'
+            enum: ['asc', 'desc']
       responses:
         '200':
           description: OK
@@ -1696,19 +1637,12 @@ paths:
               schema:
                 type: object
                 properties:
-                  code:
-                    type: string
-                    example: "#include <stdio.h>\nint main() {\n   int a, b;\n   scanf(\"%d %d\", &a, &b);\n   printf(\"%d\", a + b);\n   return 0;\n}"
-        '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: 'Problem not found'
+                  saves:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Save'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
         '422':
           description: Unprocessable Entity
           content:
@@ -1727,22 +1661,39 @@ paths:
                         items:
                           type: string
                         example: ['The id field must be a string.']
-    put:
+                      allUsers:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The all users field must be a boolean.']
+                      page:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The page field must be an integer.']
+                      perPage:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The per page field must be an integer.']
+                      sortBy:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The selected sortBy is invalid.']
+                      sortOrder:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The selected sortOrder is invalid.']
+    post:
       tags:
-        - problems
-      summary: Save code for problem
-      description: Save code for problem by id
+        - saves
+      summary: Create save
+      description: Create save for problem by id with code
       security:
         - OAuth2:
             - user
-      parameters:
-        - name: id
-          in: path
-          description: Problem id
-          required: true
-          schema:
-            type: string
-            example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
       requestBody:
         required: true
         content:
@@ -1750,20 +1701,13 @@ paths:
             schema:
               type: object
               properties:
+                problemId:
+                  type: string
+                  example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
                 code:
                   type: string
                   example: "#include <stdio.h>\nint main() {\n   int a, b;\n   scanf(\"%d %d\", &a, &b);\n   printf(\"%d\", a + b);\n   return 0;\n}"
       responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: 'Code has been updated'
         '201':
           description: OK
           content:
@@ -1773,17 +1717,7 @@ paths:
                 properties:
                   message:
                     type: string
-                    example: 'Code has been saved'
-        '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: 'Problem not found'
+                    example: 'Save has been created'
         '422':
           description: Unprocessable Entity
           content:
@@ -1797,11 +1731,188 @@ paths:
                   errors:
                     type: object
                     properties:
+                      problemId:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The problem id field is required.']
                       code:
                         type: array
                         items:
                           type: string
                         example: ['The code field is required.']
+        '429':
+          description: Too Many Requests
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Too many requests, please use put request to update existing save for autosaving'
+    put:
+      tags:
+        - saves
+      summary: Update save
+      description: Update save for problem by id with code
+      security:
+        - OAuth2:
+            - user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                problemId:
+                  type: string
+                  example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
+                code:
+                  type: string
+                  example: "#include <stdio.h>\nint main() {\n   int a, b;\n   scanf(\"%d %d\", &a, &b);\n   printf(\"%d\", a + b);\n   return 0;\n}"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Save has been updated'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Validation error'
+                  errors:
+                    type: object
+                    properties:
+                      problemId:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The problem id field is required.']
+                      code:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The code field is required.']
+  /saves/{id}:
+    get:
+      tags:
+        - saves
+      summary: Get save
+      description: Get save by id
+      security:
+        - OAuth2:
+            - user
+      parameters:
+        - name: id
+          in: path
+          description: Save id
+          required: true
+          schema:
+            type: string
+            example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Save'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Save not found'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Validation error'
+                  errors:
+                    type: object
+                    properties:
+                      id:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The id field must be a string.']
+    delete:
+      tags:
+        - saves
+      summary: Delete save
+      description: Delete save by id
+      security:
+        - OAuth2:
+            - user
+      parameters:
+        - name: id
+          in: path
+          description: Save id
+          required: true
+          schema:
+            type: string
+            example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Save has been deleted'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Save not found'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Validation error'
+                  errors:
+                    type: object
+                    properties:
+                      id:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The id field must be a string.']
   /submissions:
     get:
       tags:
@@ -1815,7 +1926,7 @@ paths:
         - name: problemId
           in: query
           description: Problem id
-          required: true
+          required: false
           schema:
             type: string
             example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
@@ -1847,7 +1958,7 @@ paths:
           schema:
             type: string
             example: 'createdAt'
-            enum: ['submittedAt', 'executionTime']
+            enum: ['createdAt', 'executionTime']
         - name: sortOrder
           in: query
           description: Sort order
@@ -1913,6 +2024,91 @@ paths:
                         items:
                           type: string
                         example: ['The selected sortOrder is invalid.']
+    post:
+      tags:
+        - submissions
+      summary: Create submission
+      description: Create submission for problem by id with code
+      security:
+        - OAuth2:
+            - user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                problemId:
+                  type: string
+                  example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
+                code:
+                  type: string
+                  example: "#include <stdio.h>\nint main() {\n   int a, b;\n   scanf(\"%d %d\", &a, &b);\n   printf(\"%d\", a + b);\n   return 0;\n}"
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Submission has been created'
+                  outputCodes:
+                    type: array
+                    items:
+                      type: string
+                    example: ['AC', 'AC', 'AC']
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Runtime errors'
+                  errors:
+                    type: array
+                    items:
+                      type: string
+                    example:
+                      [
+                        'error: Testcase 1: Wrong answer',
+                        'error: Testcase 2: Time limit exceeded',
+                        'error: Testcase 3: Memory limit exceeded',
+                      ]
+                  outputCodes:
+                    type: array
+                    items:
+                      type: string
+                    example: ['WA', 'TLE', 'MLE']
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Validation error'
+                  errors:
+                    type: object
+                    properties:
+                      problemId:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The problem id field is required.']
+                      code:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The code field is required.']
   /submissions/{id}:
     get:
       tags:
@@ -1937,6 +2133,61 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Submission'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Submission not found'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Validation error'
+                  errors:
+                    type: object
+                    properties:
+                      id:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The id field must be a string.']
+    delete:
+      tags:
+        - submissions
+      summary: Delete submission
+      description: Delete submission by id
+      security:
+        - OAuth2:
+            - user
+      parameters:
+        - name: id
+          in: path
+          description: Submission id
+          required: true
+          schema:
+            type: string
+            example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Submission has been deleted'
         '404':
           description: Not Found
           content:
@@ -2147,6 +2398,61 @@ paths:
                         items:
                           type: string
                         example: ['The name field is required.']
+    delete:
+      tags:
+        - attachments
+      summary: Delete attachment
+      description: Delete attachment by id
+      security:
+        - OAuth2:
+            - staff
+      parameters:
+        - name: id
+          in: path
+          description: Attachment id
+          required: true
+          schema:
+            type: string
+            example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Attachment has been deleted'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Attachment not found'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Validation error'
+                  errors:
+                    type: object
+                    properties:
+                      id:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The id field must be a string.']
   /attachments/{id}/{name}:
     get:
       tags:
@@ -2209,61 +2515,6 @@ paths:
                         items:
                           type: string
                         example: ['The name field must be a string.']
-    delete:
-      tags:
-        - attachments
-      summary: Delete attachment
-      description: Delete attachment by id
-      security:
-        - OAuth2:
-            - staff
-      parameters:
-        - name: id
-          in: path
-          description: Attachment id
-          required: true
-          schema:
-            type: string
-            example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: 'Attachment has been deleted'
-        '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: 'Attachment not found'
-        '422':
-          description: Unprocessable Entity
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: 'Validation error'
-                  errors:
-                    type: object
-                    properties:
-                      id:
-                        type: array
-                        items:
-                          type: string
-                        example: ['The id field must be a string.']
 
 components:
   securitySchemes:
@@ -2449,9 +2700,6 @@ components:
           type: string
           example: 'Attempted'
           enum: ['Unattempted', 'Attempted', 'Solved']
-        savedCode:
-          type: string
-          example: "#include <stdio.h>\nint main() {\n   int a, b;\n   scanf(\"%d %d\", &a, &b);\n   printf(\"%d\", a + b);\n   return 0;\n}"
     ProblemInfo:
       type: object
       properties:
@@ -2556,6 +2804,29 @@ components:
           type: string
           example: 'Attempted'
           enum: ['Unattempted', 'Attempted', 'Solved']
+    Save:
+      type: object
+      properties:
+        id:
+          type: string
+          example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
+        code:
+          type: string
+          example: "#include <stdio.h>\nint main() {\n   int a, b;\n   scanf(\"%d %d\", &a, &b);\n   printf(\"%d\", a + b);\n   return 0;\n}"
+        createdAt:
+          type: string
+          format: date-time
+          example: '2021-07-01T00:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2021-07-01T00:00:00Z'
+        problemId:
+          type: string
+          example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
+        userId:
+          type: string
+          example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
     Submission:
       type: object
       properties:
@@ -2579,7 +2850,7 @@ components:
         executionTime:
           type: number
           example: 0.001
-        submittedAt:
+        createdAt:
           type: string
           format: date-time
           example: '2021-07-01T00:00:00Z'
