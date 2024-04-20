@@ -2565,10 +2565,11 @@ components:
         code:
           type: string
           example: "#include <stdio.h>\nint main() {\n   int a, b;\n   scanf(\"%d %d\", &a, &b);\n   printf(\"%d\", a + b);\n   return 0;\n}"
-        status:
-          type: string
-          example: 'AC'
-          enum: ['AC', 'WA', 'TLE', 'MLE', 'CE']
+        outputCodes:
+          type: array
+          items:
+            type: string
+          example: ['AC', 'WA', 'TLE']
         accepted:
           type: boolean
           example: false
