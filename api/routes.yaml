@@ -662,6 +662,7 @@ paths:
                 'points',
                 'createdAt',
                 'updatedAt',
+                'solvedAt',
               ]
         - name: sortOrder
           in: query
@@ -671,6 +672,14 @@ paths:
             type: string
             example: 'asc'
             enum: ['asc', 'desc']
+        - name: completionStatus
+          in: query
+          description: Completion status
+          required: false
+          schema:
+            type: string
+            example: 'completed'
+            enum: ['Unattempted', 'Attempted', 'Solved']
         - name: search
           in: query
           description: Search keyword
@@ -1745,6 +1754,10 @@ components:
           type: string
           format: date-time
           example: '2021-07-01T00:00:00Z'
+        solvedAt:
+          type: string
+          format: date-time
+          example: '2021-07-01T00:00:00Z'
         craetedBy:
           $ref: '#/components/schemas/User'
         credit:
@@ -1845,6 +1858,10 @@ components:
           format: date-time
           example: '2021-07-01T00:00:00Z'
         updatedAt:
+          type: string
+          format: date-time
+          example: '2021-07-01T00:00:00Z'
+        solvedAt:
           type: string
           format: date-time
           example: '2021-07-01T00:00:00Z'
