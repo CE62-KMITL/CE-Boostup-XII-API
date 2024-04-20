@@ -1545,6 +1545,71 @@ paths:
                         items:
                           type: string
                         example: ['The id field must be a string.']
+    put:
+      tags:
+        - attachments
+      summary: Update attachment
+      description: Update attachment by id
+      security:
+        - OAuth2:
+            - staff
+      parameters:
+        - name: id
+          in: path
+          description: Attachment id
+          required: true
+          schema:
+            type: string
+            example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: 'attachment.pdf'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Attachment has been updated'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Attachment not found'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Validation error'
+                  errors:
+                    type: object
+                    properties:
+                      name:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The name field is required.']
   /attachments/{id}/{name}:
     get:
       tags:
