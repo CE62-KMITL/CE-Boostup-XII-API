@@ -347,7 +347,7 @@ paths:
       description: Get users with pagination
       security:
         - OAuth2:
-            - staff
+            - user
       parameters:
         - name: page
           in: query
@@ -1101,6 +1101,16 @@ paths:
                         items:
                           type: string
                         example: ['The inputs field is required.']
+        '429':
+          description: Too Many Requests
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Too many requests'
   /problems:
     get:
       tags:
@@ -2219,6 +2229,16 @@ paths:
                         items:
                           type: string
                         example: ['The code field is required.']
+        '429':
+          description: Too Many Requests
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Too many requests'
   /submissions/{id}:
     get:
       tags:
@@ -2652,6 +2672,25 @@ components:
         name:
           type: string
           example: 'Penguin'
+        description:
+          type: string
+          example: 'Penguin group'
+        memberCount:
+          type: integer
+          example: 15
+        uniqueProblemsSolved:
+          type: integer
+          example: 25
+        problemsSolved:
+          type: integer
+          example: 47
+        lastSolvedAt:
+          type: string
+          format: date-time
+          example: '2021-07-01T00:00:00Z'
+        points:
+          type: integer
+          example: 10500
         logoAttachment:
           type: string
           example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
@@ -2673,6 +2712,10 @@ components:
         solved:
           type: integer
           example: 10
+        lastSolvedAt:
+          type: string
+          format: date-time
+          example: '2021-07-01T00:00:00Z'
         points:
           type: integer
           example: 700
