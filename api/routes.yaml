@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: CE Boostup XII - OpenAPI 3.0
-  description: Swagger UI for CE Boostup XII API
+  description: Swagger UI for CE Boostup XII API. All patch endpoints are for partial updates, only fields that need to be updated should be included in the request body. All endpoints that require authentication should include the `Authorization` header with the value `Bearer $(token)` and may return 401 and 403 errors.
   version: 0.0.1
 servers:
   - url: https://api.ceboostup.com
@@ -654,7 +654,15 @@ paths:
           schema:
             type: string
             example: 'createdAt'
-            enum: ['number', 'title', 'difficulty', 'createdAt', 'updatedAt']
+            enum:
+              [
+                'number',
+                'title',
+                'difficulty',
+                'points',
+                'createdAt',
+                'updatedAt',
+              ]
         - name: sortOrder
           in: query
           description: Sort order
@@ -738,7 +746,7 @@ paths:
       tags:
         - problems
       summary: Create problem
-      description: Create problem title, description, input, output, testcases, allowedHeaders, bannedFunctions, timeLimit, memoryLimit, difficulty, optimizationLevel, tags
+      description: Create problem title, description, input, output, testcases, allowedHeaders, bannedFunctions, timeLimit, memoryLimit, difficulty, points, optimizationLevel, tags
       security:
         - OAuth2:
             - staff
@@ -765,18 +773,17 @@ paths:
                   type: array
                   items:
                     type: object
-                    properties:
-                      input:
-                        type: string
-                        example: '1 1'
-                      output:
-                        type: string
-                        example: '2'
                   example:
                     [
                       { 'input': '1 1', 'output': '2' },
                       { 'input': '2 3', 'output': '5' },
+                      { 'input': '4 5', 'output': '9' },
                     ]
+                exampleTestcases:
+                  type: array
+                  items:
+                    type: object
+                  example: [{ 'input': '1 1', 'output': '2' }]
                 allowedHeaders:
                   type: array
                   items:
@@ -797,6 +804,9 @@ paths:
                   type: integer
                   example: 1
                   enum: [1, 2, 3, 4, 5]
+                points:
+                  type: integer
+                  example: 100
                 optimizationLevel:
                   type: string
                   example: '1'
@@ -807,7 +817,8 @@ paths:
                     type: string
                   example:
                     [
-                      'https://api.ceboostup.com/attachments/49c9e215-5df6-4121-88f9-44f79559e912/attachment.pdf',
+                      '5a69dc5d-ece7-414a-8e89-f7a31741423f',
+                      'f531c0e6-c2ab-4bc2-840a-29a05c030104',
                     ]
                 tags:
                   type: array
@@ -853,6 +864,11 @@ paths:
                         items:
                           type: string
                         example: ['The difficulty field is required.']
+                      points:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The points field is required.']
                       tags:
                         type: array
                         items:
@@ -903,18 +919,17 @@ paths:
                   type: array
                   items:
                     type: object
-                    properties:
-                      input:
-                        type: string
-                        example: '1 1'
-                      output:
-                        type: string
-                        example: '2'
                   example:
                     [
                       { 'input': '1 1', 'output': '2' },
                       { 'input': '2 3', 'output': '5' },
+                      { 'input': '4 5', 'output': '9' },
                     ]
+                exampleTestcases:
+                  type: array
+                  items:
+                    type: object
+                  example: [{ 'input': '1 1', 'output': '2' }]
                 allowedHeaders:
                   type: array
                   items:
@@ -935,13 +950,17 @@ paths:
                   type: integer
                   example: 1
                   enum: [1, 2, 3, 4, 5]
+                points:
+                  type: integer
+                  example: 100
                 attachments:
                   type: array
                   items:
                     type: string
                   example:
                     [
-                      'https://api.ceboostup.com/attachments/49c9e215-5df6-4121-88f9-44f79559e912/attachment.pdf',
+                      '5a69dc5d-ece7-414a-8e89-f7a31741423f',
+                      'f531c0e6-c2ab-4bc2-840a-29a05c030104',
                     ]
                 publicationStatus:
                   type: string
@@ -998,27 +1017,7 @@ paths:
                         type: array
                         items:
                           type: string
-                        example: ['The title field is required.']
-                      description:
-                        type: array
-                        items:
-                          type: string
-                        example: ['The description field is required.']
-                      difficulty:
-                        type: array
-                        items:
-                          type: string
-                        example: ['The difficulty field is required.']
-                      tags:
-                        type: array
-                        items:
-                          type: string
-                        example: ['The tags field is required.']
-                      attachments:
-                        type: array
-                        items:
-                          type: string
-                        example: ['The attachments field must be a string.']
+                        example: ['The title field is too long.']
     delete:
       tags:
         - problems
@@ -1374,9 +1373,6 @@ paths:
                 name:
                   type: string
                   example: 'attachment.pdf'
-                type:
-                  type: string
-                  example: 'application/pdf'
       responses:
         '201':
           description: OK
@@ -1391,7 +1387,10 @@ paths:
                   url:
                     type: string
                     format: uri
-                    example: 'https://api.ceboostup.com/attachments/49c9e215-5df6-4121-88f9-44f79559e912/attachment.pdf'
+                    example: 'https://api.ceboostup.com/attachments/f531c0e6-c2ab-4bc2-840a-29a05c030104/attachment.pdf'
+                  id:
+                    type: string
+                    example: 'f531c0e6-c2ab-4bc2-840a-29a05c030104'
         '413':
           description: Payload Too Large
           content:
@@ -1420,11 +1419,6 @@ paths:
                         items:
                           type: string
                         example: ['The file field is required.']
-                      type:
-                        type: array
-                        items:
-                          type: string
-                        example: ['The type field is required.']
   /attachments/{id}:
     get:
       tags:
@@ -1619,13 +1613,17 @@ components:
           type: array
           items:
             type: object
-            properties:
-              input:
-                type: string
-                example: '1 1'
-              output:
-                type: string
-                example: '2'
+          example:
+            [
+              { 'input': '1 1', 'output': '2' },
+              { 'input': '2 3', 'output': '5' },
+              { 'input': '4 5', 'output': '9' },
+            ]
+        exampleTestcases:
+          type: array
+          items:
+            type: object
+          example: [{ 'input': '1 1', 'output': '2' }]
         allowedHeaders:
           type: array
           items:
@@ -1646,6 +1644,9 @@ components:
           type: integer
           example: 1
           enum: [1, 2, 3, 4, 5]
+        points:
+          type: integer
+          example: 100
         optimizationLevel:
           type: string
           example: '1'
@@ -1656,7 +1657,8 @@ components:
             type: string
           example:
             [
-              'https://api.ceboostup.com/attachments/49c9e215-5df6-4121-88f9-44f79559e912/attachment.pdf',
+              '5a69dc5d-ece7-414a-8e89-f7a31741423f',
+              'f531c0e6-c2ab-4bc2-840a-29a05c030104',
             ]
         createdAt:
           type: string
@@ -1719,17 +1721,6 @@ components:
         output:
           type: string
           example: 'Output a single integer representing the sum of A and B.'
-        testcases:
-          type: array
-          items:
-            type: object
-            properties:
-              input:
-                type: string
-                example: '1 1'
-              output:
-                type: string
-                example: '2'
         allowedHeaders:
           type: array
           items:
@@ -1750,6 +1741,9 @@ components:
           type: integer
           example: 1
           enum: [1, 2, 3, 4, 5]
+        points:
+          type: integer
+          example: 100
         optimizationLevel:
           type: string
           example: '1'
@@ -1760,7 +1754,8 @@ components:
             type: string
           example:
             [
-              'https://api.ceboostup.com/attachments/49c9e215-5df6-4121-88f9-44f79559e912/attachment.pdf',
+              '5a69dc5d-ece7-414a-8e89-f7a31741423f',
+              'f531c0e6-c2ab-4bc2-840a-29a05c030104',
             ]
         createdAt:
           type: string
@@ -1799,9 +1794,6 @@ components:
           type: string
           example: 'Attempted'
           enum: ['Unattempted', 'Attempted', 'Solved']
-        savedCode:
-          type: string
-          example: "#include <stdio.h>\nint main() {\n   int a, b;\n   scanf(\"%d %d\", &a, &b);\n   printf(\"%d\", a + b);\n   return 0;\n}"
     Attachment:
       type: object
       properties:
