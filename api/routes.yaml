@@ -769,6 +769,12 @@ paths:
                 output:
                   type: string
                   example: 'Output a single integer representing the sum of A and B.'
+                hint:
+                  type: string
+                  example: 'Use scanf and printf'
+                hintCost:
+                  type: integer
+                  example: 50
                 testcases:
                   type: array
                   items:
@@ -915,6 +921,12 @@ paths:
                 output:
                   type: string
                   example: 'Output a single integer representing the sum of A and B.'
+                hint:
+                  type: string
+                  example: 'Use scanf and printf'
+                hintCost:
+                  type: integer
+                  example: 50
                 testcases:
                   type: array
                   items:
@@ -1106,6 +1118,62 @@ paths:
                   message:
                     type: string
                     example: 'Problem not found'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Validation error'
+                  errors:
+                    type: object
+                    properties:
+                      id:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The id field must be a string.']
+  /problems/{id}/hint:
+    post:
+      tags:
+        - problems
+      summary: Unlock hint
+      description: Unlock hint for problem by id
+      security:
+        - OAuth2:
+            - user
+      parameters:
+        - name: id
+          in: path
+          description: Problem id
+          required: true
+          schema:
+            type: string
+            example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Hint has been unlocked'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Not enough points to unlock hint'
         '422':
           description: Unprocessable Entity
           content:
@@ -1576,6 +1644,9 @@ components:
           example: '67010001@kmitl.ac.th'
         group:
           $ref: '#/components/schemas/Group'
+        points:
+          type: integer
+          example: 700
     Pagination:
       type: object
       properties:
@@ -1609,6 +1680,12 @@ components:
         output:
           type: string
           example: 'Output a single integer representing the sum of A and B.'
+        hint:
+          type: string
+          example: 'Use scanf and printf'
+        hintCost:
+          type: integer
+          example: 50
         testcases:
           type: array
           items:
@@ -1721,6 +1798,12 @@ components:
         output:
           type: string
           example: 'Output a single integer representing the sum of A and B.'
+        hint:
+          type: string
+          example: 'Use scanf and printf'
+        hintCost:
+          type: integer
+          example: 50
         allowedHeaders:
           type: array
           items:
