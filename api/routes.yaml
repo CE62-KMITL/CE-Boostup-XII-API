@@ -340,6 +340,116 @@ paths:
                           type: string
                         example: ['The token field is required.']
   /users:
+    get:
+      tags:
+        - users
+      summary: Get users
+      description: Get users with pagination
+      security:
+        - OAuth2:
+            - staff
+      parameters:
+        - name: page
+          in: query
+          description: Page number
+          required: false
+          schema:
+            type: integer
+            example: 1
+        - name: perPage
+          in: query
+          description: Number of users per page
+          required: false
+          schema:
+            type: integer
+            example: 10
+        - name: sortBy
+          in: query
+          description: Sort by field
+          required: false
+          schema:
+            type: string
+            example: 'createdAt'
+            enum: ['displayName', 'email', 'group', 'createdAt', 'updatedAt']
+        - name: sortOrder
+          in: query
+          description: Sort order
+          required: false
+          schema:
+            type: string
+            example: 'asc'
+            enum: ['asc', 'desc']
+        - name: search
+          in: query
+          description: Search keyword
+          required: false
+          schema:
+            type: string
+            example: 'John Doe'
+        - name: group
+          in: query
+          description: Group id
+          required: false
+          schema:
+            type: string
+            example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Validation error'
+                  errors:
+                    type: object
+                    properties:
+                      page:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The page field must be an integer.']
+                      perPage:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The per page field must be an integer.']
+                      sortBy:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The selected sortBy is invalid.']
+                      sortOrder:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The selected sortOrder is invalid.']
+                      search:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The search field must be a string.']
+                      group:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The group field must be a string.']
     post:
       tags:
         - users
@@ -1751,6 +1861,58 @@ paths:
                   message:
                     type: string
                     example: 'Too many requests, please use put request to update existing save for autosaving'
+  /saves/{id}:
+    get:
+      tags:
+        - saves
+      summary: Get save
+      description: Get save by id
+      security:
+        - OAuth2:
+            - user
+      parameters:
+        - name: id
+          in: path
+          description: Save id
+          required: true
+          schema:
+            type: string
+            example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Save'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Save not found'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Validation error'
+                  errors:
+                    type: object
+                    properties:
+                      id:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The id field must be a string.']
     put:
       tags:
         - saves
@@ -1806,58 +1968,6 @@ paths:
                         items:
                           type: string
                         example: ['The code field is required.']
-  /saves/{id}:
-    get:
-      tags:
-        - saves
-      summary: Get save
-      description: Get save by id
-      security:
-        - OAuth2:
-            - user
-      parameters:
-        - name: id
-          in: path
-          description: Save id
-          required: true
-          schema:
-            type: string
-            example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Save'
-        '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: 'Save not found'
-        '422':
-          description: Unprocessable Entity
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: 'Validation error'
-                  errors:
-                    type: object
-                    properties:
-                      id:
-                        type: array
-                        items:
-                          type: string
-                        example: ['The id field must be a string.']
     delete:
       tags:
         - saves
