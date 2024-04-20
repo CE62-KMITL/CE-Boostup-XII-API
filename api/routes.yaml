@@ -1167,6 +1167,9 @@ paths:
                   items:
                     type: object
                   example: [{ 'input': '1 1', 'output': '2' }]
+                solution:
+                  type: string
+                  example: "#include <stdio.h>\nint main() {\n   int a, b;\n   scanf(\"%d %d\", &a, &b);\n   printf(\"%d\", a + b);\n   return 0;\n}"
                 allowedHeaders:
                   type: array
                   items:
@@ -1319,6 +1322,9 @@ paths:
                   items:
                     type: object
                   example: [{ 'input': '1 1', 'output': '2' }]
+                solution:
+                  type: string
+                  example: "#include <stdio.h>\nint main() {\n   int a, b;\n   scanf(\"%d %d\", &a, &b);\n   printf(\"%d\", a + b);\n   return 0;\n}"
                 allowedHeaders:
                   type: array
                   items:
@@ -2303,6 +2309,9 @@ components:
           example: '67010001@kmitl.ac.th'
         group:
           $ref: '#/components/schemas/Group'
+        solved:
+          type: integer
+          example: 10
         points:
           type: integer
           example: 700
@@ -2360,6 +2369,9 @@ components:
           items:
             type: object
           example: [{ 'input': '1 1', 'output': '2' }]
+        solution:
+          type: string
+          example: "#include <stdio.h>\nint main() {\n   int a, b;\n   scanf(\"%d %d\", &a, &b);\n   printf(\"%d\", a + b);\n   return 0;\n}"
         allowedHeaders:
           type: array
           items:
