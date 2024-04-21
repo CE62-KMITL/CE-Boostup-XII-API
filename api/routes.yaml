@@ -370,7 +370,7 @@ paths:
           schema:
             type: string
             example: 'createdAt'
-            enum: ['displayName', 'email', 'group', 'createdAt', 'updatedAt']
+            enum: ['displayName', 'email', 'group', 'problemSolvedCount', 'lastSolvedAt', 'points', 'createdAt', 'updatedAt']
         - name: sortOrder
           in: query
           description: Sort order
@@ -716,6 +716,30 @@ paths:
       security:
         - OAuth2:
             - user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                page:
+                  type: integer
+                  example: 1
+                perPage:
+                  type: integer
+                  example: 10
+                sortBy:
+                  type: string
+                  example: 'createdAt'
+                  enum: ['name', 'memberCount', 'uniqueProblemSolvedCount', 'problemSolvedCount', 'lastSolvedAt', 'points', 'createdAt', 'updatedAt']
+                sortOrder:
+                  type: string
+                  example: 'asc'
+                  enum: ['asc', 'desc']
+                search:
+                  type: string
+                  example: 'Foxes'
       responses:
         '200':
           description: OK
@@ -728,6 +752,46 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Group'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Validation error'
+                  errors:
+                    type: object
+                    properties:
+                      page:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The page field must be an integer.']
+                      perPage:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The per page field must be an integer.']
+                      sortBy:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The selected sortBy is invalid.']
+                      sortOrder:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The selected sortOrder is invalid.']
+                      search:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The search field must be a string.']
     post:
       tags:
         - groups
@@ -1146,11 +1210,14 @@ paths:
               [
                 'number',
                 'title',
+                'timeLimit',
+                'memoryLimit',
                 'difficulty',
                 'points',
                 'createdAt',
                 'updatedAt',
                 'solvedAt',
+                'userSolvedCount',
               ]
         - name: sortOrder
           in: query
@@ -1182,6 +1249,14 @@ paths:
           schema:
             type: string
             example: 'math,implementation'
+        - name: difficulty
+          in: query
+          description: Difficulty
+          required: false
+          schema:
+            type: integer
+            example: 1
+            enum: [1, 2, 3, 4, 5]
       responses:
         '200':
           description: OK
@@ -1239,6 +1314,11 @@ paths:
                         items:
                           type: string
                         example: ['The tags field must be a string.']
+                      difficulty:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The difficulty field must be an integer.']
     post:
       tags:
         - problems
@@ -2678,10 +2758,10 @@ components:
         memberCount:
           type: integer
           example: 15
-        uniqueProblemsSolved:
+        uniqueProblemSolvedCount:
           type: integer
           example: 25
-        problemsSolved:
+        problemSolvedCount:
           type: integer
           example: 47
         lastSolvedAt:
@@ -2694,6 +2774,14 @@ components:
         logoAttachment:
           type: string
           example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
+        createdAt:
+          type: string
+          format: date-time
+          example: '2021-07-01T00:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2021-07-01T00:00:00Z'
     User:
       type: object
       properties:
@@ -2709,7 +2797,7 @@ components:
           example: '67010001@kmitl.ac.th'
         group:
           $ref: '#/components/schemas/Group'
-        solved:
+        problemSolvedCount:
           type: integer
           example: 10
         lastSolvedAt:
@@ -2719,6 +2807,17 @@ components:
         points:
           type: integer
           example: 700
+        avatarAttachment:
+          type: string
+          example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
+        createdAt:
+          type: string
+          format: date-time
+          example: '2021-07-01T00:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2021-07-01T00:00:00Z'
     Pagination:
       type: object
       properties:
@@ -2834,7 +2933,7 @@ components:
           items:
             type: string
           example: ['math', 'implementation']
-        passed:
+        userSolvedCount:
           type: integer
           example: 10
         plubicationStatus:
@@ -2938,7 +3037,7 @@ components:
           items:
             type: string
           example: ['math', 'implementation']
-        passed:
+        userSolvedCount:
           type: integer
           example: 10
         plubicationStatus:
