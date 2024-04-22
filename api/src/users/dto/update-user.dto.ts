@@ -14,7 +14,7 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   @IsOptional()
   avatar: string;
 
-  @ApiPropertyOptional({ example: 'P@ssw0rd!' })
+  @ApiPropertyOptional({ example: 'P@ssw0rd!', minLength: 8 })
   @IsStrongPassword({
     minLength: 8,
     minLowercase: 1,
