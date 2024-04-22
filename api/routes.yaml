@@ -363,22 +363,14 @@ paths:
           schema:
             type: integer
             example: 10
-        - name: sortBy
+        - name: sort
           in: query
-          description: Sort by field
+          description: Sort by field, no prefix mean asc, prefix with - mean desc
           required: false
           schema:
             type: string
-            example: 'createdAt'
+            example: 'points,lastSolvedAt,-problemSolvedCount'
             enum: ['displayName', 'email', 'group', 'problemSolvedCount', 'lastSolvedAt', 'points', 'createdAt', 'updatedAt']
-        - name: sortOrder
-          in: query
-          description: Sort order
-          required: false
-          schema:
-            type: string
-            example: 'asc'
-            enum: ['asc', 'desc']
         - name: search
           in: query
           description: Search keyword
@@ -430,16 +422,11 @@ paths:
                         items:
                           type: string
                         example: ['The per page field must be an integer.']
-                      sortBy:
+                      sort:
                         type: array
                         items:
                           type: string
-                        example: ['The selected sortBy is invalid.']
-                      sortOrder:
-                        type: array
-                        items:
-                          type: string
-                        example: ['The selected sortOrder is invalid.']
+                        example: ['The selected sort is invalid.']
                       search:
                         type: array
                         items:
@@ -587,6 +574,10 @@ paths:
                 group:
                   type: string
                   example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
+                avatar:
+                  type: string
+                  format: byte
+                  example: 'data:image/png;base64,YXdmeXV0YW53bzlmbm85MHczbnB0ZnVuc3JhdHV5c25rcnQ='
                 password:
                   type: string
                   example: 'newPassword'
@@ -707,6 +698,59 @@ paths:
                         items:
                           type: string
                         example: ['The id field must be a string.']
+  /users/{id}/avatar:
+    get:
+      tags:
+        - users
+      summary: Get user avatar
+      description: Get user avatar image data
+      security:
+        - OAuth2:
+            - user
+      parameters:
+        - name: id
+          in: path
+          description: User id
+          required: true
+          schema:
+            type: string
+            example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'User not found'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Validation error'
+                  errors:
+                    type: object
+                    properties:
+                      id:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The id field must be a string.']
   /groups:
     get:
       tags:
@@ -729,14 +773,11 @@ paths:
                 perPage:
                   type: integer
                   example: 10
-                sortBy:
+                sort:
                   type: string
-                  example: 'createdAt'
+                  description: Sort by field, no prefix mean asc, prefix with - mean desc
+                  example: 'points,lastSolvedAt,-uniqueproblemSolvedCount'
                   enum: ['name', 'memberCount', 'uniqueProblemSolvedCount', 'problemSolvedCount', 'lastSolvedAt', 'points', 'createdAt', 'updatedAt']
-                sortOrder:
-                  type: string
-                  example: 'asc'
-                  enum: ['asc', 'desc']
                 search:
                   type: string
                   example: 'Foxes'
@@ -777,16 +818,11 @@ paths:
                         items:
                           type: string
                         example: ['The per page field must be an integer.']
-                      sortBy:
+                      sort:
                         type: array
                         items:
                           type: string
-                        example: ['The selected sortBy is invalid.']
-                      sortOrder:
-                        type: array
-                        items:
-                          type: string
-                        example: ['The selected sortOrder is invalid.']
+                        example: ['The selected sort is invalid.']
                       search:
                         type: array
                         items:
@@ -796,7 +832,7 @@ paths:
       tags:
         - groups
       summary: Create group
-      description: Create group with name and logo attachment
+      description: Create group with name
       security:
         - OAuth2:
             - staff
@@ -810,9 +846,6 @@ paths:
                 name:
                   type: string
                   example: 'Foxes'
-                logoAttachment:
-                  type: string
-                  example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
       responses:
         '201':
           description: OK
@@ -925,9 +958,13 @@ paths:
                 name:
                   type: string
                   example: 'Staff'
-                logoAttachment:
+                description:
                   type: string
-                  example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
+                  example: 'Staff members'
+                avatar:
+                  type: string
+                  format: byte
+                  example: 'data:image/png;base64,YXdmeXV0YW53bzlmbm85MHczbnB0ZnVuc3JhdHV5c25rcnQ='
       responses:
         '200':
           description: OK
@@ -999,6 +1036,59 @@ paths:
                   message:
                     type: string
                     example: 'Group has been deleted'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Group not found'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Validation error'
+                  errors:
+                    type: object
+                    properties:
+                      id:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The id field must be a string.']
+  /groups/{id}/avatar:
+    get:
+      tags:
+        - groups
+      summary: Get group avatar
+      description: Get group avatar image data
+      security:
+        - OAuth2:
+            - user
+      parameters:
+        - name: id
+          in: path
+          description: Group id
+          required: true
+          schema:
+            type: string
+            example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
         '404':
           description: Not Found
           content:
@@ -1199,13 +1289,13 @@ paths:
           schema:
             type: integer
             example: 10
-        - name: sortBy
+        - name: sort
           in: query
-          description: Sort by field
+          description: Sort by field, no prefix mean asc, prefix with - mean desc
           required: false
           schema:
             type: string
-            example: 'createdAt'
+            example: 'createdAt,number,-points'
             enum:
               [
                 'number',
@@ -1219,14 +1309,6 @@ paths:
                 'solvedAt',
                 'userSolvedCount',
               ]
-        - name: sortOrder
-          in: query
-          description: Sort order
-          required: false
-          schema:
-            type: string
-            example: 'asc'
-            enum: ['asc', 'desc']
         - name: completionStatus
           in: query
           description: Completion status
@@ -1294,16 +1376,11 @@ paths:
                         items:
                           type: string
                         example: ['The per page field must be an integer.']
-                      sortBy:
+                      sort:
                         type: array
                         items:
                           type: string
-                        example: ['The selected sortBy is invalid.']
-                      sortOrder:
-                        type: array
-                        items:
-                          type: string
-                        example: ['The selected sortOrder is invalid.']
+                        example: ['The selected sort is invalid.']
                       search:
                         type: array
                         items:
@@ -1775,6 +1852,28 @@ paths:
                         items:
                           type: string
                         example: ['The id field must be a string.']
+  /tags:
+    get:
+      tags:
+        - tags
+      summary: Get tags
+      description: Get all tags used currently
+      security:
+        - OAuth2:
+            - user
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tags:
+                    type: array
+                    items:
+                      type: string
+                    example: ['math', 'implementation', 'array', 'function']
   /saves:
     get:
       tags:
@@ -1813,22 +1912,14 @@ paths:
           schema:
             type: integer
             example: 10
-        - name: sortBy
+        - name: sort
           in: query
-          description: Sort by field
+          description: Sort by field, no prefix mean asc, prefix with - mean desc
           required: false
           schema:
             type: string
             example: 'updatedAt'
             enum: ['createdAt', 'updatedAt']
-        - name: sortOrder
-          in: query
-          description: Sort order
-          required: false
-          schema:
-            type: string
-            example: 'desc'
-            enum: ['asc', 'desc']
       responses:
         '200':
           description: OK
@@ -1876,16 +1967,11 @@ paths:
                         items:
                           type: string
                         example: ['The per page field must be an integer.']
-                      sortBy:
+                      sort:
                         type: array
                         items:
                           type: string
-                        example: ['The selected sortBy is invalid.']
-                      sortOrder:
-                        type: array
-                        items:
-                          type: string
-                        example: ['The selected sortOrder is invalid.']
+                        example: ['The selected sort is invalid.']
     post:
       tags:
         - saves
@@ -2151,22 +2237,14 @@ paths:
           schema:
             type: integer
             example: 10
-        - name: sortBy
+        - name: sort
           in: query
-          description: Sort by field
+          description: Sort by field, no prefix mean asc, prefix with - mean desc
           required: false
           schema:
             type: string
             example: 'createdAt'
             enum: ['createdAt', 'executionTime']
-        - name: sortOrder
-          in: query
-          description: Sort order
-          required: false
-          schema:
-            type: string
-            example: 'asc'
-            enum: ['asc', 'desc']
       responses:
         '200':
           description: OK
@@ -2214,16 +2292,11 @@ paths:
                         items:
                           type: string
                         example: ['The per page field must be an integer.']
-                      sortBy:
+                      sort:
                         type: array
                         items:
                           type: string
-                        example: ['The selected sortBy is invalid.']
-                      sortOrder:
-                        type: array
-                        items:
-                          type: string
-                        example: ['The selected sortOrder is invalid.']
+                        example: ['The selected sort is invalid.']
     post:
       tags:
         - submissions
@@ -2427,6 +2500,79 @@ paths:
                           type: string
                         example: ['The id field must be a string.']
   /attachments:
+    get:
+      tags:
+        - attachments
+      summary: Get attachments
+      description: Get attachments
+      security:
+        - OAuth2:
+            - staff
+      parameters:
+        - name: page
+          in: query
+          description: Page number
+          required: false
+          schema:
+            type: integer
+            example: 1
+        - name: perPage
+          in: query
+          description: Number of attachments per page
+          required: false
+          schema:
+            type: integer
+            example: 10
+        - name: sort
+          in: query
+          description: Sort by field, no prefix mean asc, prefix with - mean desc
+          required: false
+          schema:
+            type: string
+            example: 'createdAt'
+            enum: ['name', 'size', 'createdAt', 'updatedAt']
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  attachments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Attachment'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Validation error'
+                  errors:
+                    type: object
+                    properties:
+                      page:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The page field must be an integer.']
+                      perPage:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The per page field must be an integer.']
+                      sort:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The selected sort is invalid.']
     post:
       tags:
         - attachments
@@ -2454,18 +2600,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: 'Attachment has been uploaded'
-                  url:
-                    type: string
-                    format: uri
-                    example: 'https://api.ceboostup.com/attachments/f531c0e6-c2ab-4bc2-840a-29a05c030104/attachment.pdf'
-                  id:
-                    type: string
-                    example: 'f531c0e6-c2ab-4bc2-840a-29a05c030104'
+                $ref: '#/components/schemas/Attachment'
         '413':
           description: Payload Too Large
           content:
@@ -2569,17 +2704,23 @@ paths:
                 name:
                   type: string
                   example: 'attachment.pdf'
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                name:
+                  type: string
+                  example: 'attachment.pdf'
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: 'Attachment has been updated'
+                $ref: '#/components/schemas/Attachment'
         '404':
           description: Not Found
           content:
@@ -2679,7 +2820,7 @@ paths:
             example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
         - name: name
           in: path
-          description: Attachment name
+          description: Attachment name for downloading, does not have to match original name
           required: true
           schema:
             type: string
@@ -2688,7 +2829,7 @@ paths:
         '200':
           description: OK
           content:
-            application/pdf:
+            application/octet-stream:
               schema:
                 type: string
                 format: binary
@@ -2771,9 +2912,6 @@ components:
         points:
           type: integer
           example: 10500
-        logoAttachment:
-          type: string
-          example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
         createdAt:
           type: string
           format: date-time
@@ -2807,9 +2945,6 @@ components:
         points:
           type: integer
           example: 700
-        avatarAttachment:
-          type: string
-          example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
         createdAt:
           type: string
           format: date-time
@@ -2905,12 +3040,7 @@ components:
         attachments:
           type: array
           items:
-            type: string
-          example:
-            [
-              '5a69dc5d-ece7-414a-8e89-f7a31741423f',
-              'f531c0e6-c2ab-4bc2-840a-29a05c030104',
-            ]
+            $ref: '#/components/schemas/Attachment'
         createdAt:
           type: string
           format: date-time
@@ -3009,12 +3139,7 @@ components:
         attachments:
           type: array
           items:
-            type: string
-          example:
-            [
-              '5a69dc5d-ece7-414a-8e89-f7a31741423f',
-              'f531c0e6-c2ab-4bc2-840a-29a05c030104',
-            ]
+            $ref: '#/components/schemas/Attachment'
         createdAt:
           type: string
           format: date-time
@@ -3118,6 +3243,9 @@ components:
         id:
           type: string
           example: '5a69dc5d-ece7-414a-8e89-f7a31741423f'
+        name:
+          type: string
+          example: 'attachment.pdf'
         url:
           type: string
           format: uri
