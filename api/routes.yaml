@@ -3257,6 +3257,8 @@ components:
         size:
           type: number
           example: 1024
+        craetedBy:
+          $ref: '#/components/schemas/User'
         createdAt:
           type: string
           format: date-time
