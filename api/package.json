@@ -74,5 +74,10 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
+  },
+  "pnpm": {
+    "overrides": {
+      "formidable@<3.2.4": ">=3.2.4"
+    }
   }
 }
