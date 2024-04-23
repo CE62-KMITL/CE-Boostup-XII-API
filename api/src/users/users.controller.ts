@@ -22,12 +22,12 @@ export class UsersController {
 
   @Post()
   async create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+    return await this.usersService.create(createUserDto);
   }
 
   @Get()
   async findAll() {
-    return this.usersService.findAll();
+    return await this.usersService.findAll();
   }
 
   @Get(':id')
@@ -41,7 +41,7 @@ export class UsersController {
     )
     id: string,
   ) {
-    return this.usersService.findOne(id);
+    return await this.usersService.findOne(id);
   }
 
   @Patch(':id')
@@ -56,7 +56,7 @@ export class UsersController {
     id: string,
     @Body() updateUserDto: UpdateUserDto,
   ) {
-    return this.usersService.update(id, updateUserDto);
+    return await this.usersService.update(id, updateUserDto);
   }
 
   @Delete(':id')
@@ -70,6 +70,6 @@ export class UsersController {
     )
     id: string,
   ) {
-    return this.usersService.remove(id);
+    return await this.usersService.remove(id);
   }
 }
