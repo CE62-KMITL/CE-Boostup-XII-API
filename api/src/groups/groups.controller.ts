@@ -10,25 +10,25 @@ import {
   HttpStatus,
   NotFoundException,
 } from '@nestjs/common';
-import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { GroupsService } from './groups.service';
+import { CreateGroupDto } from './dto/create-group.dto';
+import { UpdateGroupDto } from './dto/update-group.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 @ApiBearerAuth()
-@ApiTags('users')
-@Controller('users')
-export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+@ApiTags('groups')
+@Controller('groups')
+export class GroupsController {
+  constructor(private readonly groupsService: GroupsService) {}
 
   @Post()
-  async create(@Body() createUserDto: CreateUserDto) {
-    return await this.usersService.create(createUserDto);
+  async create(@Body() createGroupDto: CreateGroupDto) {
+    return await this.groupsService.create(createGroupDto);
   }
 
   @Get()
   async findAll() {
-    return await this.usersService.findAll();
+    return await this.groupsService.findAll();
   }
 
   @Get(':id')
@@ -42,11 +42,10 @@ export class UsersController {
     )
     id: string,
   ) {
-    const user = await this.usersService.findOne(id);
+    const user = await this.groupsService.findOne(id);
     if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
+      throw new NotFoundException(`Group with ID ${id} not found`);
     }
-    return user;
   }
 
   @Patch(':id')
@@ -59,11 +58,11 @@ export class UsersController {
       }),
     )
     id: string,
-    @Body() updateUserDto: UpdateUserDto,
+    @Body() updateGroupDto: UpdateGroupDto,
   ) {
-    const user = await this.usersService.update(id, updateUserDto);
+    const user = await this.groupsService.update(id, updateGroupDto);
     if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
+      throw new NotFoundException(`Group with ID ${id} not found`);
     }
     return user;
   }
@@ -79,6 +78,6 @@ export class UsersController {
     )
     id: string,
   ) {
-    return await this.usersService.remove(id);
+    return await this.groupsService.remove(id);
   }
 }

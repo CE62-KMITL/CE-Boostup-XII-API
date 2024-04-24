@@ -12,22 +12,32 @@ export class UsersService {
     private usersRepository: Repository<User>,
   ) {}
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
+    const user = new User();
+    user.displayName = createUserDto.displayName;
+    user.email = createUserDto.email;
+    user.hashedPassword = '';
+    user.groupId = createUserDto.groupId;
+    return await this.usersRepository.save(user);
   }
 
   async findAll() {
-    return await this.usersRepository.find();
+    return await this.usersRepository.find({ relations: ['group'] });
   }
 
   async findOne(id: string) {
-    return await this.usersRepository.findOneBy({ id });
+    return await this.usersRepository.findOne({
+      where: { id },
+      relations: ['group'],
+    });
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async update(id: string, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+    const result = await this.usersRepository.update(id, updateUserDto);
+    if (!result.affected) {
+      return null;
+    }
+    return await this.usersRepository.findOne({ where: { id } });
   }
 
   async remove(id: string) {

@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
+import { GroupsModule } from './groups/groups.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { ConfigModule } from '@nestjs/config';
       synchronize: true, //TODO: Change to migration in production
     }),
     UsersModule,
+    GroupsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
