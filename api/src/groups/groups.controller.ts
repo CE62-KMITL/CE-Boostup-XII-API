@@ -42,10 +42,11 @@ export class GroupsController {
     )
     id: string,
   ) {
-    const user = await this.groupsService.findOne(id);
-    if (!user) {
+    const group = await this.groupsService.findOne(id);
+    if (!group) {
       throw new NotFoundException(`Group with ID ${id} not found`);
     }
+    return group;
   }
 
   @Patch(':id')
@@ -60,11 +61,11 @@ export class GroupsController {
     id: string,
     @Body() updateGroupDto: UpdateGroupDto,
   ) {
-    const user = await this.groupsService.update(id, updateGroupDto);
-    if (!user) {
+    const group = await this.groupsService.update(id, updateGroupDto);
+    if (!group) {
       throw new NotFoundException(`Group with ID ${id} not found`);
     }
-    return user;
+    return group;
   }
 
   @Delete(':id')

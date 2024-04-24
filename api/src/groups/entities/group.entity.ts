@@ -12,6 +12,9 @@ export class Group {
   @Column()
   description: string;
 
+  @OneToMany(() => User, (user) => user.group)
+  members: User[];
+
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 
@@ -21,7 +24,4 @@ export class Group {
     onUpdate: 'CURRENT_TIMESTAMP',
   })
   updatedAt: Date;
-
-  @OneToMany(() => User, (user) => user.group)
-  members: User[];
 }
