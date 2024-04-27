@@ -1,7 +1,14 @@
 import { CreateUserDto } from './create-user.dto';
-import { IsOptional, IsStrongPassword, Matches } from 'class-validator';
+import {
+  IsOptional,
+  IsStrongPassword,
+  Matches,
+  ValidateIf,
+  IsString,
+  MinLength,
+  IsEmpty,
+} from 'class-validator';
 import { ApiPropertyOptional, PartialType } from '@nestjs/swagger';
-
 export class UpdateUserDto extends PartialType(CreateUserDto) {
   @ApiPropertyOptional({
     example:
@@ -12,7 +19,7 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
     { message: 'Invalid base64 image' },
   )
   @IsOptional()
-  avatar: string;
+  avatar?: string;
 
   @ApiPropertyOptional({ example: 'P@ssw0rd!', minLength: 8 })
   @IsStrongPassword({
@@ -23,5 +30,14 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
     minSymbols: 1,
   })
   @IsOptional()
-  password: string;
+  password?: string;
+
+  @ApiPropertyOptional({ example: 'P@ssw0rd!', minLength: 8 })
+  @ValidateIf((o) => o.password)
+  @IsString()
+  @MinLength(1)
+  oldPassword?: string;
+
+  @IsEmpty()
+  hashedPassword?: string;
 }
