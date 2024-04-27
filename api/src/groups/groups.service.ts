@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -12,33 +12,45 @@ export class GroupsService {
     private groupsRepository: Repository<Group>,
   ) {}
 
-  async create(createGroupDto: CreateGroupDto) {
+  async create(createGroupDto: CreateGroupDto): Promise<Group> {
     const group = new Group();
     group.name = createGroupDto.name;
     group.description = createGroupDto.description;
     return await this.groupsRepository.save(group);
   }
 
-  async findAll() {
+  async findAll(): Promise<Group[]> {
     return await this.groupsRepository.find();
   }
 
-  async findOne(id: string) {
-    return await this.groupsRepository.findOne({
+  async findOne(id: string): Promise<Group> {
+    const group = await this.groupsRepository.findOne({
       where: { id },
       relations: ['members'],
     });
+    if (!group) {
+      throw new NotFoundException(`Group with ID ${id} not found`);
+    }
+    return group;
   }
 
-  async update(id: string, updateGroupDto: UpdateGroupDto) {
+  async update(id: string, updateGroupDto: UpdateGroupDto): Promise<Group> {
     const result = await this.groupsRepository.update(id, updateGroupDto);
     if (!result.affected) {
-      return null;
+      throw new NotFoundException(`Group with ID ${id} not found`);
     }
-    return await this.groupsRepository.findOne({ where: { id } });
+    const group = await this.groupsRepository.findOne({ where: { id } });
+    if (!group) {
+      throw new NotFoundException(`Group with ID ${id} not found`);
+    }
+    return group;
   }
 
-  async remove(id: string) {
-    return await this.groupsRepository.delete(id);
+  async remove(id: string): Promise<void> {
+    const result = await this.groupsRepository.delete(id);
+    if (!result.affected) {
+      throw new NotFoundException(`Group with ID ${id} not found`);
+    }
+    return;
   }
 }
