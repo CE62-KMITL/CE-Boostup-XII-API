@@ -39,7 +39,10 @@ export class GroupsService {
   }
 
   async findOne(id: string) {
-    const group = await this.groupsRepository.findOne({ id }, { populate: ['members'] });
+    const group = await this.groupsRepository.findOne(
+      { id },
+      { populate: ['members'] },
+    );
     if (!group) {
       throw new NotFoundException({
         message: 'Group not found',

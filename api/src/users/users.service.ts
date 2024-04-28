@@ -6,10 +6,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import * as argon2 from 'argon2';
+import { Group } from '../groups/entities/group.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
-import { Group } from '../groups/entities/group.entity';
 
 @Injectable()
 export class UsersService {
@@ -29,7 +29,9 @@ export class UsersService {
         errors: { email: 'Email already in use' },
       });
     }
-    const group = await this.em.getRepository(Group).findOne({ id: createUserDto.groupId });
+    const group = await this.em
+      .getRepository(Group)
+      .findOne({ id: createUserDto.groupId });
     if (!group) {
       throw new BadRequestException({
         message: 'Group not found',

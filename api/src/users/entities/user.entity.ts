@@ -20,8 +20,8 @@ export class User {
   group: Group;
 
   @Property()
-  createdAt = new Date();
+  createdAt: Date = new Date();
 
   @Property({ onUpdate: () => new Date() })
-  updatedAt = new Date();
+  updatedAt: Date = new Date();
 }

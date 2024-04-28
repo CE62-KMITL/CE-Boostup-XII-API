@@ -23,12 +23,15 @@ export class Group {
   @OneToMany(() => User, (user) => user.group)
   members: Collection<User, object> = new Collection<User>(this);
 
-  @Formula((alias) => `(SELECT COUNT(*) FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`)`)
+  @Formula(
+    (alias) =>
+      `(SELECT COUNT(*) FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`)`,
+  )
   memberCount?: number;
 
   @Property()
-  createdAt = new Date();
+  createdAt: Date = new Date();
 
   @Property({ onUpdate: () => new Date() })
-  updatedAt = new Date();
+  updatedAt: Date = new Date();
 }
