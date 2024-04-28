@@ -1,47 +1,73 @@
+import { EntityManager, EntityRepository, wrap } from '@mikro-orm/mariadb';
+import { InjectRepository } from '@mikro-orm/nestjs';
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
-  BadRequestException,
 } from '@nestjs/common';
+import * as argon2 from 'argon2';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
-import * as argon2 from 'argon2';
+import { Group } from '../groups/entities/group.entity';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
-    private usersRepository: Repository<User>,
+    private readonly usersRepository: EntityRepository<User>,
+    private readonly em: EntityManager,
   ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
+  async create(createUserDto: CreateUserDto) {
+    const emailExists = await this.usersRepository.count({
+      email: createUserDto.email,
+    });
+    if (emailExists) {
+      throw new BadRequestException({
+        message: 'Email already in use',
+        errors: { email: 'Email already in use' },
+      });
+    }
+    const group = await this.em.getRepository(Group).findOne({ id: createUserDto.groupId });
+    if (!group) {
+      throw new BadRequestException({
+        message: 'Group not found',
+        errors: { groupId: 'Group not found' },
+      });
+    }
     const user = new User();
     user.displayName = createUserDto.displayName;
     user.email = createUserDto.email;
     user.hashedPassword = '';
-    user.groupId = createUserDto.groupId;
-    return await this.usersRepository.save(user);
+    user.group = group;
+    await this.em.persistAndFlush(user);
+    return this.buildUserResponse(user);
   }
 
   async findAll(): Promise<User[]> {
-    return await this.usersRepository.find({ relations: ['group'] });
+    return await this.usersRepository.findAll();
   }
 
   async findOne(id: string): Promise<User> {
-    const user = await this.usersRepository.findOne({
-      where: { id },
-      relations: ['group'],
-    });
+    const user = await this.usersRepository.findOne({ id });
     if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
+      throw new NotFoundException({
+        message: 'User not found',
+        errors: { id: 'User not found' },
+      });
     }
     return user;
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
+  async update(id: string, updateUserDto: UpdateUserDto) {
+    const user = await this.usersRepository.findOne({ id });
+    if (!user) {
+      throw new NotFoundException({
+        message: 'User not found',
+        errors: { id: 'User not found' },
+      });
+    }
     if (updateUserDto.avatar) {
       // TODO: Implement avatar upload to local file system
       // Delete the avatar property from the DTO
@@ -49,40 +75,42 @@ export class UsersService {
     }
     if (updateUserDto.password) {
       if (!updateUserDto.oldPassword) {
-        throw new BadRequestException(
-          'Old password is required when changing password',
-        );
-      }
-      const user = await this.usersRepository.findOne({ where: { id } });
-      if (!user) {
-        throw new NotFoundException(`User with ID ${id} not found`);
+        throw new BadRequestException({
+          message: 'Old password is required',
+          errors: { oldPassword: 'Old password is required' },
+        });
       }
       if (
         !user.hashedPassword ||
         !(await argon2.verify(user.hashedPassword, updateUserDto.oldPassword))
       ) {
-        throw new BadRequestException('Old password is incorrect');
+        throw new BadRequestException({
+          message: 'Old password is incorrect',
+          errors: { oldPassword: 'Old password is incorrect' },
+        });
       }
       updateUserDto.hashedPassword = await argon2.hash(updateUserDto.password);
       delete updateUserDto.oldPassword;
       delete updateUserDto.password;
     }
-    const result = await this.usersRepository.update(id, updateUserDto);
-    if (!result.affected) {
-      throw new NotFoundException(`User with ID ${id} not found`);
-    }
-    const user = await this.usersRepository.findOne({ where: { id } });
-    if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
-    }
-    return user;
+    wrap(user).assign(updateUserDto);
+    await this.em.flush();
+    return this.buildUserResponse(user);
   }
 
-  async remove(id: string): Promise<void> {
-    const result = await this.usersRepository.delete(id);
-    if (!result.affected) {
-      throw new NotFoundException(`User with ID ${id} not found`);
-    }
+  async remove(id: string) {
+    this.usersRepository.nativeDelete({ id });
     return;
+  }
+
+  private buildUserResponse(user: User) {
+    return {
+      id: user.id,
+      displayName: user.displayName,
+      email: user.email,
+      group: user.group,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
   }
 }

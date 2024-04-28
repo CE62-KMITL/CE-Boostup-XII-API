@@ -1,38 +1,27 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  ManyToOne,
-  JoinColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Entity, ManyToOne, PrimaryKey, Property } from '@mikro-orm/mariadb';
+import { v4 as uuidv4 } from 'uuid';
 import { Group } from '../../groups/entities/group.entity';
 
 @Entity()
 export class User {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryKey()
+  id: string = uuidv4();
 
-  @Column()
+  @Property()
   email: string;
 
-  @Column()
+  @Property()
   hashedPassword: string;
 
-  @Column()
+  @Property()
   displayName: string;
 
-  @Column({ name: 'group_id' })
-  groupId: string;
-
-  @ManyToOne(() => Group, (group) => group.members)
-  @JoinColumn({ name: 'group_id' })
+  @ManyToOne(() => Group)
   group: Group;
 
-  @CreateDateColumn()
-  createdAt: Date;
+  @Property()
+  createdAt = new Date();
 
-  @UpdateDateColumn()
-  updatedAt: Date;
+  @Property({ onUpdate: () => new Date() })
+  updatedAt = new Date();
 }

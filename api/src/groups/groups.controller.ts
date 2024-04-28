@@ -1,19 +1,19 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
-  ParseUUIDPipe,
-  HttpStatus,
+  Get,
   HttpCode,
+  HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
 } from '@nestjs/common';
-import { GroupsService } from './groups.service';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { GroupsService } from './groups.service';
 
 @ApiBearerAuth()
 @ApiTags('groups')

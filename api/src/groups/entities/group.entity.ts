@@ -1,37 +1,34 @@
 import {
+  Collection,
   Entity,
-  Column,
-  PrimaryGeneratedColumn,
+  Formula,
   OneToMany,
-  CreateDateColumn,
-  UpdateDateColumn,
-  VirtualColumn,
-} from 'typeorm';
+  PrimaryKey,
+  Property,
+} from '@mikro-orm/mariadb';
+import { v4 as uuidv4 } from 'uuid';
 import { User } from '../../users/entities/user.entity';
 
 @Entity()
 export class Group {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryKey()
+  id: string = uuidv4();
 
-  @Column()
+  @Property()
   name: string;
 
-  @Column()
+  @Property()
   description: string;
 
   @OneToMany(() => User, (user) => user.group)
-  members: User[];
+  members: Collection<User, object> = new Collection<User>(this);
 
-  @VirtualColumn({
-    query: (alias) =>
-      `(SELECT COUNT(*) FROM user WHERE user.group_id = ${alias}.id)`,
-  })
-  memberCount: number;
+  @Formula((alias) => `(SELECT COUNT(*) FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`)`)
+  memberCount?: number;
 
-  @CreateDateColumn()
-  createdAt: Date;
+  @Property()
+  createdAt = new Date();
 
-  @UpdateDateColumn()
-  updatedAt: Date;
+  @Property({ onUpdate: () => new Date() })
+  updatedAt = new Date();
 }
