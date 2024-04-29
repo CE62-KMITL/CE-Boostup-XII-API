@@ -6,6 +6,7 @@ import {
   types,
 } from '@mikro-orm/mariadb';
 import { v4 as uuidv4 } from 'uuid';
+
 import { Group } from '../../groups/entities/group.entity';
 
 @Entity()
