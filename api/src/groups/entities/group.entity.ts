@@ -5,33 +5,39 @@ import {
   OneToMany,
   PrimaryKey,
   Property,
+  types,
 } from '@mikro-orm/mariadb';
 import { v4 as uuidv4 } from 'uuid';
 import { User } from '../../users/entities/user.entity';
 
 @Entity()
 export class Group {
-  @PrimaryKey()
+  @PrimaryKey({ type: types.uuid })
   id: string = uuidv4();
 
-  @Property()
+  @Property({ type: types.string, length: 32, unique: true })
   name: string;
 
-  @Property()
+  @Property({ type: types.text })
   description: string;
 
-  @OneToMany(() => User, (user) => user.group)
+  @OneToMany({ entity: () => User, mappedBy: (user) => user.group })
   members: Collection<User, object> = new Collection<User>(this);
 
   @Formula(
     (alias) =>
       `(SELECT COUNT(*) FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`)`,
   )
-  memberCount?: number;
+  memberCount: number;
 
-  @Property()
+  @Property({ type: types.datetime })
   createdAt: Date = new Date();
 
-  @Property({ onUpdate: () => new Date() })
+  @Property({ type: types.datetime, onUpdate: () => new Date() })
   updatedAt: Date = new Date();
+
+  constructor(name: string, description: string) {
+    this.name = name;
+    this.description = description;
+  }
 }

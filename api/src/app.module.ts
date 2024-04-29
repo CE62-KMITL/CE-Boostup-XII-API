@@ -1,4 +1,4 @@
-import { MariaDbDriver } from '@mikro-orm/mariadb';
+import { LoadStrategy, MariaDbDriver } from '@mikro-orm/mariadb';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
@@ -21,6 +21,7 @@ import { UsersModule } from './users/users.module';
       password: process.env.MARIADB_PASSWORD || 'ceboostupxii',
       name: process.env.MARIADB_NAME || 'unknown',
       charset: 'utf8mb4',
+      loadStrategy: LoadStrategy.JOINED,
       autoLoadEntities: true,
       timezone: process.env.TZ || '+07:00',
       debug: true, // TODO: Disable debug in production

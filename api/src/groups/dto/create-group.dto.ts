@@ -8,8 +8,8 @@ export class CreateGroupDto {
   @MaxLength(32)
   name: string;
 
-  @ApiProperty({ maxLength: 255, example: 'Ducks group' })
+  @ApiProperty({ maxLength: 65535, example: 'Ducks group' })
   @IsString()
-  @MaxLength(255)
+  @MaxLength(65535)
   description: string;
 }

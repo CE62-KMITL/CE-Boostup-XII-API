@@ -1,4 +1,4 @@
-import { EntityManager, EntityRepository, wrap } from '@mikro-orm/mariadb';
+import { EntityManager, EntityRepository } from '@mikro-orm/mariadb';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import {
   BadRequestException,
@@ -9,17 +9,17 @@ import * as argon2 from 'argon2';
 import { Group } from '../groups/entities/group.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { User } from './entities/user.entity';
+import { User, UserResponse } from './entities/user.entity';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: EntityRepository<User>,
-    private readonly em: EntityManager,
+    private readonly entityManager: EntityManager,
   ) {}
 
-  async create(createUserDto: CreateUserDto) {
+  async create(createUserDto: CreateUserDto): Promise<User> {
     const emailExists = await this.usersRepository.count({
       email: createUserDto.email,
     });
@@ -29,7 +29,7 @@ export class UsersService {
         errors: { email: 'Email already in use' },
       });
     }
-    const group = await this.em
+    const group = await this.entityManager
       .getRepository(Group)
       .findOne({ id: createUserDto.groupId });
     if (!group) {
@@ -38,21 +38,24 @@ export class UsersService {
         errors: { groupId: 'Group not found' },
       });
     }
-    const user = new User();
-    user.displayName = createUserDto.displayName;
-    user.email = createUserDto.email;
-    user.hashedPassword = '';
-    user.group = group;
-    await this.em.persistAndFlush(user);
-    return this.buildUserResponse(user);
+    const user = new User(
+      createUserDto.email,
+      createUserDto.displayName,
+      group,
+    );
+    await this.entityManager.persistAndFlush(user);
+    return user;
   }
 
   async findAll(): Promise<User[]> {
-    return await this.usersRepository.findAll();
+    return await this.usersRepository.findAll({ populate: ['group'] });
   }
 
   async findOne(id: string): Promise<User> {
-    const user = await this.usersRepository.findOne({ id });
+    const user = await this.usersRepository.findOne(
+      { id },
+      { populate: ['group'] },
+    );
     if (!user) {
       throw new NotFoundException({
         message: 'User not found',
@@ -62,8 +65,14 @@ export class UsersService {
     return user;
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto) {
-    const user = await this.usersRepository.findOne({ id });
+  async update(
+    id: string,
+    updateUserDto: UpdateUserDto,
+  ): Promise<UserResponse> {
+    const user = await this.usersRepository.findOne(
+      { id },
+      { populate: ['email', 'hashedPassword', 'group'] },
+    );
     if (!user) {
       throw new NotFoundException({
         message: 'User not found',
@@ -73,13 +82,12 @@ export class UsersService {
     if (updateUserDto.avatar) {
       // TODO: Implement avatar upload to local file system
       // Delete the avatar property from the DTO
-      delete updateUserDto.avatar;
     }
     if (updateUserDto.password) {
       if (!updateUserDto.oldPassword) {
         throw new BadRequestException({
-          message: 'Old password is required',
-          errors: { oldPassword: 'Old password is required' },
+          message: 'Old password is required when changing password',
+          errors: { oldPassword: 'Old password is required changing password' },
         });
       }
       if (
@@ -91,28 +99,42 @@ export class UsersService {
           errors: { oldPassword: 'Old password is incorrect' },
         });
       }
-      updateUserDto.hashedPassword = await argon2.hash(updateUserDto.password);
-      delete updateUserDto.oldPassword;
-      delete updateUserDto.password;
+      user.hashedPassword = await argon2.hash(updateUserDto.password);
     }
-    wrap(user).assign(updateUserDto);
-    await this.em.flush();
-    return this.buildUserResponse(user);
+    if (updateUserDto.groupId) {
+      const group = await this.entityManager
+        .getRepository(Group)
+        .findOne({ id: updateUserDto.groupId });
+      if (!group) {
+        throw new BadRequestException({
+          message: 'Group not found',
+          errors: { groupId: 'Group not found' },
+        });
+      }
+      user.group = group;
+    }
+    if (updateUserDto.displayName) {
+      user.displayName = updateUserDto.displayName;
+    }
+    if (updateUserDto.email) {
+      user.email = updateUserDto.email;
+    }
+    if (updateUserDto.bio) {
+      user.bio = updateUserDto.bio;
+    }
+    await this.entityManager.flush();
+    return new UserResponse(user);
   }
 
-  async remove(id: string) {
-    this.usersRepository.nativeDelete({ id });
+  async remove(id: string): Promise<void> {
+    const user = await this.usersRepository.findOne({ id });
+    if (!user) {
+      throw new NotFoundException({
+        message: 'User not found',
+        errors: { id: 'User not found' },
+      });
+    }
+    await this.entityManager.removeAndFlush(user);
     return;
-  }
-
-  private buildUserResponse(user: User) {
-    return {
-      id: user.id,
-      displayName: user.displayName,
-      email: user.email,
-      group: user.group,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    };
   }
 }

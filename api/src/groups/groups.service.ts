@@ -1,4 +1,4 @@
-import { EntityManager, EntityRepository, wrap } from '@mikro-orm/mariadb';
+import { EntityManager, EntityRepository } from '@mikro-orm/mariadb';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import {
   BadRequestException,
@@ -14,10 +14,10 @@ export class GroupsService {
   constructor(
     @InjectRepository(Group)
     private readonly groupsRepository: EntityRepository<Group>,
-    private readonly em: EntityManager,
+    private readonly entityManager: EntityManager,
   ) {}
 
-  async create(createGroupDto: CreateGroupDto) {
+  async create(createGroupDto: CreateGroupDto): Promise<Group> {
     const nameExists = await this.groupsRepository.count({
       name: createGroupDto.name,
     });
@@ -27,18 +27,16 @@ export class GroupsService {
         errors: { name: 'Group name already in use' },
       });
     }
-    const group = new Group();
-    group.name = createGroupDto.name;
-    group.description = createGroupDto.description;
-    await this.em.persistAndFlush(group);
-    return this.buildGroupResponse(group);
+    const group = new Group(createGroupDto.name, createGroupDto.description);
+    await this.entityManager.persistAndFlush(group);
+    return group;
   }
 
-  async findAll() {
+  async findAll(): Promise<Group[]> {
     return await this.groupsRepository.findAll();
   }
 
-  async findOne(id: string) {
+  async findOne(id: string): Promise<Group> {
     const group = await this.groupsRepository.findOne(
       { id },
       { populate: ['members'] },
@@ -52,7 +50,7 @@ export class GroupsService {
     return group;
   }
 
-  async update(id: string, updateGroupDto: UpdateGroupDto) {
+  async update(id: string, updateGroupDto: UpdateGroupDto): Promise<Group> {
     const group = await this.groupsRepository.findOne({ id });
     if (!group) {
       throw new NotFoundException({
@@ -60,26 +58,25 @@ export class GroupsService {
         errors: { id: 'Group not found' },
       });
     }
-    wrap(group).assign(updateGroupDto);
-    this.groupsRepository.assign(group, updateGroupDto);
-    await this.em.flush();
-    return this.buildGroupResponse(group);
+    if (updateGroupDto.name) {
+      group.name = updateGroupDto.name;
+    }
+    if (updateGroupDto.description) {
+      group.description = updateGroupDto.description;
+    }
+    await this.entityManager.flush();
+    return group;
   }
 
-  async remove(id: string) {
-    this.groupsRepository.nativeDelete({ id });
+  async remove(id: string): Promise<void> {
+    const group = await this.groupsRepository.findOne({ id });
+    if (!group) {
+      throw new NotFoundException({
+        message: 'Group not found',
+        errors: { id: 'Group not found' },
+      });
+    }
+    await this.entityManager.removeAndFlush(group);
     return;
-  }
-
-  private buildGroupResponse(group: Group) {
-    return {
-      id: group.id,
-      name: group.name,
-      description: group.description,
-      members: group.members,
-      memberCount: group.memberCount,
-      createdAt: group.createdAt,
-      updatedAt: group.updatedAt,
-    };
   }
 }
