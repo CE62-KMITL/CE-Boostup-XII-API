@@ -1,19 +1,19 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
-  ParseUUIDPipe,
+  Get,
+  HttpCode,
   HttpStatus,
-  NotFoundException,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
 } from '@nestjs/common';
-import { GroupsService } from './groups.service';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { GroupsService } from './groups.service';
 
 @ApiBearerAuth()
 @ApiTags('groups')
@@ -42,11 +42,7 @@ export class GroupsController {
     )
     id: string,
   ) {
-    const group = await this.groupsService.findOne(id);
-    if (!group) {
-      throw new NotFoundException(`Group with ID ${id} not found`);
-    }
-    return group;
+    return await this.groupsService.findOne(id);
   }
 
   @Patch(':id')
@@ -61,14 +57,11 @@ export class GroupsController {
     id: string,
     @Body() updateGroupDto: UpdateGroupDto,
   ) {
-    const group = await this.groupsService.update(id, updateGroupDto);
-    if (!group) {
-      throw new NotFoundException(`Group with ID ${id} not found`);
-    }
-    return group;
+    return await this.groupsService.update(id, updateGroupDto);
   }
 
   @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
   async remove(
     @Param(
       'id',

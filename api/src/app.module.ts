@@ -1,25 +1,30 @@
+import { LoadStrategy, MariaDbDriver } from '@mikro-orm/mariadb';
+import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { UsersModule } from './users/users.module';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule } from '@nestjs/config';
 import { GroupsModule } from './groups/groups.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ cache: true }),
-    TypeOrmModule.forRoot({
-      type: 'mariadb',
+    MikroOrmModule.forRoot({
+      driver: MariaDbDriver,
       host: process.env.MARIADB_HOST || 'mariadb',
       port: process.env.MARIADB_PORT
         ? parseInt(process.env.MARIADB_PORT)
         : 3306,
-      username: process.env.MARIADB_USER || 'ceboostupxii',
+      dbName: process.env.MARIADB_DATABASE || 'ceboostupxii',
+      user: process.env.MARIADB_USER || 'ceboostupxii',
       password: process.env.MARIADB_PASSWORD || 'ceboostupxii',
-      database: process.env.MARIADB_DATABASE || 'ceboostupxii',
+      name: process.env.MARIADB_NAME || 'unknown',
+      charset: 'utf8mb4',
+      loadStrategy: LoadStrategy.JOINED,
       autoLoadEntities: true,
-      synchronize: true, //TODO: Change to migration in production
+      timezone: process.env.TZ || '+07:00',
+      debug: true, // TODO: Disable debug in production
     }),
     UsersModule,
     GroupsModule,

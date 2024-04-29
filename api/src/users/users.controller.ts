@@ -1,19 +1,19 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
-  ParseUUIDPipe,
+  Get,
+  HttpCode,
   HttpStatus,
-  NotFoundException,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
 } from '@nestjs/common';
-import { UsersService } from './users.service';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { UsersService } from './users.service';
 
 @ApiBearerAuth()
 @ApiTags('users')
@@ -42,11 +42,7 @@ export class UsersController {
     )
     id: string,
   ) {
-    const user = await this.usersService.findOne(id);
-    if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
-    }
-    return user;
+    return await this.usersService.findOne(id);
   }
 
   @Patch(':id')
@@ -61,14 +57,11 @@ export class UsersController {
     id: string,
     @Body() updateUserDto: UpdateUserDto,
   ) {
-    const user = await this.usersService.update(id, updateUserDto);
-    if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
-    }
-    return user;
+    return await this.usersService.update(id, updateUserDto);
   }
 
   @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
   async remove(
     @Param(
       'id',

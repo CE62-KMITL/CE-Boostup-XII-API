@@ -1,40 +1,64 @@
 import {
   Entity,
-  Column,
-  PrimaryGeneratedColumn,
   ManyToOne,
-  JoinColumn,
-} from 'typeorm';
+  PrimaryKey,
+  Property,
+  types,
+} from '@mikro-orm/mariadb';
+import { v4 as uuidv4 } from 'uuid';
 import { Group } from '../../groups/entities/group.entity';
 
 @Entity()
 export class User {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryKey({ type: 'uuid' })
+  id: string = uuidv4();
 
-  @Column()
+  @Property({ type: types.string, length: 255, unique: true, lazy: true })
   email: string;
 
-  @Column()
+  @Property({ type: types.string, length: 255, lazy: true })
   hashedPassword: string;
 
-  @Column()
+  @Property({ type: types.string, length: 32 })
   displayName: string;
 
-  @Column({ name: 'group_id' })
-  groupId: string;
+  @Property({ type: types.text })
+  bio: string;
 
-  @ManyToOne(() => Group, (group) => group.members)
-  @JoinColumn({ name: 'group_id' })
+  @ManyToOne({ entity: () => Group })
   group: Group;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  createdAt: Date;
+  @Property({ type: types.datetime })
+  createdAt: Date = new Date();
 
-  @Column({
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP',
-    onUpdate: 'CURRENT_TIMESTAMP',
-  })
-  updatedAt: Date;
+  @Property({ type: types.datetime, onUpdate: () => new Date() })
+  updatedAt: Date = new Date();
+
+  constructor(email: string, displayName: string, group: Group) {
+    this.email = email;
+    this.displayName = displayName;
+    this.group = group;
+    this.bio = '';
+    this.hashedPassword = '';
+  }
+}
+
+export class UserResponse {
+  id?: string;
+  email?: string;
+  displayName?: string;
+  bio?: string;
+  group?: Group;
+  createdAt?: Date;
+  updatedAt?: Date;
+
+  constructor(user: User) {
+    this.id = user.id;
+    this.email = user.email;
+    this.displayName = user.displayName;
+    this.bio = user.bio;
+    this.group = user.group;
+    this.createdAt = user.createdAt;
+    this.updatedAt = user.updatedAt;
+  }
 }
