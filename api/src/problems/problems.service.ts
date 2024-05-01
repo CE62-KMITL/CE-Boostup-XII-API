@@ -14,23 +14,23 @@ export class ProblemsService {
     private readonly entityManager: EntityManager,
   ) {}
 
-  create(createProblemDto: CreateProblemDto) {
+  async create(createProblemDto: CreateProblemDto) {
     return 'This action adds a new problem';
   }
 
-  findAll() {
+  async findAll() {
     return `This action returns all problems`;
   }
 
-  findOne(id: number) {
+  async findOne(id: string) {
     return `This action returns a #${id} problem`;
   }
 
-  update(id: number, updateProblemDto: UpdateProblemDto) {
+  async update(id: string, updateProblemDto: UpdateProblemDto) {
     return `This action updates a #${id} problem`;
   }
 
-  remove(id: number) {
+  async remove(id: string) {
     return `This action removes a #${id} problem`;
   }
 }

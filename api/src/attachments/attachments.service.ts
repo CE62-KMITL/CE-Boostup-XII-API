@@ -14,23 +14,23 @@ export class AttachmentsService {
     private readonly entityManager: EntityManager,
   ) {}
 
-  create(createAttachmentDto: CreateAttachmentDto) {
+  async create(createAttachmentDto: CreateAttachmentDto) {
     return 'This action adds a new attachment';
   }
 
-  findAll() {
+  async findAll() {
     return `This action returns all attachments`;
   }
 
-  findOne(id: number) {
+  async findOne(id: string) {
     return `This action returns a #${id} attachment`;
   }
 
-  update(id: number, updateAttachmentDto: UpdateAttachmentDto) {
+  async update(id: string, updateAttachmentDto: UpdateAttachmentDto) {
     return `This action updates a #${id} attachment`;
   }
 
-  remove(id: number) {
+  async remove(id: string) {
     return `This action removes a #${id} attachment`;
   }
 }

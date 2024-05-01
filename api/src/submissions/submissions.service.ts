@@ -14,23 +14,23 @@ export class SubmissionsService {
     private readonly entityManager: EntityManager,
   ) {}
 
-  create(createSubmissionDto: CreateSubmissionDto) {
+  async create(createSubmissionDto: CreateSubmissionDto) {
     return 'This action adds a new submission';
   }
 
-  findAll() {
+  async findAll() {
     return `This action returns all submissions`;
   }
 
-  findOne(id: number) {
+  async findOne(id: string) {
     return `This action returns a #${id} submission`;
   }
 
-  update(id: number, updateSubmissionDto: UpdateSubmissionDto) {
+  async update(id: string, updateSubmissionDto: UpdateSubmissionDto) {
     return `This action updates a #${id} submission`;
   }
 
-  remove(id: number) {
+  async remove(id: string) {
     return `This action removes a #${id} submission`;
   }
 }

@@ -7,6 +7,7 @@ import {
   types,
 } from '@mikro-orm/mariadb';
 import { Problem } from 'src/problems/entities/problem.entity';
+import { ProgrammingLanguage } from 'src/shared/enums/programming-language.enum';
 import { User } from 'src/users/entities/user.entity';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -24,8 +25,8 @@ export class Submission {
   @Property({ type: types.text })
   code: string;
 
-  @Enum({ items: () => SubmissionLanguage })
-  language: SubmissionLanguage;
+  @Enum({ items: () => ProgrammingLanguage })
+  language: ProgrammingLanguage;
 
   @Property({ type: types.array })
   outputCodes: string[];
@@ -43,21 +44,4 @@ export class Submission {
   createdAt: Date = new Date();
 }
 
-export enum SubmissionLanguage {
-  C99 = 'c99',
-  C11 = 'c11',
-  C17 = 'c17',
-  CPP11 = 'c++11',
-  CPP14 = 'c++14',
-  CPP17 = 'c++17',
-  CPP20 = 'c++20',
-  CPP23 = 'c++23',
-  GNU99 = 'gnu99',
-  GNU11 = 'gnu11',
-  GNU17 = 'gnu17',
-  GNUPP11 = 'gnu++11',
-  GNUPP14 = 'gnu++14',
-  GNUPP17 = 'gnu++17',
-  GNUPP20 = 'gnu++20',
-  GNUPP23 = 'gnu++23',
-}
+export { ProgrammingLanguage } from 'src/shared/enums/programming-language.enum';

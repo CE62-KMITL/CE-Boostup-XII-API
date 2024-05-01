@@ -61,12 +61,7 @@ export class GroupsService {
         errors: { id: 'Group not found' },
       });
     }
-    if (updateGroupDto.name) {
-      group.name = updateGroupDto.name;
-    }
-    if (updateGroupDto.description) {
-      group.description = updateGroupDto.description;
-    }
+    this.groupsRepository.assign(group, updateGroupDto);
     await this.entityManager.flush();
     return group;
   }

@@ -11,7 +11,9 @@ import {
 } from '@mikro-orm/mariadb';
 import { Attachment } from 'src/attachments/entities/attachment.entity';
 import { ProblemTag } from 'src/problem-tags/entities/problem-tag.entity';
-import { Submission } from 'src/submissions/entities/submission.entity';
+import { OptimizationLevel } from 'src/shared/enums/optimization-level.enum';
+import { PublicationStatus } from 'src/shared/enums/publication-status.enum';
+import { ProgrammingLanguage } from 'src/submissions/entities/submission.entity';
 import { User } from 'src/users/entities/user.entity';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -45,7 +47,13 @@ export class Problem {
   exampleTestcases: { input: string; output: string }[];
 
   @Property({ type: types.text })
+  starterCode: string;
+
+  @Property({ type: types.text })
   solution: string;
+
+  @Enum({ items: () => ProgrammingLanguage })
+  solutionLanguage: ProgrammingLanguage;
 
   @Property({ type: types.array })
   allowedHeaders: string[];
@@ -65,8 +73,8 @@ export class Problem {
   @Property({ type: types.integer, unsigned: true })
   score: number;
 
-  @Enum({ items: () => ProblemOptimizationLevel })
-  optimizationLevel: ProblemOptimizationLevel;
+  @Enum({ items: () => OptimizationLevel })
+  optimizationLevel: OptimizationLevel;
 
   @ManyToMany({
     entity: () => Attachment,
@@ -93,10 +101,10 @@ export class Problem {
   owner: User;
 
   @Property({ type: types.string, length: 255 })
-  credit: string;
+  credits: string;
 
-  @Enum({ items: () => ProblemPublicationStatus })
-  publicationStatus: ProblemPublicationStatus;
+  @Enum({ items: () => PublicationStatus })
+  publicationStatus: PublicationStatus;
 
   @Formula(
     (alias) =>
@@ -111,21 +119,5 @@ export class Problem {
   updatedAt: Date = new Date();
 }
 
-export enum ProblemOptimizationLevel {
-  O0 = 'O0',
-  Og = 'Og',
-  O1 = 'O1',
-  O2 = 'O2',
-  O3 = 'O3',
-  Os = 'Os',
-  Ofast = 'Ofast',
-}
-
-export enum ProblemPublicationStatus {
-  Draft = 'Draft',
-  AwaitingApproval = 'AwaitingApproval',
-  Approved = 'Approved',
-  Rejected = 'Rejected',
-  Published = 'Published',
-  Archived = 'Archived',
-}
+export { OptimizationLevel } from 'src/shared/enums/optimization-level.enum';
+export { PublicationStatus } from 'src/shared/enums/publication-status.enum';

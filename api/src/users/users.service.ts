@@ -115,15 +115,11 @@ export class UsersService {
       }
       user.group = group;
     }
-    if (updateUserDto.displayName) {
-      user.displayName = updateUserDto.displayName;
-    }
-    if (updateUserDto.email) {
-      user.email = updateUserDto.email;
-    }
-    if (updateUserDto.bio) {
-      user.bio = updateUserDto.bio;
-    }
+    this.usersRepository.assign(user, {
+      displayName: updateUserDto.displayName,
+      email: updateUserDto.email,
+      bio: updateUserDto.bio,
+    });
     await this.entityManager.flush();
     return new UserResponse(user);
   }

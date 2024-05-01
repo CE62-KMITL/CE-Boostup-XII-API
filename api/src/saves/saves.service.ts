@@ -14,23 +14,23 @@ export class SavesService {
     private readonly entityManager: EntityManager,
   ) {}
 
-  create(createSaveDto: CreateSaveDto) {
+  async create(createSaveDto: CreateSaveDto) {
     return 'This action adds a new save';
   }
 
-  findAll() {
+  async findAll() {
     return `This action returns all saves`;
   }
 
-  findOne(id: number) {
+  async findOne(id: string) {
     return `This action returns a #${id} save`;
   }
 
-  update(id: number, updateSaveDto: UpdateSaveDto) {
+  async update(id: string, updateSaveDto: UpdateSaveDto) {
     return `This action updates a #${id} save`;
   }
 
-  remove(id: number) {
+  async remove(id: string) {
     return `This action removes a #${id} save`;
   }
 }
