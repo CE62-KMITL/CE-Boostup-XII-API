@@ -1,7 +1,16 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { ProblemTagsService } from './problem-tags.service';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
+
 import { CreateProblemTagDto } from './dto/create-problem-tag.dto';
 import { UpdateProblemTagDto } from './dto/update-problem-tag.dto';
+import { ProblemTagsService } from './problem-tags.service';
 
 @Controller('problem-tags')
 export class ProblemTagsController {
@@ -23,7 +32,10 @@ export class ProblemTagsController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateProblemTagDto: UpdateProblemTagDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateProblemTagDto: UpdateProblemTagDto,
+  ) {
     return this.problemTagsService.update(+id, updateProblemTagDto);
   }
 
