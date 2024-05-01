@@ -5,7 +5,12 @@ import { ConfigModule } from '@nestjs/config';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AttachmentsModule } from './attachments/attachments.module';
 import { GroupsModule } from './groups/groups.module';
+import { ProblemTagsModule } from './problem-tags/problem-tags.module';
+import { ProblemsModule } from './problems/problems.module';
+import { SavesModule } from './saves/saves.module';
+import { SubmissionsModule } from './submissions/submissions.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -29,6 +34,11 @@ import { UsersModule } from './users/users.module';
     }),
     UsersModule,
     GroupsModule,
+    ProblemsModule,
+    ProblemTagsModule,
+    SavesModule,
+    SubmissionsModule,
+    AttachmentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -28,7 +28,9 @@ export class GroupsService {
         errors: { name: 'Group name already in use' },
       });
     }
-    const group = new Group(createGroupDto.name, createGroupDto.description);
+    const group = new Group();
+    group.name = createGroupDto.name;
+    group.description = createGroupDto.description;
     await this.entityManager.persistAndFlush(group);
     return group;
   }

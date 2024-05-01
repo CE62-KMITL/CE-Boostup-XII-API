@@ -5,13 +5,12 @@ import {
   Property,
   types,
 } from '@mikro-orm/mariadb';
+import { Group } from 'src/groups/entities/group.entity';
 import { v4 as uuidv4 } from 'uuid';
-
-import { Group } from '../../groups/entities/group.entity';
 
 @Entity()
 export class User {
-  @PrimaryKey({ type: 'uuid' })
+  @PrimaryKey({ type: types.uuid })
   id: string = uuidv4();
 
   @Property({ type: types.string, length: 255, unique: true, lazy: true })
@@ -26,7 +25,7 @@ export class User {
   @Property({ type: types.text })
   bio: string;
 
-  @ManyToOne({ entity: () => Group })
+  @ManyToOne({ entity: () => Group, joinColumn: 'group_id' })
   group: Group;
 
   @Property({ type: types.datetime })

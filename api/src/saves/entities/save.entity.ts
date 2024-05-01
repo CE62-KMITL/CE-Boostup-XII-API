@@ -1,34 +1,27 @@
 import {
-  Collection,
   Entity,
-  Formula,
-  OneToMany,
+  ManyToOne,
   PrimaryKey,
   Property,
   types,
 } from '@mikro-orm/mariadb';
+import { Problem } from 'src/problems/entities/problem.entity';
 import { User } from 'src/users/entities/user.entity';
 import { v4 as uuidv4 } from 'uuid';
 
 @Entity()
-export class Group {
+export class Save {
   @PrimaryKey({ type: types.uuid })
   id: string = uuidv4();
 
-  @Property({ type: types.string, length: 32, unique: true })
-  name: string;
+  @ManyToOne({ entity: () => User })
+  user: User;
+
+  @ManyToOne({ entity: () => Problem })
+  problem: Problem;
 
   @Property({ type: types.text })
-  description: string;
-
-  @OneToMany({ entity: () => User, mappedBy: (user) => user.group })
-  members: Collection<User, object> = new Collection<User>(this);
-
-  @Formula(
-    (alias) =>
-      `(SELECT COUNT(*) FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`)`,
-  )
-  memberCount: number;
+  code: string;
 
   @Property({ type: types.datetime })
   createdAt: Date = new Date();
