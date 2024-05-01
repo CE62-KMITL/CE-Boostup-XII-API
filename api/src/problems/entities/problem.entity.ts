@@ -2,6 +2,7 @@ import {
   Collection,
   Entity,
   Enum,
+  Formula,
   ManyToMany,
   ManyToOne,
   PrimaryKey,
@@ -67,7 +68,13 @@ export class Problem {
   @Enum({ items: () => ProblemOptimizationLevel })
   optimizationLevel: ProblemOptimizationLevel;
 
-  @ManyToMany({ entity: () => Attachment })
+  @ManyToMany({
+    entity: () => Attachment,
+    pivotTable: 'problem_attachments',
+    joinColumn: 'attachment_id',
+    inverseJoinColumn: 'problem_id',
+    owner: true,
+  })
   attachments: Collection<Attachment, object> = new Collection<Attachment>(
     this,
   );
@@ -75,6 +82,9 @@ export class Problem {
   @ManyToMany({
     entity: () => ProblemTag,
     mappedBy: (tag) => tag.problems,
+    pivotTable: 'problem_tags',
+    joinColumn: 'tag_id',
+    inverseJoinColumn: 'problem_id',
     owner: true,
   })
   tags: Collection<ProblemTag, object> = new Collection<ProblemTag>(this);
@@ -87,6 +97,12 @@ export class Problem {
 
   @Enum({ items: () => ProblemPublicationStatus })
   publicationStatus: ProblemPublicationStatus;
+
+  @Formula(
+    (alias) =>
+      `(SELECT COUNT(DISTINCT \`user_id\`) FROM \`submission\` WHERE \`submission\`.\`problem_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1)`,
+  )
+  userSolvedCount: number;
 
   @Property({ type: types.datetime })
   createdAt: Date = new Date();

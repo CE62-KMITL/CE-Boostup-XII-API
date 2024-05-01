@@ -1,5 +1,6 @@
 import {
   Entity,
+  Formula,
   ManyToOne,
   PrimaryKey,
   Property,
@@ -25,8 +26,20 @@ export class User {
   @Property({ type: types.text })
   bio: string;
 
-  @ManyToOne({ entity: () => Group, joinColumn: 'group_id' })
+  @ManyToOne({ entity: () => Group, joinColumn: 'group_id', eager: true })
   group: Group;
+
+  @Formula(
+    (alias) =>
+      `(SELECT COUNT(DISTINCT \`problem_id\`) FROM \`submission\` WHERE \`submission\`.\`user_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1)`,
+  )
+  problemSolvedCount: number;
+
+  @Formula(
+    (alias) =>
+      `(SELECT MAX(\`created_at\`) FROM \`submission\` WHERE \`submission\`.\`user_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1)`,
+  )
+  lastProblemSolvedAt: Date;
 
   @Property({ type: types.datetime })
   createdAt: Date = new Date();

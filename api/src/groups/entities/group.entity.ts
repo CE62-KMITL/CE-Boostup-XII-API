@@ -30,6 +30,24 @@ export class Group {
   )
   memberCount: number;
 
+  @Formula(
+    (alias) =>
+      `(SELECT COUNT(DISTINCT \`problem_id\`, \`user_id\`) FROM \`submission\` WHERE \`submission\`.\`user_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1)`,
+  )
+  problemSolvedCount: number;
+
+  @Formula(
+    (alias) =>
+      `(SELECT COUNT(DISTINCT \`problem_id\`) FROM \`submission\` WHERE \`submission\`.\`user_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1)`,
+  )
+  uniqueProblemSolvedCount: number;
+
+  @Formula(
+    (alias) =>
+      `(SELECT MAX(\`created_at\`) FROM \`submission\` WHERE \`submission\`.\`user_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1)`,
+  )
+  lastProblemSolvedAt: Date;
+
   @Property({ type: types.datetime })
   createdAt: Date = new Date();
 

@@ -19,12 +19,15 @@ export class Attachment {
   @Property({ type: types.string, length: 255 })
   type: string;
 
+  @Property({ type: types.integer })
+  size: number;
+
   @Property({ name: 'url' })
   getUrl() {
     return `/attachments/${this.id}/${this.name}`;
   }
 
-  @ManyToOne({ entity: () => User })
+  @ManyToOne({ entity: () => User, joinColumn: 'owner_id' })
   owner: User;
 
   @Property({ type: types.datetime })
@@ -33,9 +36,10 @@ export class Attachment {
   @Property({ type: types.datetime, onUpdate: () => new Date() })
   updatedAt: Date = new Date();
 
-  constructor(name: string, type: string, owner: User) {
+  constructor(name: string, type: string, size: number, owner: User) {
     this.name = name;
     this.type = type;
+    this.size = size;
     this.owner = owner;
   }
 }
