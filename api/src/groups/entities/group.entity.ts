@@ -31,13 +31,12 @@ export class Group {
   )
   memberCount: number;
 
-  // TODO: Fix this
-  // @Formula(
-  //   (alias) =>
-  //     `(SELECT SUM(\`score\`) FROM \`problem\` INNER JOIN (SELECT DISTINCT \`user_id\`, \`problem_id\` FROM \`submission\` WHERE \`submission\`.\`user_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1) AS \`unique_submission\` ON \`problem\`.\`id\` = \`unique_submission\`.\`problem_id\`)`,
-  //  { type: types.integer, lazy: true },
-  // )
-  // totalScore: number;
+  @Formula(
+    (alias) =>
+      `(SELECT SUM(\`score\` * (SELECT COUNT(DISTINCT \`user_id\`) FROM \`submission\` WHERE \`submission\`.\`problem_id\` = \`problem\`.\`id\` AND \`submission\`.\`user_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1)) FROM \`problem\`)`,
+    { type: types.integer, lazy: true },
+  )
+  totalScore: number;
 
   @Formula(
     (alias) =>
