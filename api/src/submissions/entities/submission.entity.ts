@@ -34,10 +34,10 @@ export class Submission {
   @Property({ type: types.boolean })
   accepted: boolean;
 
-  @Property({ type: types.float, precision: 6, scale: 3 })
+  @Property({ type: types.float })
   compilationTime: number;
 
-  @Property({ type: types.float, precision: 6, scale: 3 })
+  @Property({ type: types.float })
   executionTime: number;
 
   @Property({ type: types.datetime })

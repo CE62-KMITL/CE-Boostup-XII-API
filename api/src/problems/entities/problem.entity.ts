@@ -22,49 +22,58 @@ export class Problem {
   @PrimaryKey({ type: types.uuid })
   id: string = uuidv4();
 
+  @Property({
+    type: types.integer,
+    unsigned: true,
+    unique: true,
+    index: true,
+    autoincrement: true,
+  })
+  number: number;
+
   @Property({ type: types.string, length: 255 })
   title: string;
 
   @Property({ type: types.text })
   description: string;
 
-  @Property({ type: types.text })
+  @Property({ type: types.text, lazy: true })
   input: string;
 
-  @Property({ type: types.text })
+  @Property({ type: types.text, lazy: true })
   output: string;
 
-  @Property({ type: types.text })
+  @Property({ type: types.text, lazy: true })
   hint: string;
 
-  @Property({ type: types.integer })
-  hihtCost: number;
+  @Property({ type: types.integer, lazy: true })
+  hintCost: number;
 
-  @Property({ type: types.json })
+  @Property({ type: types.json, lazy: true })
   testcases: { input: string; output: string }[];
 
-  @Property({ type: types.json })
+  @Property({ type: types.json, lazy: true })
   exampleTestcases: { input: string; output: string }[];
 
-  @Property({ type: types.text })
+  @Property({ type: types.text, lazy: true })
   starterCode: string;
 
-  @Property({ type: types.text })
+  @Property({ type: types.text, lazy: true })
   solution: string;
 
-  @Enum({ items: () => ProgrammingLanguage })
+  @Enum({ items: () => ProgrammingLanguage, lazy: true })
   solutionLanguage: ProgrammingLanguage;
 
-  @Property({ type: types.array })
+  @Property({ type: types.array, lazy: true })
   allowedHeaders: string[];
 
-  @Property({ type: types.array })
+  @Property({ type: types.array, lazy: true })
   bannedFunctions: string[];
 
-  @Property({ type: types.float, precision: 6, scale: 3 })
+  @Property({ type: types.float, lazy: true })
   timeLimit: number;
 
-  @Property({ type: types.integer, unsigned: true })
+  @Property({ type: types.integer, unsigned: true, lazy: true })
   memoryLimit: number;
 
   @Property({ type: types.tinyint, unsigned: true })
@@ -73,7 +82,7 @@ export class Problem {
   @Property({ type: types.integer, unsigned: true })
   score: number;
 
-  @Enum({ items: () => OptimizationLevel })
+  @Enum({ items: () => OptimizationLevel, lazy: true })
   optimizationLevel: OptimizationLevel;
 
   @ManyToMany({
@@ -87,28 +96,22 @@ export class Problem {
     this,
   );
 
-  @ManyToMany({
-    entity: () => ProblemTag,
-    mappedBy: (tag) => tag.problems,
-    pivotTable: 'problem_tags',
-    joinColumn: 'tag_id',
-    inverseJoinColumn: 'problem_id',
-    owner: true,
-  })
+  @ManyToMany({ entity: () => ProblemTag, eager: true })
   tags: Collection<ProblemTag, object> = new Collection<ProblemTag>(this);
 
-  @ManyToOne({ entity: () => User })
+  @ManyToOne({ entity: () => User, eager: true })
   owner: User;
 
-  @Property({ type: types.string, length: 255 })
+  @Property({ type: types.string, length: 255, lazy: true })
   credits: string;
 
-  @Enum({ items: () => PublicationStatus })
+  @Enum({ items: () => PublicationStatus, lazy: true })
   publicationStatus: PublicationStatus;
 
   @Formula(
     (alias) =>
       `(SELECT COUNT(DISTINCT \`user_id\`) FROM \`submission\` WHERE \`submission\`.\`problem_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1)`,
+    { type: types.integer },
   )
   userSolvedCount: number;
 

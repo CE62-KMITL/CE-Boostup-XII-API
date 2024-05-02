@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
@@ -58,7 +58,7 @@ export class CreateProblemDto {
   @ApiProperty({ minimum: 0, example: 100 })
   @IsNumber()
   @Min(0)
-  hihtCost: number;
+  hintCost: number;
 
   @ApiProperty({
     type: 'array',
@@ -105,6 +105,7 @@ export class CreateProblemDto {
   solution: string;
 
   @ApiProperty({ example: 'C++17' })
+  @Transform(({ value }) => value.toLowerCase())
   @IsEnum(ProgrammingLanguage)
   solutionLanguage: ProgrammingLanguage;
 
@@ -148,6 +149,7 @@ export class CreateProblemDto {
   score: number;
 
   @ApiProperty({ example: 'O1' })
+  @Transform(({ value }) => value.toUpperCase())
   @IsEnum(OptimizationLevel)
   optimizationLevel: OptimizationLevel;
 
@@ -171,9 +173,9 @@ export class CreateProblemDto {
   @IsUUID('4', { each: true })
   tags: string[];
 
-  @ApiProperty({ maxLength: 65535, example: 'The great book of knowledge' })
+  @ApiProperty({ maxLength: 255, example: 'The great book of knowledge' })
   @IsString()
-  @MaxLength(65535)
+  @MaxLength(255)
   credits: string;
 }
 

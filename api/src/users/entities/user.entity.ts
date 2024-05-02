@@ -14,7 +14,13 @@ export class User {
   @PrimaryKey({ type: types.uuid })
   id: string = uuidv4();
 
-  @Property({ type: types.string, length: 255, unique: true, lazy: true })
+  @Property({
+    type: types.string,
+    length: 255,
+    unique: true,
+    index: true,
+    lazy: true,
+  })
   email: string;
 
   @Property({ type: types.string, length: 255, lazy: true })
@@ -32,25 +38,28 @@ export class User {
   @Formula(
     (alias) =>
       `(SELECT SUM(\`score\`) FROM \`problem\` WHERE \`problem\`.\`id\` IN (SELECT DISTINCT \`problem_id\` FROM \`submission\` WHERE \`submission\`.\`user_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1))`,
+    { type: types.integer, lazy: true },
   )
   totalScore: number;
 
   @Formula(
     (alias) =>
       `(SELECT COUNT(DISTINCT \`problem_id\`) FROM \`submission\` WHERE \`submission\`.\`user_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1)`,
+    { type: types.integer, lazy: true },
   )
   problemSolvedCount: number;
 
   @Formula(
     (alias) =>
       `(SELECT MAX(\`created_at\`) FROM \`submission\` WHERE \`submission\`.\`user_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1)`,
+    { type: types.datetime, lazy: true },
   )
   lastProblemSolvedAt: Date;
 
-  @Property({ type: types.datetime })
+  @Property({ type: types.datetime, lazy: true })
   createdAt: Date = new Date();
 
-  @Property({ type: types.datetime, onUpdate: () => new Date() })
+  @Property({ type: types.datetime, lazy: true, onUpdate: () => new Date() })
   updatedAt: Date = new Date();
 
   constructor(email: string, displayName: string, group: Group) {

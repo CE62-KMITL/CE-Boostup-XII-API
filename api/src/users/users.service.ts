@@ -50,14 +50,11 @@ export class UsersService {
   }
 
   async findAll(): Promise<User[]> {
-    return await this.usersRepository.findAll({ populate: ['group'] });
+    return await this.usersRepository.findAll();
   }
 
   async findOne(id: string): Promise<User> {
-    const user = await this.usersRepository.findOne(
-      { id },
-      { populate: ['group'] },
-    );
+    const user = await this.usersRepository.findOne({ id });
     if (!user) {
       throw new NotFoundException({
         message: 'User not found',
@@ -73,7 +70,7 @@ export class UsersService {
   ): Promise<UserResponse> {
     const user = await this.usersRepository.findOne(
       { id },
-      { populate: ['email', 'hashedPassword', 'group'] },
+      { populate: ['email', 'hashedPassword'] },
     );
     if (!user) {
       throw new NotFoundException({

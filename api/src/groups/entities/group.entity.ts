@@ -27,42 +27,48 @@ export class Group {
   @Formula(
     (alias) =>
       `(SELECT COUNT(*) FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`)`,
+    { type: types.integer, lazy: true },
   )
   memberCount: number;
 
-  @Formula(
-    (alias) =>
-      `(SELECT SUM(\`score\`) FROM \`problem\` INNER JOIN (SELECT DISTINCT \`user_id\`, \`problem_id\` FROM \`submission\` WHERE \`submission\`.\`user_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1) AS \`unique_submission\` ON \`problem\`.\`id\` = \`unique_submission\`.\`problem_id\`)`,
-  )
-  totalScore: number;
+  // @Formula(
+  //   (alias) =>
+  //     `(SELECT SUM(\`score\`) FROM \`problem\` INNER JOIN (SELECT DISTINCT \`user_id\`, \`problem_id\` FROM \`submission\` WHERE \`submission\`.\`user_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1) AS \`unique_submission\` ON \`problem\`.\`id\` = \`unique_submission\`.\`problem_id\`)`,
+  //  { type: types.integer, lazy: true },
+  // )
+  // totalScore: number;
 
   @Formula(
     (alias) =>
       `(SELECT SUM(\`score\`) FROM \`problem\` WHERE \`problem\`.\`id\` IN (SELECT DISTINCT \`problem_id\` FROM \`submission\` WHERE \`submission\`.\`user_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1))`,
+    { type: types.integer, lazy: true },
   )
   uniqueTotalScore: number;
 
   @Formula(
     (alias) =>
       `(SELECT COUNT(DISTINCT \`problem_id\`, \`user_id\`) FROM \`submission\` WHERE \`submission\`.\`user_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1)`,
+    { type: types.integer, lazy: true },
   )
   problemSolvedCount: number;
 
   @Formula(
     (alias) =>
       `(SELECT COUNT(DISTINCT \`problem_id\`) FROM \`submission\` WHERE \`submission\`.\`user_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1)`,
+    { type: types.integer, lazy: true },
   )
   uniqueProblemSolvedCount: number;
 
   @Formula(
     (alias) =>
       `(SELECT MAX(\`created_at\`) FROM \`submission\` WHERE \`submission\`.\`user_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1)`,
+    { type: types.datetime, lazy: true },
   )
   lastProblemSolvedAt: Date;
 
-  @Property({ type: types.datetime })
+  @Property({ type: types.datetime, lazy: true })
   createdAt: Date = new Date();
 
-  @Property({ type: types.datetime, onUpdate: () => new Date() })
+  @Property({ type: types.datetime, lazy: true, onUpdate: () => new Date() })
   updatedAt: Date = new Date();
 }
