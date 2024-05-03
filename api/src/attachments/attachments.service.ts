@@ -59,7 +59,9 @@ export class AttachmentsService {
         errors: { id: 'Attachment not found' },
       });
     }
-    fs.unlinkSync(`${process.env.ATTACHMENTS_STORAGE_DIR}/${attachment.id}`);
+    fs.unlinkSync(
+      `${process.env.ATTACHMENTS_STORAGE_LOCATION || './attachments'}/${attachment.id}`,
+    );
     this.entityManager.removeAndFlush(attachment);
     return;
   }

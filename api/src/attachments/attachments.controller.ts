@@ -37,7 +37,8 @@ export class AttachmentsController {
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
-        destination: process.env.ATTACHMENTS_STORAGE_DIR || './attachments',
+        destination:
+          process.env.ATTACHMENTS_STORAGE_LOCATION || './attachments',
         filename: (_, file, cb) =>
           cb(null, `${uuidv4()}.${file.originalname.split('.').pop()}`),
       }),
@@ -104,7 +105,7 @@ export class AttachmentsController {
   ): Promise<StreamableFile> {
     const attachment = await this.attachmentsService.findOne(id);
     const file = createReadStream(
-      `${process.env.ATTACHMENTS_STORAGE_DIR}/${attachment.filename}`,
+      `${process.env.ATTACHMENTS_STORAGE_LOCATION || './attachments'}/${attachment.filename}`,
     );
     res.set({
       'Content-Type': attachment.type,
