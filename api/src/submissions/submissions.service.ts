@@ -14,6 +14,7 @@ export class SubmissionsService {
     private readonly entityManager: EntityManager,
   ) {}
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async create(createSubmissionDto: CreateSubmissionDto) {
     return 'This action adds a new submission';
   }
@@ -26,6 +27,7 @@ export class SubmissionsService {
     return `This action returns a #${id} submission`;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async update(id: string, updateSubmissionDto: UpdateSubmissionDto) {
     return `This action updates a #${id} submission`;
   }

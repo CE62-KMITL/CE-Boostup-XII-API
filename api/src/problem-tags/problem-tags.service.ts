@@ -1,6 +1,10 @@
 import { EntityManager, EntityRepository } from '@mikro-orm/mariadb';
 import { InjectRepository } from '@mikro-orm/nestjs';
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 
 import { CreateProblemTagDto } from './dto/create-problem-tag.dto';
 import { UpdateProblemTagDto } from './dto/update-problem-tag.dto';
@@ -14,23 +18,63 @@ export class ProblemTagsService {
     private readonly entityManager: EntityManager,
   ) {}
 
-  async create(createProblemTagDto: CreateProblemTagDto) {
-    return 'This action adds a new problemTag';
+  async create(createProblemTagDto: CreateProblemTagDto): Promise<ProblemTag> {
+    const nameExists = await this.problemTagsRepository.count({
+      name: createProblemTagDto.name,
+    });
+    if (nameExists) {
+      throw new BadRequestException({
+        message: 'Name already in use',
+        errors: { name: 'Name already in use' },
+      });
+    }
+    const problemTag = new ProblemTag();
+    problemTag.name = createProblemTagDto.name;
+    problemTag.description = createProblemTagDto.description;
+    await this.entityManager.persistAndFlush(problemTag);
+    return problemTag;
   }
 
-  async findAll() {
-    return `This action returns all problemTags`;
+  async findAll(): Promise<ProblemTag[]> {
+    return await this.problemTagsRepository.findAll();
   }
 
-  async findOne(id: string) {
-    return `This action returns a #${id} problemTag`;
+  async findOne(id: string): Promise<ProblemTag> {
+    const problemTag = await this.problemTagsRepository.findOne({ id });
+    if (!problemTag) {
+      throw new NotFoundException({
+        message: 'ProblemTag not found',
+        errors: { id: 'ProblemTag not found' },
+      });
+    }
+    return problemTag;
   }
 
-  async update(id: string, updateProblemTagDto: UpdateProblemTagDto) {
-    return `This action updates a #${id} problemTag`;
+  async update(
+    id: string,
+    updateProblemTagDto: UpdateProblemTagDto,
+  ): Promise<ProblemTag> {
+    const problemTag = await this.problemTagsRepository.findOne({ id });
+    if (!problemTag) {
+      throw new NotFoundException({
+        message: 'ProblemTag not found',
+        errors: { id: 'ProblemTag not found' },
+      });
+    }
+    this.problemTagsRepository.assign(problemTag, updateProblemTagDto);
+    await this.entityManager.flush();
+    return problemTag;
   }
 
-  async remove(id: string) {
-    return `This action removes a #${id} problemTag`;
+  async remove(id: string): Promise<void> {
+    const problemTag = await this.problemTagsRepository.findOne({ id });
+    if (!problemTag) {
+      throw new NotFoundException({
+        message: 'ProblemTag not found',
+        errors: { id: 'ProblemTag not found' },
+      });
+    }
+    await this.entityManager.removeAndFlush(problemTag);
+    return;
   }
 }
