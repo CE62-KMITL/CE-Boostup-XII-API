@@ -4,6 +4,7 @@ import {
   NotImplementedException,
   Post,
 } from '@nestjs/common';
+import { AuthService } from 'src/auth/auth.service';
 import { CreateAccountDto } from 'src/auth/dto/create-account.dto';
 import { LoginDto } from 'src/auth/dto/login.dto';
 import { RequestAccountCreationDto } from 'src/auth/dto/request-account-creation.dto';
@@ -12,9 +13,11 @@ import { ResetPasswordDto } from 'src/auth/dto/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
+  constructor(private readonly authService: AuthService) {}
+
   @Post('login')
   login(@Body() loginDto: LoginDto) {
-    throw new NotImplementedException(loginDto);
+    return this.authService.login(loginDto);
   }
 
   @Post('request-account-creation')
