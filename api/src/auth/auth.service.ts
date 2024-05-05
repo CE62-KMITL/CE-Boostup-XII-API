@@ -37,7 +37,8 @@ export class AuthService {
   }
 
   sendEmail(link: string) {
-    throw new NotImplementedException(link);
+    console.log(link);
+    // throw new NotImplementedException(link);
   }
 
   async findOneByEmail(email: string) {
