@@ -5,9 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { AuthController } from './auth/auth.controller';
 import { AuthModule } from './auth/auth.module';
-import { AuthService } from './auth/auth.service';
 import { GroupsModule } from './groups/groups.module';
 import { UsersModule } from './users/users.module';
 
@@ -34,7 +32,7 @@ import { UsersModule } from './users/users.module';
     GroupsModule,
     AuthModule,
   ],
-  controllers: [AppController, AuthController],
-  providers: [AppService, AuthService],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}
