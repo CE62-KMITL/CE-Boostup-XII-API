@@ -1,10 +1,6 @@
 import { EntityManager, EntityRepository } from '@mikro-orm/mariadb';
 import { InjectRepository } from '@mikro-orm/nestjs';
-import {
-  BadRequestException,
-  Injectable,
-  NotImplementedException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import type {
@@ -41,27 +37,32 @@ export class AuthService {
     // throw new NotImplementedException(link);
   }
 
-  async findOneByEmail(email: string) {
-    return await this.usersRepository.findOne({ email });
-  }
-
-  async login(loginDto: LoginDto) {
-    const user = await this.findOneByEmail(loginDto.email);
+  async validateCredentials(email: string, password: string) {
+    const user = await this.usersRepository.findOne(
+      { email },
+      { populate: ['hashedPassword'] },
+    );
     if (!user || !user.hashedPassword) {
       throw new BadRequestException({
         message: 'Invalid email or password',
       });
     }
 
-    const correctPassword = await argon2.verify(
-      user.hashedPassword,
-      loginDto.password,
-    );
+    const correctPassword = await argon2.verify(user.hashedPassword, password);
     if (!correctPassword) {
       throw new BadRequestException({
         message: 'Invalid email or password',
       });
     }
+
+    return user;
+  }
+
+  async login(loginDto: LoginDto) {
+    const user = await this.validateCredentials(
+      loginDto.email,
+      loginDto.password,
+    );
 
     const token = this.jwtService.sign(this.createJWTPayload(user));
     return {
@@ -72,7 +73,12 @@ export class AuthService {
   async requestAccountCreation(
     requestAccountCreationDto: RequestAccountCreationDto,
   ) {
-    const user = await this.findOneByEmail(requestAccountCreationDto.email);
+    const user = await this.usersRepository.findOne(
+      { email: requestAccountCreationDto.email },
+      { populate: ['email', 'hashedPassword'] },
+    );
+
+    console.log(JSON.stringify(user));
 
     if (!user || user.hashedPassword !== '') {
       throw new BadRequestException({
@@ -84,6 +90,7 @@ export class AuthService {
       ...this.createJWTPayload(user),
       createAccount: true,
     };
+    console.log(process.env.JWT_ES256_SECRET);
     const token = this.jwtService.sign(payload);
     const link = `${requestAccountCreationDto.siteUrl}/auth/create-account?token=${token}`;
     this.sendEmail(link);
@@ -103,7 +110,7 @@ export class AuthService {
       });
     }
 
-    const user = await this.findOneByEmail(payload.email);
+    const user = await this.usersRepository.findOne({ email: payload.email });
     if (!user) {
       throw new BadRequestException({
         message: 'Invalid token or displayName',
@@ -120,7 +127,9 @@ export class AuthService {
   }
 
   async requestPasswordReset(requestPasswordResetDto: RequestPasswordResetDto) {
-    const user = await this.findOneByEmail(requestPasswordResetDto.email);
+    const user = await this.usersRepository.findOne({
+      email: requestPasswordResetDto.email,
+    });
 
     if (!user) {
       throw new BadRequestException({
@@ -151,13 +160,17 @@ export class AuthService {
       });
     }
 
-    const user = await this.findOneByEmail(payload.email);
+    const user = await this.usersRepository.findOne(
+      { email: payload.email },
+      { populate: ['email', 'hashedPassword'] },
+    );
     if (!user) {
       throw new BadRequestException({
         message: 'Invalid token',
       });
     }
 
+    // check if password really changes
     user.hashedPassword = await argon2.hash(resetPasswordDto.password);
     await this.entityManager.flush();
 
