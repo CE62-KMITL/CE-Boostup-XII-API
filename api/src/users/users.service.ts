@@ -1,3 +1,5 @@
+import * as fs from 'fs';
+
 import { EntityManager, EntityRepository } from '@mikro-orm/mariadb';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import {
@@ -12,7 +14,6 @@ import { Group } from '../groups/entities/group.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User, UserResponse } from './entities/user.entity';
-
 @Injectable()
 export class UsersService {
   constructor(
@@ -50,11 +51,28 @@ export class UsersService {
   }
 
   async findAll(): Promise<User[]> {
-    return await this.usersRepository.findAll();
+    return await this.usersRepository.findAll({
+      populate: [
+        'bio',
+        'group',
+        'totalScore',
+        'problemSolvedCount',
+        'lastProblemSolvedAt',
+      ],
+    });
   }
 
-  async findOne(id: string): Promise<User> {
-    const user = await this.usersRepository.findOne({ id });
+  async findOne(
+    id: string,
+    populate: (keyof User)[] = [
+      'bio',
+      'group',
+      'totalScore',
+      'problemSolvedCount',
+      'lastProblemSolvedAt',
+    ],
+  ): Promise<User> {
+    const user = await this.usersRepository.findOne({ id }, { populate });
     if (!user) {
       throw new NotFoundException({
         message: 'User not found',
@@ -79,8 +97,29 @@ export class UsersService {
       });
     }
     if (updateUserDto.avatar) {
-      // TODO: Implement avatar upload to local file system
-      // Delete the avatar property from the DTO
+      const matches = updateUserDto.avatar.match(
+        /^data:image\/(png|jpg|jpeg|webp|avif|gif|bmp);base64,((?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}==|[A-Za-z0-9+\/]{3}=)?)$/,
+      );
+      if (matches?.length !== 3) {
+        throw new BadRequestException({
+          message: 'Invalid base64 image',
+          errors: { avatar: 'Invalid base64 image' },
+        });
+      }
+      const [, fileExt, fileData] = matches;
+      const filename = `${id}.${fileExt}`;
+      if (user.avatarFilename) {
+        await fs.promises.unlink(
+          `${process.env.AVATARS_STORAGE_LOCATION || '.avatars'}/${user.avatarFilename}`,
+        );
+      }
+      user.avatarFilename = filename;
+      await fs.promises.writeFile(
+        `${process.env.AVATARS_STORAGE_LOCATION || '.avatars'}/${filename}`,
+        fileData,
+        'base64',
+      );
+      delete updateUserDto.avatar;
     }
     if (updateUserDto.password) {
       if (!updateUserDto.oldPassword) {
@@ -99,6 +138,8 @@ export class UsersService {
         });
       }
       user.hashedPassword = await argon2.hash(updateUserDto.password);
+      delete updateUserDto.oldPassword;
+      delete updateUserDto.password;
     }
     if (updateUserDto.groupId) {
       const group = await this.entityManager
@@ -111,12 +152,9 @@ export class UsersService {
         });
       }
       user.group = group;
+      delete updateUserDto.groupId;
     }
-    this.usersRepository.assign(user, {
-      displayName: updateUserDto.displayName,
-      email: updateUserDto.email,
-      bio: updateUserDto.bio,
-    });
+    this.usersRepository.assign(user, updateUserDto);
     await this.entityManager.flush();
     return new UserResponse(user);
   }

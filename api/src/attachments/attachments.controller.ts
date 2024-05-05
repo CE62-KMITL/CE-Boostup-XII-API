@@ -11,10 +11,10 @@ import {
   HttpStatus,
   ParseFilePipeBuilder,
   ParseUUIDPipe,
+  Res,
   StreamableFile,
   UploadedFile,
   UseInterceptors,
-  Res,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiConsumes, ApiParam, ApiTags } from '@nestjs/swagger';

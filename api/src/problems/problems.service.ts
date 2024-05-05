@@ -84,17 +84,18 @@ export class ProblemsService {
     id: string,
     updateProblemDto: UpdateProblemDto,
   ): Promise<Problem> {
-    const problem = await this.problemsRepository.findOne({ id });
+    const problem = await this.problemsRepository.findOne(
+      { id },
+      { populate: ['attachments', 'tags'] },
+    );
     if (!problem) {
       throw new NotFoundException({
         message: 'Problem not found',
         errors: { id: 'Problem not found' },
       });
     }
-    let attachments: Attachment[] | undefined = undefined;
-    let tags: ProblemTag[] | undefined = undefined;
     if (updateProblemDto.attachments) {
-      attachments = [];
+      const attachments: Attachment[] = [];
       for (const attachmentId of updateProblemDto.attachments) {
         const attachment = await this.entityManager
           .getRepository(Attachment)
@@ -107,9 +108,11 @@ export class ProblemsService {
         }
         attachments.push(attachment);
       }
+      problem.attachments.set(attachments);
+      delete updateProblemDto.attachments;
     }
     if (updateProblemDto.tags) {
-      tags = [];
+      const tags: ProblemTag[] = [];
       for (const tagId of updateProblemDto.tags) {
         const tag = await this.entityManager
           .getRepository(ProblemTag)
@@ -122,12 +125,10 @@ export class ProblemsService {
         }
         tags.push(tag);
       }
+      problem.tags.set(tags);
+      delete updateProblemDto.tags;
     }
-    this.problemsRepository.assign(problem, {
-      ...updateProblemDto,
-      attachments: attachments,
-      tags: tags,
-    });
+    this.problemsRepository.assign(problem, updateProblemDto);
     await this.entityManager.flush();
     return problem;
   }

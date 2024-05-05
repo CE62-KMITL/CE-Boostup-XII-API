@@ -19,9 +19,7 @@ import { UsersModule } from './users/users.module';
     MikroOrmModule.forRoot({
       driver: MariaDbDriver,
       host: process.env.MARIADB_HOST || 'mariadb',
-      port: process.env.MARIADB_PORT
-        ? parseInt(process.env.MARIADB_PORT)
-        : 3306,
+      port: process.env.MARIADB_PORT ? +process.env.MARIADB_PORT : 3306,
       dbName: process.env.MARIADB_DATABASE || 'ceboostupxii',
       user: process.env.MARIADB_USER || 'ceboostupxii',
       password: process.env.MARIADB_PASSWORD || 'ceboostupxii',

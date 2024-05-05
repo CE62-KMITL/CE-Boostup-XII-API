@@ -36,11 +36,16 @@ export class ProblemTagsService {
   }
 
   async findAll(): Promise<ProblemTag[]> {
-    return await this.problemTagsRepository.findAll();
+    return await this.problemTagsRepository.findAll({
+      populate: ['description'],
+    });
   }
 
   async findOne(id: string): Promise<ProblemTag> {
-    const problemTag = await this.problemTagsRepository.findOne({ id });
+    const problemTag = await this.problemTagsRepository.findOne(
+      { id },
+      { populate: ['description'] },
+    );
     if (!problemTag) {
       throw new NotFoundException({
         message: 'ProblemTag not found',

@@ -1,3 +1,5 @@
+import { createReadStream } from 'fs';
+
 import {
   Controller,
   Get,
@@ -8,9 +10,13 @@ import {
   Delete,
   HttpCode,
   HttpStatus,
+  NotFoundException,
   ParseUUIDPipe,
+  Res,
+  StreamableFile,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import type { Response } from 'express';
 
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
@@ -74,5 +80,36 @@ export class GroupsController {
     id: string,
   ) {
     return await this.groupsService.remove(id);
+  }
+
+  @Get(':id/avatar')
+  async getAvatar(
+    @Res({ passthrough: true }) res: Response,
+    @Param(
+      'id',
+      new ParseUUIDPipe({
+        version: '4',
+        errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+      }),
+    )
+    id: string,
+  ): Promise<StreamableFile> {
+    const group = await this.groupsService.findOne(id, [
+      'avatarFilename',
+    ] as const);
+    if (!group.avatarFilename) {
+      throw new NotFoundException({
+        message: 'Avatar not found',
+        errors: { id: 'Avatar not found' },
+      });
+    }
+    const file = createReadStream(
+      `${process.env.AVATARS_STORAGE_LOCATION || '.avatars'}/${group.avatarFilename}`,
+    );
+    res.set({
+      'Content-Type': `image/${group.avatarFilename.split('.').pop()}`,
+      'Content-Disposition': 'inline',
+    });
+    return new StreamableFile(file);
   }
 }

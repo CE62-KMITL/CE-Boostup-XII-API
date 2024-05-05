@@ -9,12 +9,12 @@ export class ProblemTag {
   @Property({ type: types.string, length: 32, unique: true })
   name: string;
 
-  @Property({ type: types.text })
+  @Property({ type: types.text, lazy: true })
   description: string;
 
-  @Property({ type: types.datetime })
+  @Property({ type: types.datetime, lazy: true })
   createdAt: Date = new Date();
 
-  @Property({ type: types.datetime, onUpdate: () => new Date() })
+  @Property({ type: types.datetime, lazy: true, onUpdate: () => new Date() })
   updatedAt: Date = new Date();
 }
