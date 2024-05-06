@@ -8,6 +8,7 @@ import type {
   JWTPayloadCreateAccount,
   JWTPayloadResetPassword,
 } from 'src/auth/auth';
+import { AuthConstants } from 'src/auth/constants';
 import { CreateAccountDto } from 'src/auth/dto/create-account.dto';
 import { LoginDto } from 'src/auth/dto/login.dto';
 import { RequestAccountCreationDto } from 'src/auth/dto/request-account-creation.dto';
@@ -18,11 +19,11 @@ import { User } from 'src/users/entities/user.entity';
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly jwtService: JwtService,
-
     @InjectRepository(User)
     private readonly usersRepository: EntityRepository<User>,
     private readonly entityManager: EntityManager,
+
+    private readonly jwtService: JwtService,
   ) {}
 
   createJWTPayload(user: User): JWTPayload {
@@ -65,9 +66,7 @@ export class AuthService {
     );
 
     const token = this.jwtService.sign(this.createJWTPayload(user));
-    return {
-      token: token,
-    };
+    return { token };
   }
 
   async requestAccountCreation(
@@ -77,8 +76,6 @@ export class AuthService {
       { email: requestAccountCreationDto.email },
       { populate: ['email', 'hashedPassword'] },
     );
-
-    console.log(JSON.stringify(user));
 
     if (!user || user.hashedPassword !== '') {
       throw new BadRequestException({
@@ -90,7 +87,7 @@ export class AuthService {
       ...this.createJWTPayload(user),
       createAccount: true,
     };
-    console.log(process.env.JWT_ES256_SECRET);
+
     const token = this.jwtService.sign(payload);
     const link = `${requestAccountCreationDto.siteUrl}/auth/create-account?token=${token}`;
     this.sendEmail(link);
