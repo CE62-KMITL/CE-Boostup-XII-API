@@ -8,7 +8,6 @@ import type {
   JWTPayloadCreateAccount,
   JWTPayloadResetPassword,
 } from 'src/auth/auth';
-import { AuthConstants } from 'src/auth/constants';
 import { CreateAccountDto } from 'src/auth/dto/create-account.dto';
 import { LoginDto } from 'src/auth/dto/login.dto';
 import { RequestAccountCreationDto } from 'src/auth/dto/request-account-creation.dto';
@@ -124,9 +123,10 @@ export class AuthService {
   }
 
   async requestPasswordReset(requestPasswordResetDto: RequestPasswordResetDto) {
-    const user = await this.usersRepository.findOne({
-      email: requestPasswordResetDto.email,
-    });
+    const user = await this.usersRepository.findOne(
+      { email: requestPasswordResetDto.email },
+      { populate: ['email'] },
+    );
 
     if (!user) {
       throw new BadRequestException({
@@ -148,10 +148,10 @@ export class AuthService {
   }
 
   async resetPassword(resetPasswordDto: ResetPasswordDto) {
-    const payload: JWTPayloadCreateAccount = this.jwtService.verify(
+    const payload: JWTPayloadResetPassword = this.jwtService.verify(
       resetPasswordDto.token,
     );
-    if (!payload.createAccount) {
+    if (!payload.resetPassword) {
       throw new BadRequestException({
         message: 'Invalid token',
       });
@@ -167,7 +167,6 @@ export class AuthService {
       });
     }
 
-    // check if password really changes
     user.hashedPassword = await argon2.hash(resetPasswordDto.password);
     await this.entityManager.flush();
 

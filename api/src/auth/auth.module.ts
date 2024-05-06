@@ -15,8 +15,8 @@ import { User } from 'src/users/entities/user.entity';
     MikroOrmModule.forFeature([User]),
     PassportModule,
     JwtModule.register({
-      // secret: process.env.JWT_HS256_SECRET,
       privateKey: process.env.JWT_ES256_PRIVATE,
+      publicKey: process.env.JWT_ES256_PUBLIC,
       signOptions: {
         algorithm: 'ES256',
         expiresIn: process.env.JWT_EXPIRES_IN,
