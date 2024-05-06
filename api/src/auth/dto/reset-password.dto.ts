@@ -1,4 +1,4 @@
-import { IsString, MaxLength, MinLength } from 'class-validator';
+import { IsJWT, IsString, MaxLength, MinLength } from 'class-validator';
 import { AuthConstants } from 'src/auth/constants';
 
 export class ResetPasswordDto {
@@ -7,7 +7,7 @@ export class ResetPasswordDto {
   @MaxLength(AuthConstants.maxPasswordLength)
   password: string;
 
-  // @IsBase64()
   @IsString()
+  @IsJWT()
   token: string;
 }
