@@ -35,6 +35,9 @@ export class User {
   @Property({ type: types.datetime, onUpdate: () => new Date() })
   updatedAt: Date = new Date();
 
+  @Property({ type: types.datetime, nullable: true })
+  lastEmailRequestedAt?: Date = undefined;
+
   constructor(email: string, displayName: string, group: Group) {
     this.email = email;
     this.displayName = displayName;
