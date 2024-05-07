@@ -17,6 +17,7 @@ import { LoginDto } from 'src/auth/dto/login.dto';
 import { RequestAccountCreationDto } from 'src/auth/dto/request-account-creation.dto';
 import { RequestPasswordResetDto } from 'src/auth/dto/request-password-reset.dto';
 import { ResetPasswordDto } from 'src/auth/dto/reset-password.dto';
+import { MailService } from 'src/mail/mail.service';
 import { User } from 'src/users/entities/user.entity';
 
 @Injectable()
@@ -27,6 +28,7 @@ export class AuthService {
     private readonly entityManager: EntityManager,
 
     private readonly jwtService: JwtService,
+    private readonly mailService: MailService,
   ) {}
 
   createJWTPayload(user: User): JWTPayload {
@@ -40,11 +42,6 @@ export class AuthService {
       sub: user.id,
       email: user.email,
     };
-  }
-
-  sendEmail(link: string) {
-    console.log(link);
-    // throw new NotImplementedException(link);
   }
 
   async validateCredentials(email: string, password: string) {
@@ -83,7 +80,7 @@ export class AuthService {
   ) {
     const user = await this.usersRepository.findOne(
       { email: requestAccountCreationDto.email },
-      { populate: ['email', 'hashedPassword'] },
+      { populate: ['email', 'hashedPassword', 'lastEmailRequestedAt'] },
     );
 
     if (!user || user.hashedPassword !== '') {
@@ -98,8 +95,8 @@ export class AuthService {
     };
 
     const token = this.jwtService.sign(payload);
-    const link = `${requestAccountCreationDto.siteUrl}/auth/create-account?token=${token}`;
-    this.sendEmail(link);
+    const url = `${requestAccountCreationDto.siteUrl}/auth/create-account?token=${token}`;
+    await this.mailService.sendAccountCreationEmail(user, url);
 
     return {
       message: 'Account creation email has been sent',
@@ -135,10 +132,10 @@ export class AuthService {
   async requestPasswordReset(requestPasswordResetDto: RequestPasswordResetDto) {
     const user = await this.usersRepository.findOne(
       { email: requestPasswordResetDto.email },
-      { populate: ['email'] },
+      { populate: ['email', 'hashedPassword', 'lastEmailRequestedAt'] },
     );
 
-    if (!user) {
+    if (!user || user.hashedPassword === '') {
       throw new BadRequestException({
         message: 'Invalid email',
       });
@@ -149,8 +146,8 @@ export class AuthService {
       resetPassword: true,
     };
     const token = this.jwtService.sign(payload);
-    const link = `${requestPasswordResetDto.siteUrl}/auth/reset-password?token=${token}`;
-    this.sendEmail(link);
+    const url = `${requestPasswordResetDto.siteUrl}/auth/reset-password?token=${token}`;
+    await this.mailService.sendResetPasswordEmail(user, url);
 
     return {
       message: 'Password reset email has been sent',
