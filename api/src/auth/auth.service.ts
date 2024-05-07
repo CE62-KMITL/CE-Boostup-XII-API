@@ -1,6 +1,6 @@
 import { EntityManager, EntityRepository } from '@mikro-orm/mariadb';
 import { InjectRepository } from '@mikro-orm/nestjs';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import type {
@@ -26,6 +26,12 @@ export class AuthService {
   ) {}
 
   createJWTPayload(user: User): JWTPayload {
+    if (!user.id || !user.email) {
+      throw new InternalServerErrorException({
+        message: 'Failed to generate JWT payload.',
+      });
+    }
+
     return {
       sub: user.id,
       email: user.email,
