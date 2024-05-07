@@ -36,7 +36,7 @@ export class User {
   updatedAt: Date = new Date();
 
   @Property({ type: types.datetime })
-  lastEmailRequestedAt: Date = new Date();
+  lastEmailRequestedAt: Date = new Date(0);
 
   constructor(email: string, displayName: string, group: Group) {
     this.email = email;
