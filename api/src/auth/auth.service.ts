@@ -94,7 +94,9 @@ export class AuthService {
       createAccount: true,
     };
 
-    const token = this.jwtService.sign(payload);
+    const token = this.jwtService.sign(payload, {
+      expiresIn: process.env.MAIL_REQUEST_COOLDOWN,
+    });
     const url = `${requestAccountCreationDto.siteUrl}/auth/create-account?token=${token}`;
     await this.mailService.sendAccountCreationEmail(user, url);
 
@@ -145,7 +147,9 @@ export class AuthService {
       ...this.createJWTPayload(user),
       resetPassword: true,
     };
-    const token = this.jwtService.sign(payload);
+    const token = this.jwtService.sign(payload, {
+      expiresIn: process.env.MAIL_REQUEST_COOLDOWN,
+    });
     const url = `${requestPasswordResetDto.siteUrl}/auth/reset-password?token=${token}`;
     await this.mailService.sendResetPasswordEmail(user, url);
 
