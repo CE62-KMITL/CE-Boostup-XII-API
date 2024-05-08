@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import { join } from 'path';
 
 import { EntityManager, EntityRepository } from '@mikro-orm/mariadb';
 import { InjectRepository } from '@mikro-orm/nestjs';
@@ -7,6 +8,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
@@ -18,6 +20,7 @@ export class GroupsService {
     @InjectRepository(Group)
     private readonly groupsRepository: EntityRepository<Group>,
     private readonly entityManager: EntityManager,
+    private readonly configService: ConfigService,
   ) {}
 
   async create(createGroupDto: CreateGroupDto): Promise<Group> {
@@ -94,12 +97,18 @@ export class GroupsService {
       const filename = `${id}.${fileExt}`;
       if (group.avatarFilename) {
         await fs.promises.unlink(
-          `${process.env.AVATARS_STORAGE_LOCATION || '.avatars'}/${group.avatarFilename}`,
+          join(
+            this.configService.getOrThrow<string>('storages.avatars.path'),
+            group.avatarFilename,
+          ),
         );
       }
       group.avatarFilename = filename;
       await fs.promises.writeFile(
-        `${process.env.AVATARS_STORAGE_LOCATION || '.avatars'}/${filename}`,
+        join(
+          this.configService.getOrThrow<string>('storages.avatars.path'),
+          filename,
+        ),
         fileData,
         'base64',
       );

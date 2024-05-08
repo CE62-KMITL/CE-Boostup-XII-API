@@ -1,4 +1,5 @@
 import { createReadStream } from 'fs';
+import { join } from 'path';
 
 import {
   Controller,
@@ -16,12 +17,11 @@ import {
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiConsumes, ApiParam, ApiTags } from '@nestjs/swagger';
 import { Express } from 'express';
 import type { Response } from 'express';
-import { diskStorage } from 'multer';
-import { v4 as uuidv4 } from 'uuid';
 
 import { AttachmentsService } from './attachments.service';
 import { CreateAttachmentDto } from './dto/create-attachment.dto';
@@ -30,20 +30,14 @@ import { CreateAttachmentDto } from './dto/create-attachment.dto';
 @ApiTags('attachments')
 @Controller('attachments')
 export class AttachmentsController {
-  constructor(private readonly attachmentsService: AttachmentsService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly attachmentsService: AttachmentsService,
+  ) {}
 
   @Post()
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(
-    FileInterceptor('file', {
-      storage: diskStorage({
-        destination:
-          process.env.ATTACHMENTS_STORAGE_LOCATION || './attachments',
-        filename: (_, file, cb) =>
-          cb(null, `${uuidv4()}.${file.originalname.split('.').pop()}`),
-      }),
-    }),
-  )
+  @UseInterceptors(FileInterceptor('file'))
   async create(
     @Body() createAttachmentDto: CreateAttachmentDto,
     @UploadedFile(
@@ -105,7 +99,10 @@ export class AttachmentsController {
   ): Promise<StreamableFile> {
     const attachment = await this.attachmentsService.findOne(id);
     const file = createReadStream(
-      `${process.env.ATTACHMENTS_STORAGE_LOCATION || './attachments'}/${attachment.filename}`,
+      join(
+        this.configService.getOrThrow<string>('storages.attachments.path'),
+        attachment.filename,
+      ),
     );
     res.set({
       'Content-Type': attachment.type,

@@ -1,4 +1,5 @@
 import { createReadStream } from 'fs';
+import { join } from 'path';
 
 import {
   Body,
@@ -15,6 +16,7 @@ import {
   Res,
   StreamableFile,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 
@@ -26,7 +28,10 @@ import { UsersService } from './users.service';
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly usersService: UsersService,
+  ) {}
 
   @Post()
   async create(@Body() createUserDto: CreateUserDto) {
@@ -104,7 +109,10 @@ export class UsersController {
       });
     }
     const file = createReadStream(
-      `${process.env.AVATARS_STORAGE_LOCATION || '.avatars'}/${user.avatarFilename}`,
+      join(
+        this.configService.getOrThrow<string>('storages.avatars.path'),
+        user.avatarFilename,
+      ),
     );
     res.set({
       'Content-Type': `image/${user.avatarFilename.split('.').pop()}`,

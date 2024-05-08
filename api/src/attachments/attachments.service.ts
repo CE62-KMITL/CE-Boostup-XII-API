@@ -1,8 +1,10 @@
 import * as fs from 'fs';
+import { join } from 'path';
 
 import { EntityManager, EntityRepository } from '@mikro-orm/mariadb';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { User } from 'src/users/entities/user.entity';
 
 import { CreateAttachmentDto } from './dto/create-attachment.dto';
@@ -14,6 +16,7 @@ export class AttachmentsService {
     @InjectRepository(Attachment)
     private readonly attachmentsRepository: EntityRepository<Attachment>,
     private readonly entityManager: EntityManager,
+    private readonly configService: ConfigService,
   ) {}
 
   async create(
@@ -60,7 +63,10 @@ export class AttachmentsService {
       });
     }
     await fs.promises.unlink(
-      `${process.env.ATTACHMENTS_STORAGE_LOCATION || './attachments'}/${attachment.id}`,
+      join(
+        this.configService.getOrThrow<string>('storages.attachments.path'),
+        attachment.filename,
+      ),
     );
     this.entityManager.removeAndFlush(attachment);
     return;

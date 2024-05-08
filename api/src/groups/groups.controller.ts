@@ -1,4 +1,5 @@
 import { createReadStream } from 'fs';
+import { join } from 'path';
 
 import {
   Controller,
@@ -15,6 +16,7 @@ import {
   Res,
   StreamableFile,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 
@@ -26,7 +28,10 @@ import { GroupsService } from './groups.service';
 @ApiTags('groups')
 @Controller('groups')
 export class GroupsController {
-  constructor(private readonly groupsService: GroupsService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly groupsService: GroupsService,
+  ) {}
 
   @Post()
   async create(@Body() createGroupDto: CreateGroupDto) {
@@ -104,7 +109,10 @@ export class GroupsController {
       });
     }
     const file = createReadStream(
-      `${process.env.AVATARS_STORAGE_LOCATION || '.avatars'}/${group.avatarFilename}`,
+      join(
+        this.configService.getOrThrow<string>('storages.avatars.path'),
+        group.avatarFilename,
+      ),
     );
     res.set({
       'Content-Type': `image/${group.avatarFilename.split('.').pop()}`,

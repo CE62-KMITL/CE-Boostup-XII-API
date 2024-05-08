@@ -1,11 +1,15 @@
 import { LoadStrategy, MariaDbDriver } from '@mikro-orm/mariadb';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { MulterModule } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { v4 as uuidv4 } from 'uuid';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AttachmentsModule } from './attachments/attachments.module';
+import configuration from './config/configuration';
 import { GroupsModule } from './groups/groups.module';
 import { ProblemTagsModule } from './problem-tags/problem-tags.module';
 import { ProblemsModule } from './problems/problems.module';
@@ -15,20 +19,41 @@ import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ cache: true }),
-    MikroOrmModule.forRoot({
-      driver: MariaDbDriver,
-      host: process.env.MARIADB_HOST || 'mariadb',
-      port: process.env.MARIADB_PORT ? +process.env.MARIADB_PORT : 3306,
-      dbName: process.env.MARIADB_DATABASE || 'ceboostupxii',
-      user: process.env.MARIADB_USER || 'ceboostupxii',
-      password: process.env.MARIADB_PASSWORD || 'ceboostupxii',
-      name: process.env.MARIADB_NAME || 'unknown',
-      charset: 'utf8mb4',
-      loadStrategy: LoadStrategy.JOINED,
-      autoLoadEntities: true,
-      timezone: process.env.TZ || '+07:00',
-      debug: true, // TODO: Disable debug in production
+    ConfigModule.forRoot({
+      isGlobal: true,
+      cache: true,
+      load: [configuration],
+    }),
+    MikroOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        driver: MariaDbDriver,
+        host: configService.getOrThrow<string>('database.host'),
+        port: configService.getOrThrow<number>('database.port'),
+        dbName: configService.getOrThrow<string>('database.dbName'),
+        user: configService.getOrThrow<string>('database.user'),
+        password: configService.getOrThrow<string>('database.password'),
+        name: configService.getOrThrow<string>('database.name'),
+        charset: 'utf8mb4',
+        loadStrategy: LoadStrategy.JOINED,
+        autoLoadEntities: true,
+        timezone: configService.getOrThrow<string>('database.timezone'),
+        debug: configService.getOrThrow<boolean>('database.debug'),
+      }),
+      inject: [ConfigService],
+    }),
+    MulterModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        storage: diskStorage({
+          destination: configService.getOrThrow<string>(
+            'storages.attachments.path',
+          ),
+          filename: (_, file, cb) =>
+            cb(null, `${uuidv4()}.${file.originalname.split('.').pop()}`),
+        }),
+      }),
+      inject: [ConfigService],
     }),
     UsersModule,
     GroupsModule,

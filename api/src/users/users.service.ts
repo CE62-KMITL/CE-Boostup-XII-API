@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import { join } from 'path';
 
 import { EntityManager, EntityRepository } from '@mikro-orm/mariadb';
 import { InjectRepository } from '@mikro-orm/nestjs';
@@ -7,6 +8,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
 
 import { Group } from '../groups/entities/group.entity';
@@ -14,12 +16,14 @@ import { Group } from '../groups/entities/group.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User, UserResponse } from './entities/user.entity';
+
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: EntityRepository<User>,
     private readonly entityManager: EntityManager,
+    private readonly configService: ConfigService,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
@@ -110,12 +114,18 @@ export class UsersService {
       const filename = `${id}.${fileExt}`;
       if (user.avatarFilename) {
         await fs.promises.unlink(
-          `${process.env.AVATARS_STORAGE_LOCATION || '.avatars'}/${user.avatarFilename}`,
+          join(
+            this.configService.getOrThrow<string>('storages.avatars.path'),
+            user.avatarFilename,
+          ),
         );
       }
       user.avatarFilename = filename;
       await fs.promises.writeFile(
-        `${process.env.AVATARS_STORAGE_LOCATION || '.avatars'}/${filename}`,
+        join(
+          this.configService.getOrThrow<string>('storages.avatars.path'),
+          filename,
+        ),
         fileData,
         'base64',
       );
