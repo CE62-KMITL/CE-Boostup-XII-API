@@ -245,7 +245,7 @@ export class UsersService {
         },
       });
     }
-    if (!argon2.verify(user.hashedPassword, password)) {
+    if (!(await argon2.verify(user.hashedPassword, password))) {
       throw new BadRequestException({
         message: 'Invalid email or password',
         errors: {
