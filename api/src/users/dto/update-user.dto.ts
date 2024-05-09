@@ -7,6 +7,7 @@ import {
   MaxLength,
   ValidateIf,
 } from 'class-validator';
+import { Group } from 'src/groups/entities/group.entity';
 
 import { CreateUserDto } from './create-user.dto';
 
@@ -43,4 +44,13 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   @ValidateIf((o) => o.password)
   @IsString()
   oldPassword?: string;
+}
+
+export class UpdateUserInternalDto {
+  email?: string;
+  hashedPassword?: string;
+  displayName?: string;
+  bio?: string;
+  group?: Group;
+  lastEmailRequestedAt?: Date;
 }

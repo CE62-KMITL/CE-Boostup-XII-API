@@ -56,6 +56,9 @@ export class User {
   )
   lastProblemSolvedAt: Date;
 
+  @Property({ type: types.datetime, nullable: true, lazy: true })
+  lastEmailRequestedAt?: Date;
+
   @Property({ type: types.string, length: 255, nullable: true, lazy: true })
   avatarFilename?: string;
 

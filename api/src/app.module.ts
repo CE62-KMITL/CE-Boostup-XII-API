@@ -2,15 +2,20 @@ import { LoadStrategy, MariaDbDriver } from '@mikro-orm/mariadb';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
 import { MulterModule } from '@nestjs/platform-express';
+import { MailerModule } from '@nestjs-modules/mailer';
+import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 import { diskStorage } from 'multer';
 import { v4 as uuidv4 } from 'uuid';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AttachmentsModule } from './attachments/attachments.module';
+import { AuthModule } from './auth/auth.module';
 import configuration from './config/configuration';
 import { GroupsModule } from './groups/groups.module';
+import { MailModule } from './mail/mail.module';
 import { ProblemTagsModule } from './problem-tags/problem-tags.module';
 import { ProblemsModule } from './problems/problems.module';
 import { SavesModule } from './saves/saves.module';
@@ -42,6 +47,42 @@ import { UsersModule } from './users/users.module';
       }),
       inject: [ConfigService],
     }),
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      global: true,
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.getOrThrow<string>('auth.jwtSecret'),
+        signOptions: {
+          expiresIn: configService.getOrThrow<string>('auth.jwtExpiresIn'),
+        },
+      }),
+      inject: [ConfigService],
+    }),
+    MailerModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        transport: {
+          host: configService.getOrThrow<string>('mail.smtpHost'),
+          port: configService.getOrThrow<number>('mail.smtpPort'),
+          secure: true,
+          auth: {
+            user: configService.getOrThrow<string>('mail.smtpUser'),
+            pass: configService.getOrThrow<string>('mail.smtpPassword'),
+          },
+        },
+        defaults: {
+          from: `"${configService.getOrThrow<string>('mail.from')}" <${configService.getOrThrow<string>('mail.fromAddress')}>`,
+        },
+        template: {
+          dir: './templates',
+          adapter: new HandlebarsAdapter(),
+          options: {
+            strict: true,
+          },
+        },
+      }),
+      inject: [ConfigService],
+    }),
     MulterModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -62,6 +103,8 @@ import { UsersModule } from './users/users.module';
     SavesModule,
     SubmissionsModule,
     AttachmentsModule,
+    AuthModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

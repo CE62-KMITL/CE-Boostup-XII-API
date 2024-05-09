@@ -1,7 +1,11 @@
 import * as fs from 'fs';
 import { join } from 'path';
 
-import { EntityManager, EntityRepository } from '@mikro-orm/mariadb';
+import {
+  EntityManager,
+  EntityRepository,
+  FilterQuery,
+} from '@mikro-orm/mariadb';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import {
   BadRequestException,
@@ -14,7 +18,7 @@ import * as argon2 from 'argon2';
 import { Group } from '../groups/entities/group.entity';
 
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateUserDto, UpdateUserInternalDto } from './dto/update-user.dto';
 import { User, UserResponse } from './entities/user.entity';
 
 @Injectable()
@@ -86,6 +90,20 @@ export class UsersService {
     return user;
   }
 
+  async findOneInternal(
+    where: FilterQuery<User>,
+    populate: (keyof User)[] = [],
+  ): Promise<User> {
+    const user = await this.usersRepository.findOne(where, { populate });
+    if (!user) {
+      throw new NotFoundException({
+        message: 'User not found',
+        errors: { where: 'User not found' },
+      });
+    }
+    return user;
+  }
+
   async update(
     id: string,
     updateUserDto: UpdateUserDto,
@@ -147,7 +165,7 @@ export class UsersService {
           errors: { oldPassword: 'Old password is incorrect' },
         });
       }
-      user.hashedPassword = await argon2.hash(updateUserDto.password);
+      user.hashedPassword = await this.hashPassword(updateUserDto.password);
       delete updateUserDto.oldPassword;
       delete updateUserDto.password;
     }
@@ -169,6 +187,22 @@ export class UsersService {
     return new UserResponse(user);
   }
 
+  async updateInternal(
+    where: FilterQuery<User>,
+    data: UpdateUserInternalDto,
+  ): Promise<User> {
+    const user = await this.usersRepository.findOne(where, { populate: ['*'] });
+    if (!user) {
+      throw new NotFoundException({
+        message: 'User not found',
+        errors: { where: 'User not found' },
+      });
+    }
+    this.usersRepository.assign(user, data);
+    await this.entityManager.flush();
+    return user;
+  }
+
   async remove(id: string): Promise<void> {
     const user = await this.usersRepository.findOne({ id });
     if (!user) {
@@ -179,5 +213,47 @@ export class UsersService {
     }
     await this.entityManager.removeAndFlush(user);
     return;
+  }
+
+  async removeInternal(where: FilterQuery<User>): Promise<void> {
+    const user = await this.usersRepository.findOne(where);
+    if (!user) {
+      throw new NotFoundException({
+        message: 'User not found',
+        errors: { where: 'User not found' },
+      });
+    }
+    await this.entityManager.removeAndFlush(user);
+    return;
+  }
+
+  async hashPassword(password: string): Promise<string> {
+    return argon2.hash(password);
+  }
+
+  async validatePassword(email: string, password: string): Promise<User> {
+    const user = await this.usersRepository.findOne(
+      { email },
+      { populate: ['hashedPassword'] },
+    );
+    if (!user) {
+      throw new BadRequestException({
+        message: 'Invalid email or password',
+        errors: {
+          email: 'Potentially invalid email',
+          password: 'Potentially invalid password',
+        },
+      });
+    }
+    if (!argon2.verify(user.hashedPassword, password)) {
+      throw new BadRequestException({
+        message: 'Invalid email or password',
+        errors: {
+          email: 'Potentially invalid email',
+          password: 'Potentially invalid password',
+        },
+      });
+    }
+    return user;
   }
 }
