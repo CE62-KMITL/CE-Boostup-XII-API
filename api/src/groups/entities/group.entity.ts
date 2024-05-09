@@ -7,16 +7,20 @@ import {
   Property,
   types,
 } from '@mikro-orm/mariadb';
+import { ConfigConstants } from 'src/config/config-constants';
+import { User } from 'src/users/entities/user.entity';
 import { v4 as uuidv4 } from 'uuid';
-
-import { User } from '../../users/entities/user.entity';
 
 @Entity()
 export class Group {
   @PrimaryKey({ type: types.uuid })
   id: string = uuidv4();
 
-  @Property({ type: types.string, length: 32, unique: true })
+  @Property({
+    type: types.string,
+    length: ConfigConstants.group.maxNameLength,
+    unique: true,
+  })
   name: string;
 
   @Property({ type: types.text })
@@ -28,17 +32,51 @@ export class Group {
   @Formula(
     (alias) =>
       `(SELECT COUNT(*) FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`)`,
+    { type: types.integer, serializer: (value) => +value, lazy: true },
   )
   memberCount: number;
 
-  @Property({ type: types.datetime })
+  @Formula(
+    (alias) =>
+      `(SELECT SUM(\`score\` * (SELECT COUNT(DISTINCT \`user_id\`) FROM \`submission\` WHERE \`submission\`.\`problem_id\` = \`problem\`.\`id\` AND \`submission\`.\`user_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1)) FROM \`problem\`)`,
+    { type: types.integer, serializer: (value) => +value, lazy: true },
+  )
+  totalScore: number;
+
+  @Formula(
+    (alias) =>
+      `(SELECT SUM(\`score\`) FROM \`problem\` WHERE \`problem\`.\`id\` IN (SELECT DISTINCT \`problem_id\` FROM \`submission\` WHERE \`submission\`.\`user_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1))`,
+    { type: types.integer, serializer: (value) => +value, lazy: true },
+  )
+  uniqueTotalScore: number;
+
+  @Formula(
+    (alias) =>
+      `(SELECT COUNT(DISTINCT \`problem_id\`, \`user_id\`) FROM \`submission\` WHERE \`submission\`.\`user_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1)`,
+    { type: types.integer, serializer: (value) => +value, lazy: true },
+  )
+  problemSolvedCount: number;
+
+  @Formula(
+    (alias) =>
+      `(SELECT COUNT(DISTINCT \`problem_id\`) FROM \`submission\` WHERE \`submission\`.\`user_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1)`,
+    { type: types.integer, serializer: (value) => +value, lazy: true },
+  )
+  uniqueProblemSolvedCount: number;
+
+  @Formula(
+    (alias) =>
+      `(SELECT MAX(\`created_at\`) FROM \`submission\` WHERE \`submission\`.\`user_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1)`,
+    { type: types.datetime, lazy: true },
+  )
+  lastProblemSolvedAt: Date;
+
+  @Property({ type: types.string, length: 255, nullable: true, lazy: true })
+  avatarFilename?: string;
+
+  @Property({ type: types.datetime, lazy: true })
   createdAt: Date = new Date();
 
-  @Property({ type: types.datetime, onUpdate: () => new Date() })
+  @Property({ type: types.datetime, lazy: true, onUpdate: () => new Date() })
   updatedAt: Date = new Date();
-
-  constructor(name: string, description: string) {
-    this.name = name;
-    this.description = description;
-  }
 }
