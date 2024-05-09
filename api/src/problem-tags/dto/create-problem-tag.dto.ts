@@ -1,18 +1,23 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, MaxLength, MinLength } from 'class-validator';
+import { ConfigConstants } from 'src/config/config-constants';
 
 export class CreateProblemTagDto {
-  @ApiProperty({ minLength: 3, maxLength: 32, example: 'Array' })
+  @ApiProperty({
+    minLength: ConfigConstants.problemTag.minNameLength,
+    maxLength: ConfigConstants.problemTag.maxNameLength,
+    example: 'Array',
+  })
   @IsString()
-  @MinLength(3)
-  @MaxLength(32)
+  @MinLength(ConfigConstants.problemTag.minNameLength)
+  @MaxLength(ConfigConstants.problemTag.maxNameLength)
   name: string;
 
   @ApiProperty({
-    maxLength: 65535,
+    maxLength: ConfigConstants.problemTag.maxDescriptionLength,
     example: 'Things involving square brackets',
   })
   @IsString()
-  @MaxLength(65535)
+  @MaxLength(ConfigConstants.problemTag.maxDescriptionLength)
   description: string;
 }

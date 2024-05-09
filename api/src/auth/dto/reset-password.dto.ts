@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsJWT, IsStrongPassword } from 'class-validator';
+import { IsJWT, IsStrongPassword, MaxLength } from 'class-validator';
+import { ConfigConstants } from 'src/config/config-constants';
 
 export class ResetPasswordDto {
   @ApiProperty({
@@ -9,9 +10,14 @@ export class ResetPasswordDto {
   @IsJWT()
   token: string;
 
-  @ApiProperty({ example: 'P@ssw0rd!', minLength: 8 })
+  @ApiProperty({
+    minLength: ConfigConstants.user.minPasswordLength,
+    maxLength: ConfigConstants.user.maxPasswordLength,
+    example: 'P@ssw0rd!',
+  })
+  @MaxLength(ConfigConstants.user.maxPasswordLength)
   @IsStrongPassword({
-    minLength: 8,
+    minLength: ConfigConstants.user.minPasswordLength,
     minLowercase: 1,
     minUppercase: 1,
     minNumbers: 1,

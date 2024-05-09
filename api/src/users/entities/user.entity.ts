@@ -6,6 +6,7 @@ import {
   Property,
   types,
 } from '@mikro-orm/mariadb';
+import { ConfigConstants } from 'src/config/config-constants';
 import { Group } from 'src/groups/entities/group.entity';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -16,7 +17,7 @@ export class User {
 
   @Property({
     type: types.string,
-    length: 255,
+    length: ConfigConstants.user.maxEmailLength,
     unique: true,
     index: true,
     lazy: true,
@@ -26,7 +27,10 @@ export class User {
   @Property({ type: types.string, length: 255, lazy: true })
   hashedPassword: string;
 
-  @Property({ type: types.string, length: 32 })
+  @Property({
+    type: types.string,
+    length: ConfigConstants.user.maxDisplayNameLength,
+  })
   displayName: string;
 
   @Property({ type: types.text, lazy: true })

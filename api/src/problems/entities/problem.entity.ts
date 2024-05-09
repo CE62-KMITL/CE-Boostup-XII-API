@@ -10,6 +10,7 @@ import {
   types,
 } from '@mikro-orm/mariadb';
 import { Attachment } from 'src/attachments/entities/attachment.entity';
+import { ConfigConstants } from 'src/config/config-constants';
 import { ProblemTag } from 'src/problem-tags/entities/problem-tag.entity';
 import { OptimizationLevel } from 'src/shared/enums/optimization-level.enum';
 import { PublicationStatus } from 'src/shared/enums/publication-status.enum';
@@ -31,7 +32,10 @@ export class Problem {
   })
   number: number;
 
-  @Property({ type: types.string, length: 255 })
+  @Property({
+    type: types.string,
+    length: ConfigConstants.problem.maxTitleLength,
+  })
   title: string;
 
   @Property({ type: types.text })
@@ -102,7 +106,11 @@ export class Problem {
   @ManyToOne({ entity: () => User, eager: true })
   owner: User;
 
-  @Property({ type: types.string, length: 255, lazy: true })
+  @Property({
+    type: types.string,
+    length: ConfigConstants.problem.maxCreditsLength,
+    lazy: true,
+  })
   credits: string;
 
   @Enum({ items: () => PublicationStatus, lazy: true })

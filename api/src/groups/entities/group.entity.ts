@@ -7,6 +7,7 @@ import {
   Property,
   types,
 } from '@mikro-orm/mariadb';
+import { ConfigConstants } from 'src/config/config-constants';
 import { User } from 'src/users/entities/user.entity';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -15,7 +16,11 @@ export class Group {
   @PrimaryKey({ type: types.uuid })
   id: string = uuidv4();
 
-  @Property({ type: types.string, length: 32, unique: true })
+  @Property({
+    type: types.string,
+    length: ConfigConstants.group.maxNameLength,
+    unique: true,
+  })
   name: string;
 
   @Property({ type: types.text })

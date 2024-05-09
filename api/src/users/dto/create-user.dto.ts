@@ -6,15 +6,24 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { ConfigConstants } from 'src/config/config-constants';
 
 export class CreateUserDto {
-  @ApiProperty({ minLength: 3, maxLength: 32, example: 'John Doe' })
+  @ApiProperty({
+    minLength: ConfigConstants.user.minDisplayNameLength,
+    maxLength: ConfigConstants.user.maxDisplayNameLength,
+    example: 'John Doe',
+  })
   @IsString()
-  @MinLength(3)
-  @MaxLength(32)
+  @MinLength(ConfigConstants.user.minDisplayNameLength)
+  @MaxLength(ConfigConstants.user.maxDisplayNameLength)
   displayName: string;
 
-  @ApiProperty({ example: 'example@example.com' })
+  @ApiProperty({
+    maxLength: ConfigConstants.user.maxEmailLength,
+    example: 'example@example.com',
+  })
+  @MaxLength(ConfigConstants.user.maxEmailLength)
   @IsEmail()
   email: string;
 

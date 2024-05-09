@@ -1,8 +1,41 @@
 export const ConfigConstants = {
-  users: {
-    minDisplayNameLength: 3,
+  user: {
+    maxEmailLength: 255,
+    minDisplayNameLength: 1,
     maxDisplayNameLength: 32,
     minPasswordLength: 8,
     maxPasswordLength: 255,
+  },
+  group: {
+    minNameLength: 1,
+    maxNameLength: 32,
+    maxDescriptionLength: 65535,
+  },
+  problemTag: {
+    minNameLength: 1,
+    maxNameLength: 32,
+    maxDescriptionLength: 65535,
+  },
+  problem: {
+    minTitleLength: 1,
+    maxTitleLength: 255,
+    maxDescriptionLength: 65535,
+    maxInputLength: 65535,
+    maxOutputLength: 65535,
+    maxHintLength: 65535,
+    minTestcaseCount: 1,
+    maxTestcaseCount: 4096,
+    minExampleTestcaseCount: 0,
+    maxExampleTestcaseCount: 16,
+    maxTestcaseInputLength: 65535,
+    maxTestcaseOutputLength: 65535,
+    maxStarterCodeLength: 65535,
+    maxSolutionLength: 65535,
+    maxTimeLimit: 30,
+    maxMemoryLimit: 262144,
+    maxCreditsLength: 255,
+  },
+  save: {
+    maxCodeLength: 65535,
   },
 };

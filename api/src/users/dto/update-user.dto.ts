@@ -7,6 +7,7 @@ import {
   MaxLength,
   ValidateIf,
 } from 'class-validator';
+import { ConfigConstants } from 'src/config/config-constants';
 import { Group } from 'src/groups/entities/group.entity';
 
 import { CreateUserDto } from './create-user.dto';
@@ -29,9 +30,14 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   @IsOptional()
   avatar?: string;
 
-  @ApiPropertyOptional({ example: 'P@ssw0rd!', minLength: 8 })
+  @ApiPropertyOptional({
+    minLength: ConfigConstants.user.minPasswordLength,
+    maxLength: ConfigConstants.user.maxPasswordLength,
+    example: 'P@ssw0rd!',
+  })
+  @MaxLength(ConfigConstants.user.maxPasswordLength)
   @IsStrongPassword({
-    minLength: 8,
+    minLength: ConfigConstants.user.minPasswordLength,
     minLowercase: 1,
     minUppercase: 1,
     minNumbers: 1,
