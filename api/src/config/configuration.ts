@@ -20,8 +20,7 @@ export default () => ({
     },
   },
   auth: {
-    jwtSecret:
-      process.env.JWT_SECRET || process.exit('JWT_SECRET is not defined'),
+    jwtSecret: process.env.JWT_SECRET,
     jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
     mailRequestCooldown: process.env.MAIL_REQUEST_COOLDOWN || '15m',
   },
