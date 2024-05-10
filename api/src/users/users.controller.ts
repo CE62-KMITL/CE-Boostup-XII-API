@@ -13,12 +13,18 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Req,
   Res,
   StreamableFile,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
+import { Public } from 'src/auth/public.decorator';
+import { Role } from 'src/shared/enums/role.enum';
+import { AuthenticatedRequest } from 'src/shared/interfaces/authenticated-request.interface';
+
+import { Roles } from '../auth/roles.decorator';
 
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -33,18 +39,22 @@ export class UsersController {
     private readonly usersService: UsersService,
   ) {}
 
+  @Roles(Role.Admin)
   @Post()
   async create(@Body() createUserDto: CreateUserDto) {
     return await this.usersService.create(createUserDto);
   }
 
+  @Roles(Role.User, Role.Staff, Role.Admin)
   @Get()
   async findAll() {
     return await this.usersService.findAll();
   }
 
+  @Roles(Role.User, Role.Staff)
   @Get(':id')
   async findOne(
+    @Req() request: AuthenticatedRequest,
     @Param(
       'id',
       new ParseUUIDPipe({
@@ -54,9 +64,11 @@ export class UsersController {
     )
     id: string,
   ) {
+    console.log(request.user);
     return await this.usersService.findOne(id);
   }
 
+  @Roles(Role.User, Role.Staff, Role.Admin)
   @Patch(':id')
   async update(
     @Param(
@@ -72,8 +84,9 @@ export class UsersController {
     return await this.usersService.update(id, updateUserDto);
   }
 
-  @Delete(':id')
+  @Roles(Role.Admin)
   @HttpCode(HttpStatus.NO_CONTENT)
+  @Delete(':id')
   async remove(
     @Param(
       'id',
@@ -87,6 +100,7 @@ export class UsersController {
     return await this.usersService.remove(id);
   }
 
+  @Public()
   @Get(':id/avatar')
   async getAvatar(
     @Res({ passthrough: true }) res: Response,

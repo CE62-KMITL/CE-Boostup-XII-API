@@ -77,9 +77,9 @@ export class CreateProblemDto {
     ],
   })
   @IsArray()
-  @ValidateNested({ each: true })
   @ArrayMinSize(ConfigConstants.problem.minTestcaseCount)
   @ArrayMaxSize(ConfigConstants.problem.maxTestcaseCount)
+  @ValidateNested({ each: true })
   @Type(() => Testcase)
   testcases: Testcase[];
 
@@ -91,9 +91,9 @@ export class CreateProblemDto {
     example: [{ input: '1 1', output: '2' }],
   })
   @IsArray()
-  @ValidateNested({ each: true })
   @ArrayMinSize(ConfigConstants.problem.minExampleTestcaseCount)
   @ArrayMaxSize(ConfigConstants.problem.maxExampleTestcaseCount)
+  @ValidateNested({ each: true })
   @Type(() => Testcase)
   exampleTestcases: Testcase[];
 

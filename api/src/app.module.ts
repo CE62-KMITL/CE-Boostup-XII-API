@@ -1,7 +1,10 @@
+import { join } from 'path';
+
 import { LoadStrategy, MariaDbDriver } from '@mikro-orm/mariadb';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { MulterModule } from '@nestjs/platform-express';
 import { MailerModule } from '@nestjs-modules/mailer';
@@ -12,7 +15,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AttachmentsModule } from './attachments/attachments.module';
+import { AuthGuard } from './auth/auth.guard';
 import { AuthModule } from './auth/auth.module';
+import { RolesGuard } from './auth/roles.guard';
 import configuration from './config/configuration';
 import { GroupsModule } from './groups/groups.module';
 import { MailModule } from './mail/mail.module';
@@ -42,6 +47,7 @@ import { UsersModule } from './users/users.module';
         charset: 'utf8mb4',
         loadStrategy: LoadStrategy.JOINED,
         autoLoadEntities: true,
+        allowGlobalContext: true,
         timezone: configService.getOrThrow<string>('database.timezone'),
         debug: configService.getOrThrow<boolean>('database.debug'),
       }),
@@ -74,7 +80,7 @@ import { UsersModule } from './users/users.module';
           from: `"${configService.getOrThrow<string>('mail.from')}" <${configService.getOrThrow<string>('mail.fromAddress')}>`,
         },
         template: {
-          dir: './templates',
+          dir: join(__dirname, 'mail', 'templates'),
           adapter: new HandlebarsAdapter(),
           options: {
             strict: true,
@@ -96,6 +102,7 @@ import { UsersModule } from './users/users.module';
       }),
       inject: [ConfigService],
     }),
+    AuthModule,
     UsersModule,
     GroupsModule,
     ProblemsModule,
@@ -103,10 +110,19 @@ import { UsersModule } from './users/users.module';
     SavesModule,
     SubmissionsModule,
     AttachmentsModule,
-    AuthModule,
     MailModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: AuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
+    },
+  ],
 })
 export class AppModule {}

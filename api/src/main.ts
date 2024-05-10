@@ -19,6 +19,7 @@ async function bootstrap() {
     }),
   );
   const config = new DocumentBuilder()
+    .addBearerAuth()
     .setTitle('CE Boostup XII API')
     .setDescription('Swagger UI for CE Boostup XII API.')
     .setVersion('0.0.2')

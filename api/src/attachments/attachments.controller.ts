@@ -22,6 +22,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiConsumes, ApiParam, ApiTags } from '@nestjs/swagger';
 import { Express } from 'express';
 import type { Response } from 'express';
+import { Public } from 'src/auth/public.decorator';
 
 import { AttachmentsService } from './attachments.service';
 import { CreateAttachmentDto } from './dto/create-attachment.dto';
@@ -55,6 +56,7 @@ export class AttachmentsController {
     return await this.attachmentsService.findAll();
   }
 
+  @Public()
   @Get(':id')
   async findOne(
     @Param(
@@ -84,6 +86,7 @@ export class AttachmentsController {
     return await this.attachmentsService.remove(id);
   }
 
+  @Public()
   @Get(':id/:name')
   @ApiParam({ name: 'name', type: 'string' })
   async download(

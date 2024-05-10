@@ -11,9 +11,11 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
+import { Role } from 'src/shared/enums/role.enum';
 
 import { Group } from '../groups/entities/group.entity';
 
@@ -22,7 +24,7 @@ import { UpdateUserDto, UpdateUserInternalDto } from './dto/update-user.dto';
 import { User, UserResponse } from './entities/user.entity';
 
 @Injectable()
-export class UsersService {
+export class UsersService implements OnModuleInit {
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: EntityRepository<User>,
@@ -30,7 +32,36 @@ export class UsersService {
     private readonly configService: ConfigService,
   ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
+  onModuleInit() {
+    this.createSuperAdmin();
+  }
+
+  async createSuperAdmin(): Promise<void> {
+    const superAdmin = await this.usersRepository.findOne(
+      { email: this.configService.getOrThrow<string>('auth.superAdminEmail') },
+      { populate: ['hashedPassword'] },
+    );
+    if (!superAdmin) {
+      const user = new User(
+        this.configService.getOrThrow<string>('auth.superAdminEmail'),
+        [Role.SuperAdmin],
+        'Super Admin',
+      );
+      user.hashedPassword = await this.hashPassword(
+        this.configService.getOrThrow<string>('auth.superAdminPassword'),
+      );
+      this.entityManager.persistAndFlush(user);
+      return;
+    }
+    if (!superAdmin.hashedPassword) {
+      superAdmin.hashedPassword = await this.hashPassword(
+        this.configService.getOrThrow<string>('auth.superAdminPassword'),
+      );
+      await this.entityManager.flush();
+    }
+  }
+
+  async create(createUserDto: CreateUserDto): Promise<UserResponse> {
     const emailExists = await this.usersRepository.count({
       email: createUserDto.email,
     });
@@ -42,7 +73,7 @@ export class UsersService {
     }
     const group = await this.entityManager
       .getRepository(Group)
-      .findOne({ id: createUserDto.groupId });
+      .findOne({ id: createUserDto.group });
     if (!group) {
       throw new BadRequestException({
         message: 'Group not found',
@@ -51,11 +82,12 @@ export class UsersService {
     }
     const user = new User(
       createUserDto.email,
+      createUserDto.roles,
       createUserDto.displayName,
       group,
     );
     await this.entityManager.persistAndFlush(user);
-    return user;
+    return new UserResponse(user);
   }
 
   async findAll(): Promise<User[]> {
@@ -169,10 +201,10 @@ export class UsersService {
       delete updateUserDto.oldPassword;
       delete updateUserDto.password;
     }
-    if (updateUserDto.groupId) {
+    if (updateUserDto.group) {
       const group = await this.entityManager
         .getRepository(Group)
-        .findOne({ id: updateUserDto.groupId });
+        .findOne({ id: updateUserDto.group });
       if (!group) {
         throw new BadRequestException({
           message: 'Group not found',
@@ -180,7 +212,7 @@ export class UsersService {
         });
       }
       user.group = group;
-      delete updateUserDto.groupId;
+      delete updateUserDto.group;
     }
     this.usersRepository.assign(user, updateUserDto);
     await this.entityManager.flush();
@@ -191,7 +223,7 @@ export class UsersService {
     where: FilterQuery<User>,
     data: UpdateUserInternalDto,
   ): Promise<User> {
-    const user = await this.usersRepository.findOne(where, { populate: ['*'] });
+    const user = await this.usersRepository.findOne(where);
     if (!user) {
       throw new NotFoundException({
         message: 'User not found',
@@ -234,7 +266,7 @@ export class UsersService {
   async validatePassword(email: string, password: string): Promise<User> {
     const user = await this.usersRepository.findOne(
       { email },
-      { populate: ['hashedPassword'] },
+      { populate: ['hashedPassword', 'roles'] },
     );
     if (!user) {
       throw new BadRequestException({
