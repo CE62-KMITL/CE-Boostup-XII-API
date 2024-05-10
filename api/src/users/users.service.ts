@@ -254,6 +254,12 @@ export class UsersService {
         },
       });
     }
+    if (argon2.needsRehash(user.hashedPassword)) {
+      await this.updateInternal(
+        { id: user.id },
+        { hashedPassword: await this.hashPassword(password) },
+      );
+    }
     return user;
   }
 }
