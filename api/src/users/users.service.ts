@@ -37,6 +37,7 @@ export class UsersService implements OnModuleInit {
 
   onModuleInit() {
     this.createSuperAdmin();
+    this.createAvatarDirectory();
   }
 
   async createSuperAdmin(): Promise<void> {
@@ -61,6 +62,17 @@ export class UsersService implements OnModuleInit {
         this.configService.getOrThrow<string>('auth.superAdminPassword'),
       );
       await this.entityManager.flush();
+    }
+  }
+
+  async createAvatarDirectory() {
+    const avatarsPath = this.configService.getOrThrow<string>(
+      'storages.avatars.path',
+    );
+    try {
+      await fs.promises.access(avatarsPath);
+    } catch (error) {
+      await fs.promises.mkdir(avatarsPath, { recursive: true });
     }
   }
 

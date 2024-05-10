@@ -3,7 +3,7 @@ import { join } from 'path';
 
 import { EntityManager, EntityRepository } from '@mikro-orm/mariadb';
 import { InjectRepository } from '@mikro-orm/nestjs';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { User } from 'src/users/entities/user.entity';
 
@@ -11,13 +11,28 @@ import { CreateAttachmentDto } from './dto/create-attachment.dto';
 import { Attachment } from './entities/attachment.entity';
 
 @Injectable()
-export class AttachmentsService {
+export class AttachmentsService implements OnModuleInit {
   constructor(
     @InjectRepository(Attachment)
     private readonly attachmentsRepository: EntityRepository<Attachment>,
     private readonly entityManager: EntityManager,
     private readonly configService: ConfigService,
   ) {}
+
+  onModuleInit() {
+    this.createAttachmentDirectory();
+  }
+
+  async createAttachmentDirectory(): Promise<void> {
+    const attachmentsPath = this.configService.getOrThrow<string>(
+      'storages.attachments.path',
+    );
+    try {
+      await fs.promises.access(attachmentsPath);
+    } catch (error) {
+      await fs.promises.mkdir(attachmentsPath, { recursive: true });
+    }
+  }
 
   async create(
     // user: User, // TODO: Add user authentication
