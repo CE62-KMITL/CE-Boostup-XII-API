@@ -41,14 +41,17 @@ export class UsersController {
 
   @Roles(Role.Admin)
   @Post()
-  async create(@Body() createUserDto: CreateUserDto) {
-    return await this.usersService.create(createUserDto);
+  async create(
+    @Req() request: AuthenticatedRequest,
+    @Body() createUserDto: CreateUserDto,
+  ) {
+    return await this.usersService.create(request.user, createUserDto);
   }
 
   @Roles(Role.User, Role.Staff, Role.Admin)
   @Get()
-  async findAll() {
-    return await this.usersService.findAll();
+  async findAll(@Req() request: AuthenticatedRequest) {
+    return await this.usersService.findAll(request.user);
   }
 
   @Roles(Role.User, Role.Staff)
@@ -64,13 +67,13 @@ export class UsersController {
     )
     id: string,
   ) {
-    console.log(request.user);
-    return await this.usersService.findOne(id);
+    return await this.usersService.findOne(request.user, id);
   }
 
   @Roles(Role.User, Role.Staff, Role.Admin)
   @Patch(':id')
   async update(
+    @Req() request: AuthenticatedRequest,
     @Param(
       'id',
       new ParseUUIDPipe({
@@ -81,7 +84,7 @@ export class UsersController {
     id: string,
     @Body() updateUserDto: UpdateUserDto,
   ) {
-    return await this.usersService.update(id, updateUserDto);
+    return await this.usersService.update(request.user, id, updateUserDto);
   }
 
   @Roles(Role.Admin)
@@ -113,7 +116,7 @@ export class UsersController {
     )
     id: string,
   ): Promise<StreamableFile> {
-    const user = await this.usersService.findOne(id, [
+    const user = await this.usersService.findOneInternal({ id }, [
       'avatarFilename',
     ] as const);
     if (!user.avatarFilename) {

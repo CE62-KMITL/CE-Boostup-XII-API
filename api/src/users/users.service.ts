@@ -9,6 +9,7 @@ import {
 import { InjectRepository } from '@mikro-orm/nestjs';
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
   OnModuleInit,
@@ -16,6 +17,8 @@ import {
 import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
 import { Role } from 'src/shared/enums/role.enum';
+import { AuthenticatedRequest } from 'src/shared/interfaces/authenticated-request.interface';
+import { compareRoles, sortRoles } from 'src/shared/roles';
 
 import { Group } from '../groups/entities/group.entity';
 
@@ -61,7 +64,10 @@ export class UsersService implements OnModuleInit {
     }
   }
 
-  async create(createUserDto: CreateUserDto): Promise<UserResponse> {
+  async create(
+    originUser: AuthenticatedRequest['user'],
+    createUserDto: CreateUserDto,
+  ): Promise<UserResponse> {
     const emailExists = await this.usersRepository.count({
       email: createUserDto.email,
     });
@@ -80,6 +86,23 @@ export class UsersService implements OnModuleInit {
         errors: { groupId: 'Group not found' },
       });
     }
+    const originUserTopRole =
+      sortRoles(originUser.roles)[0] === Role.Reviewer
+        ? Role.Staff
+        : sortRoles(originUser.roles)[0];
+    const creatingUserTopRole = sortRoles(createUserDto.roles)[0];
+    if (creatingUserTopRole === Role.SuperAdmin) {
+      throw new BadRequestException({
+        message: "Super Admin can't be created",
+        errors: { roles: "Super Admin can't be created" },
+      });
+    }
+    if (compareRoles(originUserTopRole, creatingUserTopRole) >= 0) {
+      throw new ForbiddenException({
+        message: 'Insufficient permissions',
+        errors: { roles: 'Insufficient permissions' },
+      });
+    }
     const user = new User(
       createUserDto.email,
       createUserDto.roles,
@@ -90,28 +113,47 @@ export class UsersService implements OnModuleInit {
     return new UserResponse(user);
   }
 
-  async findAll(): Promise<User[]> {
-    return await this.usersRepository.findAll({
-      populate: [
-        'bio',
-        'group',
-        'totalScore',
-        'problemSolvedCount',
-        'lastProblemSolvedAt',
-      ],
-    });
-  }
-
-  async findOne(
-    id: string,
-    populate: (keyof User)[] = [
+  async findAll(originUser: AuthenticatedRequest['user']): Promise<User[]> {
+    const populate: (keyof User)[] = [
       'bio',
       'group',
       'totalScore',
       'problemSolvedCount',
       'lastProblemSolvedAt',
-    ],
+    ];
+    if (
+      originUser.roles.includes(Role.Admin) ||
+      originUser.roles.includes(Role.SuperAdmin)
+    ) {
+      populate.push('email');
+      populate.push('roles');
+      populate.push('createdAt');
+      populate.push('updatedAt');
+    }
+    return await this.usersRepository.findAll({ populate });
+  }
+
+  async findOne(
+    originUser: AuthenticatedRequest['user'],
+    id: string,
   ): Promise<User> {
+    const populate: (keyof User)[] = [
+      'bio',
+      'group',
+      'totalScore',
+      'problemSolvedCount',
+      'lastProblemSolvedAt',
+    ];
+    if (
+      originUser.roles.includes(Role.Admin) ||
+      originUser.roles.includes(Role.SuperAdmin)
+    ) {
+      populate.push('email');
+      populate.push('roles');
+      populate.push('lastEmailRequestedAt');
+      populate.push('createdAt');
+      populate.push('updatedAt');
+    }
     const user = await this.usersRepository.findOne({ id }, { populate });
     if (!user) {
       throw new NotFoundException({
@@ -137,9 +179,20 @@ export class UsersService implements OnModuleInit {
   }
 
   async update(
+    originUser: AuthenticatedRequest['user'],
     id: string,
     updateUserDto: UpdateUserDto,
   ): Promise<UserResponse> {
+    if (
+      id !== originUser.id &&
+      !originUser.roles.includes(Role.SuperAdmin) &&
+      !originUser.roles.includes(Role.Admin)
+    ) {
+      throw new ForbiddenException({
+        message: 'Insufficient permissions',
+        errors: { id: 'Insufficient permissions' },
+      });
+    }
     const user = await this.usersRepository.findOne(
       { id },
       { populate: ['email', 'hashedPassword'] },
@@ -148,6 +201,35 @@ export class UsersService implements OnModuleInit {
       throw new NotFoundException({
         message: 'User not found',
         errors: { id: 'User not found' },
+      });
+    }
+    if (updateUserDto.group) {
+      if (
+        !originUser.roles.includes(Role.SuperAdmin) &&
+        !originUser.roles.includes(Role.Admin)
+      ) {
+        throw new ForbiddenException({
+          message: 'Insufficient permissions',
+          errors: { id: 'Insufficient permissions' },
+        });
+      }
+      const group = await this.entityManager
+        .getRepository(Group)
+        .findOne({ id: updateUserDto.group });
+      if (!group) {
+        throw new BadRequestException({
+          message: 'Group not found',
+          errors: { groupId: 'Group not found' },
+        });
+      }
+      user.group = group;
+      delete updateUserDto.group;
+    }
+    if (id !== originUser.id) {
+      await this.entityManager.flush();
+      throw new ForbiddenException({
+        message: 'Insufficient permissions',
+        errors: { id: 'Insufficient permissions' },
       });
     }
     if (updateUserDto.avatar) {
@@ -200,19 +282,6 @@ export class UsersService implements OnModuleInit {
       user.hashedPassword = await this.hashPassword(updateUserDto.password);
       delete updateUserDto.oldPassword;
       delete updateUserDto.password;
-    }
-    if (updateUserDto.group) {
-      const group = await this.entityManager
-        .getRepository(Group)
-        .findOne({ id: updateUserDto.group });
-      if (!group) {
-        throw new BadRequestException({
-          message: 'Group not found',
-          errors: { groupId: 'Group not found' },
-        });
-      }
-      user.group = group;
-      delete updateUserDto.group;
     }
     this.usersRepository.assign(user, updateUserDto);
     await this.entityManager.flush();

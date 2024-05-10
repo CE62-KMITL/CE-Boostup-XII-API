@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   ArrayMinSize,
   ArrayUnique,
@@ -39,7 +39,7 @@ export class CreateUserDto {
   @IsEnum(Role, { each: true })
   roles: Role[];
 
-  @ApiProperty({ example: '87415e9a-cc80-47e2-a9fb-ac635fce364a' })
+  @ApiPropertyOptional({ example: '87415e9a-cc80-47e2-a9fb-ac635fce364a' })
   @IsUUID('4')
-  group: string;
+  group?: string;
 }
