@@ -65,7 +65,7 @@ export class UsersService implements OnModuleInit {
     }
   }
 
-  async createAvatarDirectory() {
+  async createAvatarDirectory(): Promise<void> {
     const avatarsPath = this.configService.getOrThrow<string>(
       'storages.avatars.path',
     );
