@@ -5,6 +5,7 @@ import {
   IsArray,
   IsEmail,
   IsEnum,
+  IsOptional,
   IsString,
   IsUUID,
   MaxLength,
@@ -41,5 +42,6 @@ export class CreateUserDto {
 
   @ApiPropertyOptional({ example: '87415e9a-cc80-47e2-a9fb-ac635fce364a' })
   @IsUUID('4')
+  @IsOptional()
   group?: string;
 }

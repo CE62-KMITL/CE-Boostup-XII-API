@@ -95,18 +95,28 @@ export class User {
 export class UserResponse {
   id?: string;
   email?: string;
+  roles?: Role[];
   displayName?: string;
   bio?: string;
   group?: Group;
+  totalScore?: number;
+  problemSolvedCount?: number;
+  lastProblemSolvedAt?: Date;
+  lastEmailRequestedAt?: Date;
   createdAt?: Date;
   updatedAt?: Date;
 
   constructor(user: User) {
     this.id = user.id;
     this.email = user.email;
+    this.roles = user.roles;
     this.displayName = user.displayName;
     this.bio = user.bio;
     this.group = user.group;
+    this.totalScore = user.totalScore;
+    this.problemSolvedCount = user.problemSolvedCount;
+    this.lastProblemSolvedAt = user.lastProblemSolvedAt;
+    this.lastEmailRequestedAt = user.lastEmailRequestedAt;
     this.createdAt = user.createdAt;
     this.updatedAt = user.updatedAt;
   }
