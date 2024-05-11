@@ -115,7 +115,7 @@ export class CreateProblemDto {
   @MaxLength(ConfigConstants.problem.maxSolutionLength)
   solution: string;
 
-  @ApiProperty({ example: 'C++17' })
+  @ApiProperty({ example: 'C++17', enum: ProgrammingLanguage })
   @Transform(({ value }) => value.toLowerCase())
   @IsEnum(ProgrammingLanguage)
   solutionLanguage: ProgrammingLanguage;
@@ -169,7 +169,7 @@ export class CreateProblemDto {
   @Min(0)
   score: number;
 
-  @ApiProperty({ example: 'O1' })
+  @ApiProperty({ example: 'O1', enum: OptimizationLevel })
   @Transform(({ value }) => value.toUpperCase())
   @IsEnum(OptimizationLevel)
   optimizationLevel: OptimizationLevel;

@@ -41,7 +41,12 @@ export class User {
   @Property({ type: types.text, lazy: true })
   bio: string;
 
-  @ManyToOne({ entity: () => Group, nullable: true, joinColumn: 'group_id' })
+  @ManyToOne({
+    entity: () => Group,
+    nullable: true,
+    eager: true,
+    joinColumn: 'group_id',
+  })
   group?: Group;
 
   @Formula(

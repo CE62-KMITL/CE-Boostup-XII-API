@@ -62,7 +62,7 @@ export class SavesService {
         errors: { id: 'Save not found' },
       });
     }
-    this.savesRepository.assign(save, updateSaveDto);
+    Object.assign(save, updateSaveDto);
     await this.entityManager.flush();
     return save;
   }

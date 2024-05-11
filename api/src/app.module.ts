@@ -47,7 +47,6 @@ import { UsersModule } from './users/users.module';
         charset: 'utf8mb4',
         loadStrategy: LoadStrategy.JOINED,
         autoLoadEntities: true,
-        allowGlobalContext: true,
         timezone: configService.getOrThrow<string>('database.timezone'),
         debug: configService.getOrThrow<boolean>('database.debug'),
       }),

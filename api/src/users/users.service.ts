@@ -16,9 +16,9 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
+import { isRolesHigher, isSomeRolesIn } from 'src/auth/roles';
 import { Role } from 'src/shared/enums/role.enum';
-import { AuthenticatedRequest } from 'src/shared/interfaces/authenticated-request.interface';
-import { compareRoles, sortRoles } from 'src/shared/roles';
+import { AuthenticatedUser } from 'src/shared/interfaces/authenticated-request.interface';
 
 import { Group } from '../groups/entities/group.entity';
 
@@ -41,8 +41,11 @@ export class UsersService implements OnModuleInit {
   }
 
   async createSuperAdmin(): Promise<void> {
-    const superAdmin = await this.usersRepository.findOne(
-      { email: this.configService.getOrThrow<string>('auth.superAdminEmail') },
+    const em = this.entityManager.fork();
+    const superAdmin = await em.getRepository(User).findOne(
+      {
+        email: this.configService.getOrThrow<string>('auth.superAdminEmail'),
+      },
       { populate: ['hashedPassword'] },
     );
     if (!superAdmin) {
@@ -54,14 +57,14 @@ export class UsersService implements OnModuleInit {
       user.hashedPassword = await this.hashPassword(
         this.configService.getOrThrow<string>('auth.superAdminPassword'),
       );
-      this.entityManager.persistAndFlush(user);
+      em.persistAndFlush(user);
       return;
     }
     if (!superAdmin.hashedPassword) {
       superAdmin.hashedPassword = await this.hashPassword(
         this.configService.getOrThrow<string>('auth.superAdminPassword'),
       );
-      await this.entityManager.flush();
+      await em.flush();
     }
   }
 
@@ -77,7 +80,7 @@ export class UsersService implements OnModuleInit {
   }
 
   async create(
-    originUser: AuthenticatedRequest['user'],
+    originUser: AuthenticatedUser,
     createUserDto: CreateUserDto,
   ): Promise<UserResponse> {
     const emailExists = await this.usersRepository.count({
@@ -98,18 +101,13 @@ export class UsersService implements OnModuleInit {
         errors: { groupId: 'Group not found' },
       });
     }
-    const originUserTopRole =
-      sortRoles(originUser.roles)[0] === Role.Reviewer
-        ? Role.Staff
-        : sortRoles(originUser.roles)[0];
-    const creatingUserTopRole = sortRoles(createUserDto.roles)[0];
-    if (creatingUserTopRole === Role.SuperAdmin) {
-      throw new BadRequestException({
-        message: "Super Admin can't be created",
-        errors: { roles: "Super Admin can't be created" },
+    if (!isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])) {
+      throw new ForbiddenException({
+        message: 'Insufficient permissions',
+        errors: { roles: 'Insufficient permissions' },
       });
     }
-    if (compareRoles(originUserTopRole, creatingUserTopRole) >= 0) {
+    if (!isRolesHigher(originUser.roles, createUserDto.roles)) {
       throw new ForbiddenException({
         message: 'Insufficient permissions',
         errors: { roles: 'Insufficient permissions' },
@@ -125,47 +123,65 @@ export class UsersService implements OnModuleInit {
     return new UserResponse(user);
   }
 
-  async findAll(originUser: AuthenticatedRequest['user']): Promise<User[]> {
-    const populate: (keyof User)[] = [
+  async findAll(originUser: AuthenticatedUser): Promise<User[]> {
+    if (isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])) {
+      const populate = [
+        'email',
+        'roles',
+        'bio',
+        'group',
+        'totalScore',
+        'problemSolvedCount',
+        'lastProblemSolvedAt',
+        'createdAt',
+        'updatedAt',
+      ] as const;
+      return await this.usersRepository.findAll({ populate });
+    }
+    const populate = [
       'bio',
       'group',
       'totalScore',
       'problemSolvedCount',
       'lastProblemSolvedAt',
-    ];
-    if (
-      originUser.roles.includes(Role.Admin) ||
-      originUser.roles.includes(Role.SuperAdmin)
-    ) {
-      populate.push('email');
-      populate.push('roles');
-      populate.push('createdAt');
-      populate.push('updatedAt');
-    }
+      'createdAt',
+      'updatedAt',
+    ] as const;
     return await this.usersRepository.findAll({ populate });
   }
 
-  async findOne(
-    originUser: AuthenticatedRequest['user'],
-    id: string,
-  ): Promise<User> {
-    const populate: (keyof User)[] = [
+  async findOne(originUser: AuthenticatedUser, id: string): Promise<User> {
+    if (isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])) {
+      const populate = [
+        'email',
+        'roles',
+        'bio',
+        'group',
+        'totalScore',
+        'problemSolvedCount',
+        'lastProblemSolvedAt',
+        'lastEmailRequestedAt',
+        'createdAt',
+        'updatedAt',
+      ] as const;
+      const user = await this.usersRepository.findOne({ id }, { populate });
+      if (!user) {
+        throw new NotFoundException({
+          message: 'User not found',
+          errors: { id: 'User not found' },
+        });
+      }
+      return user;
+    }
+    const populate = [
       'bio',
       'group',
       'totalScore',
       'problemSolvedCount',
       'lastProblemSolvedAt',
-    ];
-    if (
-      originUser.roles.includes(Role.Admin) ||
-      originUser.roles.includes(Role.SuperAdmin)
-    ) {
-      populate.push('email');
-      populate.push('roles');
-      populate.push('lastEmailRequestedAt');
-      populate.push('createdAt');
-      populate.push('updatedAt');
-    }
+      'createdAt',
+      'updatedAt',
+    ] as const;
     const user = await this.usersRepository.findOne({ id }, { populate });
     if (!user) {
       throw new NotFoundException({
@@ -176,11 +192,19 @@ export class UsersService implements OnModuleInit {
     return user;
   }
 
-  async findOneInternal(
-    where: FilterQuery<User>,
-    populate: (keyof User)[] = [],
-  ): Promise<User> {
-    const user = await this.usersRepository.findOne(where, { populate });
+  async findOneInternal(where: FilterQuery<User>): Promise<User> {
+    const user = await this.usersRepository.findOne(where, {
+      populate: [
+        'email',
+        'roles',
+        'hashedPassword',
+        'bio',
+        'lastEmailRequestedAt',
+        'avatarFilename',
+        'createdAt',
+        'updatedAt',
+      ],
+    });
     if (!user) {
       throw new NotFoundException({
         message: 'User not found',
@@ -191,20 +215,10 @@ export class UsersService implements OnModuleInit {
   }
 
   async update(
-    originUser: AuthenticatedRequest['user'],
+    originUser: AuthenticatedUser,
     id: string,
     updateUserDto: UpdateUserDto,
   ): Promise<UserResponse> {
-    if (
-      id !== originUser.id &&
-      !originUser.roles.includes(Role.SuperAdmin) &&
-      !originUser.roles.includes(Role.Admin)
-    ) {
-      throw new ForbiddenException({
-        message: 'Insufficient permissions',
-        errors: { id: 'Insufficient permissions' },
-      });
-    }
     const user = await this.usersRepository.findOne(
       { id },
       { populate: ['email', 'hashedPassword'] },
@@ -216,10 +230,7 @@ export class UsersService implements OnModuleInit {
       });
     }
     if (updateUserDto.group) {
-      if (
-        !originUser.roles.includes(Role.SuperAdmin) &&
-        !originUser.roles.includes(Role.Admin)
-      ) {
+      if (!isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])) {
         throw new ForbiddenException({
           message: 'Insufficient permissions',
           errors: { id: 'Insufficient permissions' },
@@ -237,7 +248,10 @@ export class UsersService implements OnModuleInit {
       user.group = group;
       delete updateUserDto.group;
     }
-    if (id !== originUser.id) {
+    if (
+      id !== originUser.id &&
+      !isSomeRolesIn(originUser.roles, [Role.SuperAdmin])
+    ) {
       await this.entityManager.flush();
       throw new ForbiddenException({
         message: 'Insufficient permissions',
@@ -295,7 +309,7 @@ export class UsersService implements OnModuleInit {
       delete updateUserDto.oldPassword;
       delete updateUserDto.password;
     }
-    this.usersRepository.assign(user, updateUserDto);
+    Object.assign(user, updateUserDto);
     await this.entityManager.flush();
     return new UserResponse(user);
   }
@@ -311,17 +325,29 @@ export class UsersService implements OnModuleInit {
         errors: { where: 'User not found' },
       });
     }
-    this.usersRepository.assign(user, data);
+    Object.assign(user, data);
     await this.entityManager.flush();
     return user;
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(originUser: AuthenticatedUser, id: string): Promise<void> {
     const user = await this.usersRepository.findOne({ id });
     if (!user) {
       throw new NotFoundException({
         message: 'User not found',
         errors: { id: 'User not found' },
+      });
+    }
+    if (!isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])) {
+      throw new ForbiddenException({
+        message: 'Insufficient permissions',
+        errors: { id: 'Insufficient permissions' },
+      });
+    }
+    if (!isRolesHigher(originUser.roles, user.roles)) {
+      throw new ForbiddenException({
+        message: 'Insufficient permissions',
+        errors: { id: 'Insufficient permissions' },
       });
     }
     await this.entityManager.removeAndFlush(user);

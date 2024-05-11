@@ -1,13 +1,22 @@
-import { EntityManager, EntityRepository } from '@mikro-orm/mariadb';
+import {
+  EntityManager,
+  EntityRepository,
+  FilterQuery,
+} from '@mikro-orm/mariadb';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Attachment } from 'src/attachments/entities/attachment.entity';
+import { isSomeRolesIn } from 'src/auth/roles';
 import { ProblemTag } from 'src/problem-tags/entities/problem-tag.entity';
 import { PublicationStatus } from 'src/shared/enums/publication-status.enum';
+import { Role } from 'src/shared/enums/role.enum';
+import { AuthenticatedUser } from 'src/shared/interfaces/authenticated-request.interface';
 import { User } from 'src/users/entities/user.entity';
 
 import { CreateProblemDto } from './dto/create-problem.dto';
@@ -23,10 +32,18 @@ export class ProblemsService {
   ) {}
 
   async create(
-    // user: User, // TODO: Add user authentication
+    originUser: AuthenticatedUser,
     createProblemDto: CreateProblemDto,
   ): Promise<Problem> {
-    const user = (await this.entityManager.getRepository(User).findAll())[0];
+    const user = await this.entityManager
+      .getRepository(User)
+      .findOne({ id: originUser.id });
+    if (!user) {
+      throw new UnauthorizedException({
+        message: 'Invalid token',
+        errors: { token: 'Invalid token' },
+      });
+    }
     const problem = new Problem();
     const attachments: Attachment[] = [];
     const tags: ProblemTag[] = [];
@@ -65,33 +82,173 @@ export class ProblemsService {
     return problem;
   }
 
-  async findAll(): Promise<Problem[]> {
-    return await this.problemsRepository.findAll();
+  async findAll(originUser: AuthenticatedUser): Promise<Problem[]> {
+    if (
+      isSomeRolesIn(originUser.roles, [Role.Staff, Role.Admin, Role.SuperAdmin])
+    ) {
+      const populate = [
+        'description',
+        'owner',
+        'publicationStatus',
+        'userSolvedCount',
+        'createdAt',
+        'updatedAt',
+      ] as const;
+      return await this.problemsRepository.findAll({ populate });
+    }
+    const populate = [
+      'description',
+      'owner',
+      'userSolvedCount',
+      'createdAt',
+      'updatedAt',
+    ] as const;
+    return await this.problemsRepository.findAll({
+      where: { publicationStatus: PublicationStatus.Published },
+      populate,
+    });
   }
 
-  async findOne(id: string): Promise<Problem> {
-    const problem = await this.problemsRepository.findOne({ id });
+  async findOne(originUser: AuthenticatedUser, id: string): Promise<Problem> {
+    if (
+      isSomeRolesIn(originUser.roles, [Role.Staff, Role.Admin, Role.SuperAdmin])
+    ) {
+      const populate = [
+        'description',
+        'input',
+        'output',
+        'hint',
+        'hintCost',
+        'testcases',
+        'exampleTestcases',
+        'starterCode',
+        'solution',
+        'solutionLanguage',
+        'allowedHeaders',
+        'bannedFunctions',
+        'timeLimit',
+        'memoryLimit',
+        'optimizationLevel',
+        'attachments',
+        'tags',
+        'owner',
+        'credits',
+        'publicationStatus',
+        'userSolvedCount',
+        'createdAt',
+        'updatedAt',
+      ] as const;
+      const problem = await this.problemsRepository.findOne(
+        { id },
+        { populate },
+      );
+      if (!problem) {
+        throw new NotFoundException({
+          message: 'Problem not found',
+          errors: { id: 'Problem not found' },
+        });
+      }
+      return problem;
+    }
+    const populate = [
+      'description',
+      'input',
+      'output',
+      'hintCost',
+      'exampleTestcases',
+      'starterCode',
+      'allowedHeaders',
+      'bannedFunctions',
+      'timeLimit',
+      'memoryLimit',
+      'optimizationLevel',
+      'attachments',
+      'tags',
+      'owner',
+      'credits',
+      'userSolvedCount',
+      'createdAt',
+      'updatedAt',
+    ] as const;
+    const problem = await this.problemsRepository.findOne({ id }, { populate });
     if (!problem) {
       throw new NotFoundException({
         message: 'Problem not found',
         errors: { id: 'Problem not found' },
       });
     }
+    if (true) {
+      // TODO: If user has unlocked hint
+      this.problemsRepository.populate(problem, ['hint']);
+    }
+    return problem;
+  }
+
+  async findOneInternal(where: FilterQuery<Problem>): Promise<Problem> {
+    const problem = await this.problemsRepository.findOne(where, {
+      populate: [
+        'description',
+        'input',
+        'output',
+        'hint',
+        'hintCost',
+        'testcases',
+        'exampleTestcases',
+        'starterCode',
+        'solution',
+        'solutionLanguage',
+        'allowedHeaders',
+        'bannedFunctions',
+        'timeLimit',
+        'memoryLimit',
+        'optimizationLevel',
+        'attachments',
+        'tags',
+        'owner',
+        'credits',
+        'publicationStatus',
+        'createdAt',
+        'updatedAt',
+      ],
+    });
+    if (!problem) {
+      throw new NotFoundException({
+        message: 'Problem not found',
+        errors: { where: 'Problem not found' },
+      });
+    }
     return problem;
   }
 
   async update(
+    originUser: AuthenticatedUser,
     id: string,
     updateProblemDto: UpdateProblemDto,
   ): Promise<Problem> {
-    const problem = await this.problemsRepository.findOne(
-      { id },
-      { populate: ['attachments', 'tags'] },
-    );
+    const problem = await this.findOneInternal({ id });
     if (!problem) {
       throw new NotFoundException({
         message: 'Problem not found',
         errors: { id: 'Problem not found' },
+      });
+    }
+    if (updateProblemDto.publicationStatus) {
+      if (!isSomeRolesIn(originUser.roles, [Role.Reviewer, Role.SuperAdmin])) {
+        throw new ForbiddenException({
+          message: 'Insufficient permissions',
+          errors: { publicationStatus: 'Insufficient permissions' },
+        });
+      }
+      problem.publicationStatus = updateProblemDto.publicationStatus;
+    }
+    if (
+      problem.owner.id !== originUser.id &&
+      !isSomeRolesIn(originUser.roles, [Role.SuperAdmin])
+    ) {
+      await this.entityManager.flush();
+      throw new ForbiddenException({
+        message: 'Insufficient permissions',
+        errors: { id: 'Insufficient permissions' },
       });
     }
     if (updateProblemDto.attachments) {
@@ -128,17 +285,26 @@ export class ProblemsService {
       problem.tags.set(tags);
       delete updateProblemDto.tags;
     }
-    this.problemsRepository.assign(problem, updateProblemDto);
+    Object.assign(problem, updateProblemDto);
     await this.entityManager.flush();
     return problem;
   }
 
-  async remove(id: string) {
-    const problem = await this.problemsRepository.findOne({ id });
+  async remove(originUser: AuthenticatedUser, id: string) {
+    const problem = await this.findOneInternal({ id });
     if (!problem) {
       throw new NotFoundException({
         message: 'Problem not found',
         errors: { id: 'Problem not found' },
+      });
+    }
+    if (
+      originUser.id !== problem.owner.id &&
+      !isSomeRolesIn(originUser.roles, [Role.SuperAdmin])
+    ) {
+      throw new ForbiddenException({
+        message: 'Insufficient permissions',
+        errors: { id: 'Insufficient permissions' },
       });
     }
     await this.entityManager.removeAndFlush(problem);

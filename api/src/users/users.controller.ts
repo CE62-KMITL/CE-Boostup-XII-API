@@ -91,6 +91,7 @@ export class UsersController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
   async remove(
+    @Req() request: AuthenticatedRequest,
     @Param(
       'id',
       new ParseUUIDPipe({
@@ -100,7 +101,7 @@ export class UsersController {
     )
     id: string,
   ) {
-    return await this.usersService.remove(id);
+    return await this.usersService.remove(request.user, id);
   }
 
   @Public()
@@ -116,9 +117,7 @@ export class UsersController {
     )
     id: string,
   ): Promise<StreamableFile> {
-    const user = await this.usersService.findOneInternal({ id }, [
-      'avatarFilename',
-    ] as const);
+    const user = await this.usersService.findOneInternal({ id });
     if (!user.avatarFilename) {
       throw new NotFoundException({
         message: 'Avatar not found',

@@ -1,7 +1,11 @@
 import * as fs from 'fs';
 import { join } from 'path';
 
-import { EntityManager, EntityRepository } from '@mikro-orm/mariadb';
+import {
+  EntityManager,
+  EntityRepository,
+  FilterQuery,
+} from '@mikro-orm/mariadb';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import {
   BadRequestException,
@@ -9,6 +13,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { isSomeRolesIn } from 'src/auth/roles';
+import { Role } from 'src/shared/enums/role.enum';
+import { AuthenticatedUser } from 'src/shared/interfaces/authenticated-request.interface';
 
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
@@ -40,22 +47,53 @@ export class GroupsService {
     return group;
   }
 
-  async findAll(): Promise<Group[]> {
-    return await this.groupsRepository.findAll({
-      populate: [
+  async findAll(originUser: AuthenticatedUser): Promise<Group[]> {
+    if (isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])) {
+      const populate = [
         'memberCount',
         'totalScore',
         'uniqueTotalScore',
         'problemSolvedCount',
         'uniqueProblemSolvedCount',
         'lastProblemSolvedAt',
-      ],
-    });
+        'createdAt',
+        'updatedAt',
+      ] as const;
+      return await this.groupsRepository.findAll({ populate });
+    }
+    const populate = [
+      'memberCount',
+      'totalScore',
+      'uniqueTotalScore',
+      'problemSolvedCount',
+      'uniqueProblemSolvedCount',
+      'lastProblemSolvedAt',
+    ] as const;
+    return await this.groupsRepository.findAll({ populate });
   }
 
-  async findOne(
-    id: string,
-    populate: (keyof Group)[] = [
+  async findOne(originUser: AuthenticatedUser, id: string): Promise<Group> {
+    if (isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])) {
+      const populate = [
+        'description',
+        'members',
+        'memberCount',
+        'totalScore',
+        'uniqueTotalScore',
+        'problemSolvedCount',
+        'uniqueProblemSolvedCount',
+        'lastProblemSolvedAt',
+      ] as const;
+      const group = await this.groupsRepository.findOne({ id }, { populate });
+      if (!group) {
+        throw new NotFoundException({
+          message: 'Group not found',
+          errors: { id: 'Group not found' },
+        });
+      }
+      return group;
+    }
+    const populate = [
       'members',
       'memberCount',
       'totalScore',
@@ -63,8 +101,9 @@ export class GroupsService {
       'problemSolvedCount',
       'uniqueProblemSolvedCount',
       'lastProblemSolvedAt',
-    ],
-  ): Promise<Group> {
+      'createdAt',
+      'updatedAt',
+    ] as const;
     const group = await this.groupsRepository.findOne({ id }, { populate });
     if (!group) {
       throw new NotFoundException({
@@ -75,8 +114,27 @@ export class GroupsService {
     return group;
   }
 
+  async findOneInternal(where: FilterQuery<Group>): Promise<Group> {
+    const group = await this.groupsRepository.findOne(where, {
+      populate: [
+        'description',
+        'members',
+        'avatarFilename',
+        'createdAt',
+        'updatedAt',
+      ],
+    });
+    if (!group) {
+      throw new NotFoundException({
+        message: 'Group not found',
+        errors: { where: 'Group not found' },
+      });
+    }
+    return group;
+  }
+
   async update(id: string, updateGroupDto: UpdateGroupDto): Promise<Group> {
-    const group = await this.groupsRepository.findOne({ id });
+    const group = await this.findOneInternal({ id });
     if (!group) {
       throw new NotFoundException({
         message: 'Group not found',
@@ -114,13 +172,13 @@ export class GroupsService {
       );
       delete updateGroupDto.avatar;
     }
-    this.groupsRepository.assign(group, updateGroupDto);
+    Object.assign(group, updateGroupDto);
     await this.entityManager.flush();
     return group;
   }
 
   async remove(id: string): Promise<void> {
-    const group = await this.groupsRepository.findOne({ id });
+    const group = await this.findOneInternal({ id });
     if (!group) {
       throw new NotFoundException({
         message: 'Group not found',

@@ -9,8 +9,12 @@ import {
   HttpCode,
   HttpStatus,
   ParseUUIDPipe,
+  Req,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Roles } from 'src/auth/roles.decorator';
+import { Role } from 'src/shared/enums/role.enum';
+import { AuthenticatedRequest } from 'src/shared/interfaces/authenticated-request.interface';
 
 import { CreateProblemDto } from './dto/create-problem.dto';
 import { UpdateProblemDto } from './dto/update-problem.dto';
@@ -22,18 +26,23 @@ import { ProblemsService } from './problems.service';
 export class ProblemsController {
   constructor(private readonly problemsService: ProblemsService) {}
 
+  @Roles(Role.Staff, Role.Admin)
   @Post()
-  async create(@Body() createProblemDto: CreateProblemDto) {
-    return await this.problemsService.create(createProblemDto);
+  async create(
+    @Req() request: AuthenticatedRequest,
+    @Body() createProblemDto: CreateProblemDto,
+  ) {
+    return await this.problemsService.create(request.user, createProblemDto);
   }
 
   @Get()
-  async findAll() {
-    return await this.problemsService.findAll();
+  async findAll(@Req() request: AuthenticatedRequest) {
+    return await this.problemsService.findAll(request.user);
   }
 
   @Get(':id')
   async findOne(
+    @Req() request: AuthenticatedRequest,
     @Param(
       'id',
       new ParseUUIDPipe({
@@ -43,11 +52,13 @@ export class ProblemsController {
     )
     id: string,
   ) {
-    return await this.problemsService.findOne(id);
+    return await this.problemsService.findOne(request.user, id);
   }
 
+  @Roles(Role.Staff, Role.Admin)
   @Patch(':id')
   async update(
+    @Req() request: AuthenticatedRequest,
     @Param(
       'id',
       new ParseUUIDPipe({
@@ -58,12 +69,18 @@ export class ProblemsController {
     id: string,
     @Body() updateProblemDto: UpdateProblemDto,
   ) {
-    return await this.problemsService.update(id, updateProblemDto);
+    return await this.problemsService.update(
+      request.user,
+      id,
+      updateProblemDto,
+    );
   }
 
-  @Delete(':id')
+  @Roles(Role.Staff, Role.Admin)
   @HttpCode(HttpStatus.NO_CONTENT)
+  @Delete(':id')
   async remove(
+    @Req() request: AuthenticatedRequest,
     @Param(
       'id',
       new ParseUUIDPipe({
@@ -73,6 +90,6 @@ export class ProblemsController {
     )
     id: string,
   ) {
-    return await this.problemsService.remove(id);
+    return await this.problemsService.remove(request.user, id);
   }
 }
