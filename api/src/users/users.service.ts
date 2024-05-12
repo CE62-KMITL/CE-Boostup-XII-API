@@ -131,12 +131,6 @@ export class UsersService implements OnModuleInit {
     options: FindAllDto,
   ): Promise<PaginatedResponse<UserResponse>> {
     const where: FilterQuery<User> = {};
-    if (options.search) {
-      where.$or = [
-        { displayName: { $like: `%${options.search}%` } },
-        { email: { $like: `%${options.search}%` } },
-      ];
-    }
     if (options.group !== undefined) {
       where.group = options.group;
     }
@@ -144,6 +138,12 @@ export class UsersService implements OnModuleInit {
     const limit = options.perPage;
     let orderBy = null;
     if (isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])) {
+      if (options.search) {
+        where.$or = [
+          { displayName: { $like: `%${options.search}%` } },
+          { email: { $like: `%${options.search}%` } },
+        ];
+      }
       const populate = [
         'email',
         'roles',
@@ -193,6 +193,9 @@ export class UsersService implements OnModuleInit {
         perPage: options.perPage,
         total: count,
       };
+    }
+    if (options.search) {
+      where.$or = [{ displayName: { $like: `%${options.search}%` } }];
     }
     const populate = [
       'bio',
