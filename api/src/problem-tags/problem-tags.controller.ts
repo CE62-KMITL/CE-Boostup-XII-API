@@ -9,8 +9,12 @@ import {
   HttpCode,
   HttpStatus,
   ParseUUIDPipe,
+  Req,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Roles } from 'src/auth/roles.decorator';
+import { Role } from 'src/shared/enums/role.enum';
+import { AuthenticatedRequest } from 'src/shared/interfaces/authenticated-request.interface';
 
 import { CreateProblemTagDto } from './dto/create-problem-tag.dto';
 import { UpdateProblemTagDto } from './dto/update-problem-tag.dto';
@@ -22,18 +26,26 @@ import { ProblemTagsService } from './problem-tags.service';
 export class ProblemTagsController {
   constructor(private readonly problemTagsService: ProblemTagsService) {}
 
+  @Roles(Role.Staff, Role.Admin)
   @Post()
-  async create(@Body() createProblemTagDto: CreateProblemTagDto) {
-    return await this.problemTagsService.create(createProblemTagDto);
+  async create(
+    @Req() request: AuthenticatedRequest,
+    @Body() createProblemTagDto: CreateProblemTagDto,
+  ) {
+    return await this.problemTagsService.create(
+      request.user,
+      createProblemTagDto,
+    );
   }
 
   @Get()
-  async findAll() {
-    return await this.problemTagsService.findAll();
+  async findAll(@Req() request: AuthenticatedRequest) {
+    return await this.problemTagsService.findAll(request.user);
   }
 
   @Get(':id')
   async findOne(
+    @Req() request: AuthenticatedRequest,
     @Param(
       'id',
       new ParseUUIDPipe({
@@ -43,11 +55,13 @@ export class ProblemTagsController {
     )
     id: string,
   ) {
-    return await this.problemTagsService.findOne(id);
+    return await this.problemTagsService.findOne(request.user, id);
   }
 
+  @Roles(Role.Staff, Role.Admin)
   @Patch(':id')
   async update(
+    @Req() request: AuthenticatedRequest,
     @Param(
       'id',
       new ParseUUIDPipe({
@@ -58,12 +72,18 @@ export class ProblemTagsController {
     id: string,
     @Body() updateProblemTagDto: UpdateProblemTagDto,
   ) {
-    return await this.problemTagsService.update(id, updateProblemTagDto);
+    return await this.problemTagsService.update(
+      request.user,
+      id,
+      updateProblemTagDto,
+    );
   }
 
-  @Delete(':id')
+  @Roles(Role.Staff, Role.Admin)
   @HttpCode(HttpStatus.NO_CONTENT)
+  @Delete(':id')
   async remove(
+    @Req() request: AuthenticatedRequest,
     @Param(
       'id',
       new ParseUUIDPipe({
@@ -73,6 +93,6 @@ export class ProblemTagsController {
     )
     id: string,
   ) {
-    return await this.problemTagsService.remove(id);
+    return await this.problemTagsService.remove(request.user, id);
   }
 }

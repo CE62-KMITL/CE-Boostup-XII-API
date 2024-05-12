@@ -20,6 +20,8 @@ export default () => ({
     },
   },
   auth: {
+    superAdminEmail: process.env.SUPER_ADMIN_EMAIL,
+    superAdminPassword: process.env.SUPER_ADMIN_PASSWORD,
     jwtSecret: process.env.JWT_SECRET,
     jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
     mailRequestCooldown: process.env.MAIL_REQUEST_COOLDOWN || '15m',

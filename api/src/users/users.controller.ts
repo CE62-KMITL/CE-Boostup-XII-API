@@ -13,12 +13,18 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Req,
   Res,
   StreamableFile,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
+import { Public } from 'src/auth/public.decorator';
+import { Role } from 'src/shared/enums/role.enum';
+import { AuthenticatedRequest } from 'src/shared/interfaces/authenticated-request.interface';
+
+import { Roles } from '../auth/roles.decorator';
 
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -33,18 +39,25 @@ export class UsersController {
     private readonly usersService: UsersService,
   ) {}
 
+  @Roles(Role.Admin)
   @Post()
-  async create(@Body() createUserDto: CreateUserDto) {
-    return await this.usersService.create(createUserDto);
+  async create(
+    @Req() request: AuthenticatedRequest,
+    @Body() createUserDto: CreateUserDto,
+  ) {
+    return await this.usersService.create(request.user, createUserDto);
   }
 
+  @Roles(Role.User, Role.Staff, Role.Admin)
   @Get()
-  async findAll() {
-    return await this.usersService.findAll();
+  async findAll(@Req() request: AuthenticatedRequest) {
+    return await this.usersService.findAll(request.user);
   }
 
+  @Roles(Role.User, Role.Staff)
   @Get(':id')
   async findOne(
+    @Req() request: AuthenticatedRequest,
     @Param(
       'id',
       new ParseUUIDPipe({
@@ -54,11 +67,13 @@ export class UsersController {
     )
     id: string,
   ) {
-    return await this.usersService.findOne(id);
+    return await this.usersService.findOne(request.user, id);
   }
 
+  @Roles(Role.User, Role.Staff, Role.Admin)
   @Patch(':id')
   async update(
+    @Req() request: AuthenticatedRequest,
     @Param(
       'id',
       new ParseUUIDPipe({
@@ -69,12 +84,14 @@ export class UsersController {
     id: string,
     @Body() updateUserDto: UpdateUserDto,
   ) {
-    return await this.usersService.update(id, updateUserDto);
+    return await this.usersService.update(request.user, id, updateUserDto);
   }
 
-  @Delete(':id')
+  @Roles(Role.Admin)
   @HttpCode(HttpStatus.NO_CONTENT)
+  @Delete(':id')
   async remove(
+    @Req() request: AuthenticatedRequest,
     @Param(
       'id',
       new ParseUUIDPipe({
@@ -84,9 +101,10 @@ export class UsersController {
     )
     id: string,
   ) {
-    return await this.usersService.remove(id);
+    return await this.usersService.remove(request.user, id);
   }
 
+  @Public()
   @Get(':id/avatar')
   async getAvatar(
     @Res({ passthrough: true }) res: Response,
@@ -99,9 +117,7 @@ export class UsersController {
     )
     id: string,
   ): Promise<StreamableFile> {
-    const user = await this.usersService.findOne(id, [
-      'avatarFilename',
-    ] as const);
+    const user = await this.usersService.findOneInternal({ id });
     if (!user.avatarFilename) {
       throw new NotFoundException({
         message: 'Avatar not found',

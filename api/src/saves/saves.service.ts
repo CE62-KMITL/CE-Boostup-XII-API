@@ -1,8 +1,19 @@
-import { EntityManager, EntityRepository } from '@mikro-orm/mariadb';
+import {
+  EntityManager,
+  EntityRepository,
+  FilterQuery,
+} from '@mikro-orm/mariadb';
 import { InjectRepository } from '@mikro-orm/nestjs';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { isSomeRolesIn } from 'src/auth/roles';
 import { Problem } from 'src/problems/entities/problem.entity';
-import { User } from 'src/users/entities/user.entity';
+import { Role } from 'src/shared/enums/role.enum';
+import { AuthenticatedUser } from 'src/shared/interfaces/authenticated-request.interface';
+import { UsersService } from 'src/users/users.service';
 
 import { CreateSaveDto } from './dto/create-save.dto';
 import { UpdateSaveDto } from './dto/update-save.dto';
@@ -14,14 +25,15 @@ export class SavesService {
     @InjectRepository(Save)
     private readonly savesRepository: EntityRepository<Save>,
     private readonly entityManager: EntityManager,
+    private readonly usersService: UsersService,
   ) {}
 
   async create(
-    // user: User, // TODO: Add user authentication
+    originUser: AuthenticatedUser,
     createSaveDto: CreateSaveDto,
   ): Promise<Save> {
     // TODO: Add rate limiting
-    const user = (await this.entityManager.getRepository(User).findAll())[0];
+    const user = await this.usersService.findOneInternal({ id: originUser.id });
     const problem = await this.entityManager
       .getRepository(Problem)
       .findOne({ id: createSaveDto.problemId });
@@ -32,19 +44,25 @@ export class SavesService {
       });
     }
     const save = new Save();
-    save.user = user;
+    save.owner = user;
     save.problem = problem;
     save.code = createSaveDto.code;
     await this.entityManager.persistAndFlush(save);
     return save;
   }
 
-  async findAll(): Promise<Save[]> {
-    return await this.savesRepository.findAll();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async findAll(originUser: AuthenticatedUser): Promise<Save[]> {
+    // TODO: Add permission control
+    const populate = ['owner', 'problem'] as const;
+    return await this.savesRepository.findAll({ populate });
   }
 
-  async findOne(id: string): Promise<Save> {
-    const save = await this.savesRepository.findOne({ id });
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async findOne(originUser: AuthenticatedUser, id: string): Promise<Save> {
+    // TODO: Add permission control
+    const populate = ['owner', 'problem', 'code'] as const;
+    const save = await this.savesRepository.findOne({ id }, { populate });
     if (!save) {
       throw new NotFoundException({
         message: 'Save not found',
@@ -54,25 +72,60 @@ export class SavesService {
     return save;
   }
 
-  async update(id: string, updateSaveDto: UpdateSaveDto): Promise<Save> {
-    const save = await this.savesRepository.findOne({ id });
+  async findOneInternal(where: FilterQuery<Save>): Promise<Save> {
+    const save = await this.savesRepository.findOne(where, {
+      populate: ['owner', 'problem', 'code'],
+    });
+    if (!save) {
+      throw new NotFoundException({
+        message: 'Save not found',
+        errors: { where: 'Save not found' },
+      });
+    }
+    return save;
+  }
+
+  async update(
+    originUser: AuthenticatedUser,
+    id: string,
+    updateSaveDto: UpdateSaveDto,
+  ): Promise<Save> {
+    const save = await this.findOneInternal({ id });
     if (!save) {
       throw new NotFoundException({
         message: 'Save not found',
         errors: { id: 'Save not found' },
       });
     }
-    this.savesRepository.assign(save, updateSaveDto);
+    if (
+      save.owner.id !== originUser.id &&
+      !isSomeRolesIn(originUser.roles, [Role.SuperAdmin])
+    ) {
+      throw new ForbiddenException({
+        message: 'Insufficient permissions',
+        errors: { id: 'Insufficient permissions' },
+      });
+    }
+    Object.assign(save, updateSaveDto);
     await this.entityManager.flush();
     return save;
   }
 
-  async remove(id: string): Promise<void> {
-    const save = await this.savesRepository.findOne({ id });
+  async remove(originUser: AuthenticatedUser, id: string): Promise<void> {
+    const save = await this.findOneInternal({ id });
     if (!save) {
       throw new NotFoundException({
         message: 'Save not found',
         errors: { id: 'Save not found' },
+      });
+    }
+    if (
+      save.owner.id !== originUser.id &&
+      !isSomeRolesIn(originUser.roles, [Role.SuperAdmin])
+    ) {
+      throw new ForbiddenException({
+        message: 'Insufficient permissions',
+        errors: { id: 'Insufficient permissions' },
       });
     }
     await this.entityManager.removeAndFlush(save);

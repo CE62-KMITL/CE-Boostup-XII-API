@@ -1,5 +1,6 @@
 import {
   Entity,
+  Enum,
   Formula,
   ManyToOne,
   PrimaryKey,
@@ -8,6 +9,7 @@ import {
 } from '@mikro-orm/mariadb';
 import { ConfigConstants } from 'src/config/config-constants';
 import { Group } from 'src/groups/entities/group.entity';
+import { Role } from 'src/shared/enums/role.enum';
 import { v4 as uuidv4 } from 'uuid';
 
 @Entity()
@@ -24,6 +26,9 @@ export class User {
   })
   email: string;
 
+  @Enum({ items: () => Role, array: true, lazy: true })
+  roles: Role[];
+
   @Property({ type: types.string, length: 255, lazy: true })
   hashedPassword: string;
 
@@ -36,8 +41,13 @@ export class User {
   @Property({ type: types.text, lazy: true })
   bio: string;
 
-  @ManyToOne({ entity: () => Group, joinColumn: 'group_id' })
-  group: Group;
+  @ManyToOne({
+    entity: () => Group,
+    nullable: true,
+    eager: true,
+    joinColumn: 'group_id',
+  })
+  group?: Group;
 
   @Formula(
     (alias) =>
@@ -72,8 +82,14 @@ export class User {
   @Property({ type: types.datetime, lazy: true, onUpdate: () => new Date() })
   updatedAt: Date = new Date();
 
-  constructor(email: string, displayName: string, group: Group) {
+  constructor(
+    email: string,
+    roles: Role[],
+    displayName: string,
+    group?: Group,
+  ) {
     this.email = email;
+    this.roles = roles;
     this.displayName = displayName;
     this.group = group;
     this.bio = '';
@@ -84,18 +100,28 @@ export class User {
 export class UserResponse {
   id?: string;
   email?: string;
+  roles?: Role[];
   displayName?: string;
   bio?: string;
   group?: Group;
+  totalScore?: number;
+  problemSolvedCount?: number;
+  lastProblemSolvedAt?: Date;
+  lastEmailRequestedAt?: Date;
   createdAt?: Date;
   updatedAt?: Date;
 
   constructor(user: User) {
     this.id = user.id;
     this.email = user.email;
+    this.roles = user.roles;
     this.displayName = user.displayName;
     this.bio = user.bio;
     this.group = user.group;
+    this.totalScore = user.totalScore;
+    this.problemSolvedCount = user.problemSolvedCount;
+    this.lastProblemSolvedAt = user.lastProblemSolvedAt;
+    this.lastEmailRequestedAt = user.lastEmailRequestedAt;
     this.createdAt = user.createdAt;
     this.updatedAt = user.updatedAt;
   }

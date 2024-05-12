@@ -14,18 +14,18 @@ export class Save {
   @PrimaryKey({ type: types.uuid })
   id: string = uuidv4();
 
-  @ManyToOne({ entity: () => User, joinColumn: 'user_id' })
-  user: User;
+  @ManyToOne({ entity: () => User, joinColumn: 'owner_id' })
+  owner: User;
 
   @ManyToOne({ entity: () => Problem, joinColumn: 'problem_id' })
   problem: Problem;
 
-  @Property({ type: types.text })
+  @Property({ type: types.text, lazy: true })
   code: string;
 
-  @Property({ type: types.datetime })
+  @Property({ type: types.datetime, lazy: true })
   createdAt: Date = new Date();
 
-  @Property({ type: types.datetime, onUpdate: () => new Date() })
+  @Property({ type: types.datetime, lazy: true, onUpdate: () => new Date() })
   updatedAt: Date = new Date();
 }

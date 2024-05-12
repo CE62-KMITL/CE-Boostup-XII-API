@@ -1,5 +1,12 @@
-import { Entity, PrimaryKey, Property, types } from '@mikro-orm/mariadb';
+import {
+  Entity,
+  ManyToOne,
+  PrimaryKey,
+  Property,
+  types,
+} from '@mikro-orm/mariadb';
 import { ConfigConstants } from 'src/config/config-constants';
+import { User } from 'src/users/entities/user.entity';
 import { v4 as uuidv4 } from 'uuid';
 
 @Entity()
@@ -16,6 +23,9 @@ export class ProblemTag {
 
   @Property({ type: types.text, lazy: true })
   description: string;
+
+  @ManyToOne({ entity: () => User })
+  owner: User;
 
   @Property({ type: types.datetime, lazy: true })
   createdAt: Date = new Date();

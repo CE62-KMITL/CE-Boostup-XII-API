@@ -1,12 +1,18 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  ArrayMinSize,
+  ArrayUnique,
+  IsArray,
   IsEmail,
+  IsEnum,
+  IsOptional,
   IsString,
   IsUUID,
   MaxLength,
   MinLength,
 } from 'class-validator';
 import { ConfigConstants } from 'src/config/config-constants';
+import { Role } from 'src/shared/enums/role.enum';
 
 export class CreateUserDto {
   @ApiProperty({
@@ -27,7 +33,15 @@ export class CreateUserDto {
   @IsEmail()
   email: string;
 
-  @ApiProperty({ example: '87415e9a-cc80-47e2-a9fb-ac635fce364a' })
+  @ApiProperty({ minLength: 1, example: ['User'] })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayUnique()
+  @IsEnum(Role, { each: true })
+  roles: Role[];
+
+  @ApiPropertyOptional({ example: '87415e9a-cc80-47e2-a9fb-ac635fce364a' })
   @IsUUID('4')
-  groupId: string;
+  @IsOptional()
+  group?: string;
 }

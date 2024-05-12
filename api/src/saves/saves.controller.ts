@@ -9,8 +9,10 @@ import {
   HttpCode,
   HttpStatus,
   ParseUUIDPipe,
+  Req,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { AuthenticatedRequest } from 'src/shared/interfaces/authenticated-request.interface';
 
 import { CreateSaveDto } from './dto/create-save.dto';
 import { UpdateSaveDto } from './dto/update-save.dto';
@@ -23,17 +25,21 @@ export class SavesController {
   constructor(private readonly savesService: SavesService) {}
 
   @Post()
-  async create(@Body() createSaveDto: CreateSaveDto) {
-    return await this.savesService.create(createSaveDto);
+  async create(
+    @Req() request: AuthenticatedRequest,
+    @Body() createSaveDto: CreateSaveDto,
+  ) {
+    return await this.savesService.create(request.user, createSaveDto);
   }
 
   @Get()
-  async findAll() {
-    return await this.savesService.findAll();
+  async findAll(@Req() request: AuthenticatedRequest) {
+    return await this.savesService.findAll(request.user);
   }
 
   @Get(':id')
   async findOne(
+    @Req() request: AuthenticatedRequest,
     @Param(
       'id',
       new ParseUUIDPipe({
@@ -43,11 +49,12 @@ export class SavesController {
     )
     id: string,
   ) {
-    return await this.savesService.findOne(id);
+    return await this.savesService.findOne(request.user, id);
   }
 
   @Patch(':id')
   async update(
+    @Req() request: AuthenticatedRequest,
     @Param(
       'id',
       new ParseUUIDPipe({
@@ -58,12 +65,13 @@ export class SavesController {
     id: string,
     @Body() updateSaveDto: UpdateSaveDto,
   ) {
-    return await this.savesService.update(id, updateSaveDto);
+    return await this.savesService.update(request.user, id, updateSaveDto);
   }
 
-  @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @Delete(':id')
   async remove(
+    @Req() request: AuthenticatedRequest,
     @Param(
       'id',
       new ParseUUIDPipe({
@@ -73,6 +81,6 @@ export class SavesController {
     )
     id: string,
   ) {
-    return await this.savesService.remove(id);
+    return await this.savesService.remove(request.user, id);
   }
 }

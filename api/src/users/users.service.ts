@@ -9,11 +9,16 @@ import {
 import { InjectRepository } from '@mikro-orm/nestjs';
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
+import { isRolesHigher, isSomeRolesIn } from 'src/auth/roles';
+import { Role } from 'src/shared/enums/role.enum';
+import { AuthenticatedUser } from 'src/shared/interfaces/authenticated-request.interface';
 
 import { Group } from '../groups/entities/group.entity';
 
@@ -22,7 +27,7 @@ import { UpdateUserDto, UpdateUserInternalDto } from './dto/update-user.dto';
 import { User, UserResponse } from './entities/user.entity';
 
 @Injectable()
-export class UsersService {
+export class UsersService implements OnModuleInit {
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: EntityRepository<User>,
@@ -30,7 +35,54 @@ export class UsersService {
     private readonly configService: ConfigService,
   ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
+  onModuleInit() {
+    this.createSuperAdmin();
+    this.createAvatarDirectory();
+  }
+
+  async createSuperAdmin(): Promise<void> {
+    const em = this.entityManager.fork();
+    const superAdmin = await em.getRepository(User).findOne(
+      {
+        email: this.configService.getOrThrow<string>('auth.superAdminEmail'),
+      },
+      { populate: ['hashedPassword'] },
+    );
+    if (!superAdmin) {
+      const user = new User(
+        this.configService.getOrThrow<string>('auth.superAdminEmail'),
+        [Role.SuperAdmin],
+        'Super Admin',
+      );
+      user.hashedPassword = await this.hashPassword(
+        this.configService.getOrThrow<string>('auth.superAdminPassword'),
+      );
+      em.persistAndFlush(user);
+      return;
+    }
+    if (!superAdmin.hashedPassword) {
+      superAdmin.hashedPassword = await this.hashPassword(
+        this.configService.getOrThrow<string>('auth.superAdminPassword'),
+      );
+      await em.flush();
+    }
+  }
+
+  async createAvatarDirectory(): Promise<void> {
+    const avatarsPath = this.configService.getOrThrow<string>(
+      'storages.avatars.path',
+    );
+    try {
+      await fs.promises.access(avatarsPath);
+    } catch (error) {
+      await fs.promises.mkdir(avatarsPath, { recursive: true });
+    }
+  }
+
+  async create(
+    originUser: AuthenticatedUser,
+    createUserDto: CreateUserDto,
+  ): Promise<UserResponse> {
     const emailExists = await this.usersRepository.count({
       email: createUserDto.email,
     });
@@ -42,44 +94,94 @@ export class UsersService {
     }
     const group = await this.entityManager
       .getRepository(Group)
-      .findOne({ id: createUserDto.groupId });
+      .findOne({ id: createUserDto.group });
     if (!group) {
       throw new BadRequestException({
         message: 'Group not found',
         errors: { groupId: 'Group not found' },
       });
     }
+    if (!isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])) {
+      throw new ForbiddenException({
+        message: 'Insufficient permissions',
+        errors: { roles: 'Insufficient permissions' },
+      });
+    }
+    if (!isRolesHigher(originUser.roles, createUserDto.roles)) {
+      throw new ForbiddenException({
+        message: 'Insufficient permissions',
+        errors: { roles: 'Insufficient permissions' },
+      });
+    }
     const user = new User(
       createUserDto.email,
+      createUserDto.roles,
       createUserDto.displayName,
       group,
     );
     await this.entityManager.persistAndFlush(user);
-    return user;
+    return new UserResponse(user);
   }
 
-  async findAll(): Promise<User[]> {
-    return await this.usersRepository.findAll({
-      populate: [
+  async findAll(originUser: AuthenticatedUser): Promise<User[]> {
+    if (isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])) {
+      const populate = [
+        'email',
+        'roles',
         'bio',
         'group',
         'totalScore',
         'problemSolvedCount',
         'lastProblemSolvedAt',
-      ],
-    });
-  }
-
-  async findOne(
-    id: string,
-    populate: (keyof User)[] = [
+        'createdAt',
+        'updatedAt',
+      ] as const;
+      return await this.usersRepository.findAll({ populate });
+    }
+    const populate = [
       'bio',
       'group',
       'totalScore',
       'problemSolvedCount',
       'lastProblemSolvedAt',
-    ],
-  ): Promise<User> {
+      'createdAt',
+      'updatedAt',
+    ] as const;
+    return await this.usersRepository.findAll({ populate });
+  }
+
+  async findOne(originUser: AuthenticatedUser, id: string): Promise<User> {
+    if (isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])) {
+      const populate = [
+        'email',
+        'roles',
+        'bio',
+        'group',
+        'totalScore',
+        'problemSolvedCount',
+        'lastProblemSolvedAt',
+        'lastEmailRequestedAt',
+        'createdAt',
+        'updatedAt',
+      ] as const;
+      const user = await this.usersRepository.findOne({ id }, { populate });
+      if (!user) {
+        throw new NotFoundException({
+          message: 'User not found',
+          errors: { id: 'User not found' },
+        });
+      }
+      return user;
+    }
+    const populate = [
+      'bio',
+      'group',
+      'totalScore',
+      'problemSolvedCount',
+      'lastProblemSolvedAt',
+      'createdAt',
+      'updatedAt',
+    ] as const;
     const user = await this.usersRepository.findOne({ id }, { populate });
     if (!user) {
       throw new NotFoundException({
@@ -90,11 +192,19 @@ export class UsersService {
     return user;
   }
 
-  async findOneInternal(
-    where: FilterQuery<User>,
-    populate: (keyof User)[] = [],
-  ): Promise<User> {
-    const user = await this.usersRepository.findOne(where, { populate });
+  async findOneInternal(where: FilterQuery<User>): Promise<User> {
+    const user = await this.usersRepository.findOne(where, {
+      populate: [
+        'email',
+        'roles',
+        'hashedPassword',
+        'bio',
+        'lastEmailRequestedAt',
+        'avatarFilename',
+        'createdAt',
+        'updatedAt',
+      ],
+    });
     if (!user) {
       throw new NotFoundException({
         message: 'User not found',
@@ -105,17 +215,44 @@ export class UsersService {
   }
 
   async update(
+    originUser: AuthenticatedUser,
     id: string,
     updateUserDto: UpdateUserDto,
   ): Promise<UserResponse> {
-    const user = await this.usersRepository.findOne(
-      { id },
-      { populate: ['email', 'hashedPassword'] },
-    );
+    const user = await this.findOneInternal({ id });
     if (!user) {
       throw new NotFoundException({
         message: 'User not found',
         errors: { id: 'User not found' },
+      });
+    }
+    if (updateUserDto.group) {
+      if (!isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])) {
+        throw new ForbiddenException({
+          message: 'Insufficient permissions',
+          errors: { id: 'Insufficient permissions' },
+        });
+      }
+      const group = await this.entityManager
+        .getRepository(Group)
+        .findOne({ id: updateUserDto.group });
+      if (!group) {
+        throw new BadRequestException({
+          message: 'Group not found',
+          errors: { groupId: 'Group not found' },
+        });
+      }
+      user.group = group;
+      delete updateUserDto.group;
+    }
+    if (
+      id !== originUser.id &&
+      !isSomeRolesIn(originUser.roles, [Role.SuperAdmin])
+    ) {
+      await this.entityManager.flush();
+      throw new ForbiddenException({
+        message: 'Insufficient permissions',
+        errors: { id: 'Insufficient permissions' },
       });
     }
     if (updateUserDto.avatar) {
@@ -169,20 +306,7 @@ export class UsersService {
       delete updateUserDto.oldPassword;
       delete updateUserDto.password;
     }
-    if (updateUserDto.groupId) {
-      const group = await this.entityManager
-        .getRepository(Group)
-        .findOne({ id: updateUserDto.groupId });
-      if (!group) {
-        throw new BadRequestException({
-          message: 'Group not found',
-          errors: { groupId: 'Group not found' },
-        });
-      }
-      user.group = group;
-      delete updateUserDto.groupId;
-    }
-    this.usersRepository.assign(user, updateUserDto);
+    Object.assign(user, updateUserDto);
     await this.entityManager.flush();
     return new UserResponse(user);
   }
@@ -191,24 +315,36 @@ export class UsersService {
     where: FilterQuery<User>,
     data: UpdateUserInternalDto,
   ): Promise<User> {
-    const user = await this.usersRepository.findOne(where, { populate: ['*'] });
+    const user = await this.findOneInternal(where);
     if (!user) {
       throw new NotFoundException({
         message: 'User not found',
         errors: { where: 'User not found' },
       });
     }
-    this.usersRepository.assign(user, data);
+    Object.assign(user, data);
     await this.entityManager.flush();
     return user;
   }
 
-  async remove(id: string): Promise<void> {
-    const user = await this.usersRepository.findOne({ id });
+  async remove(originUser: AuthenticatedUser, id: string): Promise<void> {
+    const user = await this.findOneInternal({ id });
     if (!user) {
       throw new NotFoundException({
         message: 'User not found',
         errors: { id: 'User not found' },
+      });
+    }
+    if (!isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])) {
+      throw new ForbiddenException({
+        message: 'Insufficient permissions',
+        errors: { id: 'Insufficient permissions' },
+      });
+    }
+    if (!isRolesHigher(originUser.roles, user.roles)) {
+      throw new ForbiddenException({
+        message: 'Insufficient permissions',
+        errors: { id: 'Insufficient permissions' },
       });
     }
     await this.entityManager.removeAndFlush(user);
@@ -216,7 +352,7 @@ export class UsersService {
   }
 
   async removeInternal(where: FilterQuery<User>): Promise<void> {
-    const user = await this.usersRepository.findOne(where);
+    const user = await this.findOneInternal(where);
     if (!user) {
       throw new NotFoundException({
         message: 'User not found',
@@ -232,10 +368,7 @@ export class UsersService {
   }
 
   async validatePassword(email: string, password: string): Promise<User> {
-    const user = await this.usersRepository.findOne(
-      { email },
-      { populate: ['hashedPassword'] },
-    );
+    const user = await this.findOneInternal({ email });
     if (!user) {
       throw new BadRequestException({
         message: 'Invalid email or password',

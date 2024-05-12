@@ -38,7 +38,7 @@ export class Problem {
   })
   title: string;
 
-  @Property({ type: types.text })
+  @Property({ type: types.text, lazy: true })
   description: string;
 
   @Property({ type: types.text, lazy: true })
@@ -100,10 +100,17 @@ export class Problem {
     this,
   );
 
-  @ManyToMany({ entity: () => ProblemTag, eager: true })
+  @ManyToMany({
+    entity: () => ProblemTag,
+    pivotTable: 'problem_tags',
+    joinColumn: 'problem_tag_id',
+    inverseJoinColumn: 'problem_id',
+    owner: true,
+    eager: true,
+  })
   tags: Collection<ProblemTag, object> = new Collection<ProblemTag>(this);
 
-  @ManyToOne({ entity: () => User, eager: true })
+  @ManyToOne({ entity: () => User })
   owner: User;
 
   @Property({
@@ -119,14 +126,14 @@ export class Problem {
   @Formula(
     (alias) =>
       `(SELECT COUNT(DISTINCT \`user_id\`) FROM \`submission\` WHERE \`submission\`.\`problem_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1)`,
-    { type: types.integer },
+    { type: types.integer, serializer: (value) => +value, lazy: true },
   )
   userSolvedCount: number;
 
-  @Property({ type: types.datetime })
+  @Property({ type: types.datetime, lazy: true })
   createdAt: Date = new Date();
 
-  @Property({ type: types.datetime, onUpdate: () => new Date() })
+  @Property({ type: types.datetime, lazy: true, onUpdate: () => new Date() })
   updatedAt: Date = new Date();
 }
 

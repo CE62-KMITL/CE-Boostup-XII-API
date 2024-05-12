@@ -15,7 +15,7 @@ export class Attachment {
   @Property({ type: types.text })
   name: string;
 
-  @Property({ type: types.text })
+  @Property({ type: types.text, lazy: true })
   filename: string;
 
   @Property({ type: types.string, length: 255 })
@@ -32,6 +32,6 @@ export class Attachment {
   @ManyToOne({ entity: () => User, joinColumn: 'owner_id' })
   owner: User;
 
-  @Property({ type: types.datetime })
+  @Property({ type: types.datetime, lazy: true })
   createdAt: Date = new Date();
 }

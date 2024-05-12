@@ -23,7 +23,7 @@ export class Group {
   })
   name: string;
 
-  @Property({ type: types.text })
+  @Property({ type: types.text, lazy: true })
   description: string;
 
   @OneToMany({ entity: () => User, mappedBy: (user) => user.group })
