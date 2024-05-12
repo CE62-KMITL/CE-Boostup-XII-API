@@ -103,7 +103,7 @@ export class Problem {
   @ManyToMany({
     entity: () => ProblemTag,
     pivotTable: 'problem_tags',
-    joinColumn: 'tag_id',
+    joinColumn: 'problem_tag_id',
     inverseJoinColumn: 'problem_id',
     owner: true,
     eager: true,
@@ -126,7 +126,7 @@ export class Problem {
   @Formula(
     (alias) =>
       `(SELECT COUNT(DISTINCT \`user_id\`) FROM \`submission\` WHERE \`submission\`.\`problem_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1)`,
-    { type: types.integer, lazy: true },
+    { type: types.integer, serializer: (value) => +value, lazy: true },
   )
   userSolvedCount: number;
 
