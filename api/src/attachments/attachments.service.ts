@@ -18,7 +18,7 @@ import { ConfigService } from '@nestjs/config';
 import { isSomeRolesIn } from 'src/auth/roles';
 import { Role } from 'src/shared/enums/role.enum';
 import { AuthenticatedUser } from 'src/shared/interfaces/authenticated-request.interface';
-import { User } from 'src/users/entities/user.entity';
+import { UsersService } from 'src/users/users.service';
 
 import { CreateAttachmentDto } from './dto/create-attachment.dto';
 import { Attachment } from './entities/attachment.entity';
@@ -30,6 +30,7 @@ export class AttachmentsService implements OnModuleInit {
     private readonly attachmentsRepository: EntityRepository<Attachment>,
     private readonly entityManager: EntityManager,
     private readonly configService: ConfigService,
+    private readonly usersService: UsersService,
   ) {}
 
   onModuleInit() {
@@ -53,9 +54,7 @@ export class AttachmentsService implements OnModuleInit {
     file: Express.Multer.File,
   ): Promise<Attachment> {
     // TODO: Add rate limiting
-    const user = await this.entityManager
-      .getRepository(User)
-      .findOne({ id: originUser.id });
+    const user = await this.usersService.findOneInternal({ id: originUser.id });
     if (!user) {
       throw new UnauthorizedException({
         message: 'Invalid token',

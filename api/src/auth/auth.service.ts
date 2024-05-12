@@ -24,11 +24,7 @@ export class AuthService {
   }
 
   async requestAccountCreation(email: string, siteUrl: string) {
-    const user = await this.usersService.findOneInternal({ email }, [
-      'email',
-      'hashedPassword',
-      'lastEmailRequestedAt',
-    ]);
+    const user = await this.usersService.findOneInternal({ email });
     if (!user) {
       throw new BadRequestException({
         message: 'Invalid email',
@@ -85,9 +81,7 @@ export class AuthService {
         errors: { token: 'Invalid token' },
       });
     }
-    const user = await this.usersService.findOneInternal({ id: payload.id }, [
-      'hashedPassword',
-    ]);
+    const user = await this.usersService.findOneInternal({ id: payload.id });
     if (user.hashedPassword) {
       throw new BadRequestException({
         message: 'User already exists',
@@ -102,11 +96,7 @@ export class AuthService {
   }
 
   async requestPasswordReset(email: string, siteUrl: string) {
-    const user = await this.usersService.findOneInternal({ email }, [
-      'email',
-      'hashedPassword',
-      'lastEmailRequestedAt',
-    ]);
+    const user = await this.usersService.findOneInternal({ email });
     if (!user) {
       throw new BadRequestException({
         message: 'User not found',
@@ -163,9 +153,7 @@ export class AuthService {
         errors: { token: 'Invalid token' },
       });
     }
-    const user = await this.usersService.findOneInternal({ id: payload.id }, [
-      'hashedPassword',
-    ]);
+    const user = await this.usersService.findOneInternal({ id: payload.id });
     if (!user.hashedPassword) {
       throw new BadRequestException({
         message: 'User not found',

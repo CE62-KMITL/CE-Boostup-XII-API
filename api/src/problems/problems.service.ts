@@ -17,7 +17,7 @@ import { ProblemTag } from 'src/problem-tags/entities/problem-tag.entity';
 import { PublicationStatus } from 'src/shared/enums/publication-status.enum';
 import { Role } from 'src/shared/enums/role.enum';
 import { AuthenticatedUser } from 'src/shared/interfaces/authenticated-request.interface';
-import { User } from 'src/users/entities/user.entity';
+import { UsersService } from 'src/users/users.service';
 
 import { CreateProblemDto } from './dto/create-problem.dto';
 import { UpdateProblemDto } from './dto/update-problem.dto';
@@ -29,15 +29,14 @@ export class ProblemsService {
     @InjectRepository(Problem)
     private readonly problemsRepository: EntityRepository<Problem>,
     private readonly entityManager: EntityManager,
+    private readonly usersService: UsersService,
   ) {}
 
   async create(
     originUser: AuthenticatedUser,
     createProblemDto: CreateProblemDto,
   ): Promise<Problem> {
-    const user = await this.entityManager
-      .getRepository(User)
-      .findOne({ id: originUser.id });
+    const user = await this.usersService.findOneInternal({ id: originUser.id });
     if (!user) {
       throw new UnauthorizedException({
         message: 'Invalid token',
@@ -233,13 +232,145 @@ export class ProblemsService {
       });
     }
     if (updateProblemDto.publicationStatus) {
-      if (!isSomeRolesIn(originUser.roles, [Role.Reviewer, Role.SuperAdmin])) {
-        throw new ForbiddenException({
-          message: 'Insufficient permissions',
-          errors: { publicationStatus: 'Insufficient permissions' },
-        });
+      switch (problem.publicationStatus) {
+        case PublicationStatus.Draft:
+          if (
+            updateProblemDto.publicationStatus !==
+            PublicationStatus.AwaitingApproval
+          ) {
+            throw new BadRequestException({
+              message: 'Invalid publication status',
+              errors: {
+                publicationStatus:
+                  'Draft problems can only be submitted for approval',
+              },
+            });
+          }
+          if (
+            originUser.id !== problem.owner.id &&
+            !isSomeRolesIn(originUser.roles, [Role.SuperAdmin])
+          ) {
+            throw new ForbiddenException({
+              message: 'Insufficient permissions',
+              errors: { id: 'Insufficient permissions' },
+            });
+          }
+          break;
+        case PublicationStatus.AwaitingApproval:
+          switch (updateProblemDto.publicationStatus) {
+            case PublicationStatus.Draft:
+              if (
+                originUser.id !== problem.owner.id &&
+                !isSomeRolesIn(originUser.roles, [Role.SuperAdmin])
+              ) {
+                throw new ForbiddenException({
+                  message: 'Insufficient permissions',
+                  errors: { id: 'Insufficient permissions' },
+                });
+              }
+              break;
+            case PublicationStatus.Approved:
+            case PublicationStatus.Rejected:
+              if (
+                !isSomeRolesIn(originUser.roles, [
+                  Role.Reviewer,
+                  Role.SuperAdmin,
+                ]) ||
+                (originUser.id === problem.owner.id &&
+                  !isSomeRolesIn(originUser.roles, [Role.SuperAdmin]))
+              ) {
+                throw new ForbiddenException({
+                  message: 'Insufficient permissions',
+                  errors: { publicationStatus: 'Insufficient permissions' },
+                });
+              }
+              break;
+            default:
+              throw new BadRequestException({
+                message: 'Invalid publication status',
+                errors: {
+                  publicationStatus:
+                    'Awaiting approval problems can only be reverted to draft, approved or rejected',
+                },
+              });
+          }
+          break;
+        case PublicationStatus.Approved:
+          switch (updateProblemDto.publicationStatus) {
+            case PublicationStatus.Draft:
+            case PublicationStatus.Published:
+            case PublicationStatus.Archived:
+              if (
+                originUser.id !== problem.owner.id &&
+                !isSomeRolesIn(originUser.roles, [Role.SuperAdmin])
+              ) {
+                throw new ForbiddenException({
+                  message: 'Insufficient permissions',
+                  errors: { id: 'Insufficient permissions' },
+                });
+              }
+              break;
+            default:
+              throw new BadRequestException({
+                message: 'Invalid publication status',
+                errors: {
+                  publicationStatus:
+                    'Approved problems can only be reverted to draft, published or archived',
+                },
+              });
+          }
+          break;
+        case PublicationStatus.Rejected:
+          if (updateProblemDto.publicationStatus !== PublicationStatus.Draft) {
+            throw new BadRequestException({
+              message: 'Invalid publication status',
+              errors: {
+                publicationStatus:
+                  'Rejected problems can only be reverted to draft',
+              },
+            });
+          }
+          if (
+            originUser.id !== problem.owner.id &&
+            !isSomeRolesIn(originUser.roles, [Role.SuperAdmin])
+          ) {
+            throw new ForbiddenException({
+              message: 'Insufficient permissions',
+              errors: { id: 'Insufficient permissions' },
+            });
+          }
+          break;
+        case PublicationStatus.Published:
+          if (
+            updateProblemDto.publicationStatus !== PublicationStatus.Archived
+          ) {
+            throw new BadRequestException({
+              message: 'Invalid publication status',
+              errors: {
+                publicationStatus: 'Published problems can only be archived',
+              },
+            });
+          }
+          if (
+            originUser.id !== problem.owner.id &&
+            !isSomeRolesIn(originUser.roles, [Role.SuperAdmin])
+          ) {
+            throw new ForbiddenException({
+              message: 'Insufficient permissions',
+              errors: { id: 'Insufficient permissions' },
+            });
+          }
+          break;
+        case PublicationStatus.Archived:
+          throw new BadRequestException({
+            message: 'Invalid publication status',
+            errors: {
+              publicationStatus: 'Archived problems cannot be modified',
+            },
+          });
       }
       problem.publicationStatus = updateProblemDto.publicationStatus;
+      delete updateProblemDto.publicationStatus;
     }
     if (
       problem.owner.id !== originUser.id &&

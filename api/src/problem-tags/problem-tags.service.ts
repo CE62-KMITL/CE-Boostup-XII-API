@@ -14,7 +14,7 @@ import {
 import { isSomeRolesIn } from 'src/auth/roles';
 import { Role } from 'src/shared/enums/role.enum';
 import { AuthenticatedUser } from 'src/shared/interfaces/authenticated-request.interface';
-import { User } from 'src/users/entities/user.entity';
+import { UsersService } from 'src/users/users.service';
 
 import { CreateProblemTagDto } from './dto/create-problem-tag.dto';
 import { UpdateProblemTagDto } from './dto/update-problem-tag.dto';
@@ -26,15 +26,14 @@ export class ProblemTagsService {
     @InjectRepository(ProblemTag)
     private readonly problemTagsRepository: EntityRepository<ProblemTag>,
     private readonly entityManager: EntityManager,
+    private readonly usersService: UsersService,
   ) {}
 
   async create(
     originUser: AuthenticatedUser,
     createProblemTagDto: CreateProblemTagDto,
   ): Promise<ProblemTag> {
-    const user = await this.entityManager
-      .getRepository(User)
-      .findOne({ id: originUser.id });
+    const user = await this.usersService.findOneInternal({ id: originUser.id });
     if (!user) {
       throw new UnauthorizedException({
         message: 'Invalid token',

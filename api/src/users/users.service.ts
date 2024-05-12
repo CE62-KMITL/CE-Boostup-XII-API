@@ -219,10 +219,7 @@ export class UsersService implements OnModuleInit {
     id: string,
     updateUserDto: UpdateUserDto,
   ): Promise<UserResponse> {
-    const user = await this.usersRepository.findOne(
-      { id },
-      { populate: ['email', 'hashedPassword'] },
-    );
+    const user = await this.findOneInternal({ id });
     if (!user) {
       throw new NotFoundException({
         message: 'User not found',
@@ -318,7 +315,7 @@ export class UsersService implements OnModuleInit {
     where: FilterQuery<User>,
     data: UpdateUserInternalDto,
   ): Promise<User> {
-    const user = await this.usersRepository.findOne(where);
+    const user = await this.findOneInternal(where);
     if (!user) {
       throw new NotFoundException({
         message: 'User not found',
@@ -331,7 +328,7 @@ export class UsersService implements OnModuleInit {
   }
 
   async remove(originUser: AuthenticatedUser, id: string): Promise<void> {
-    const user = await this.usersRepository.findOne({ id });
+    const user = await this.findOneInternal({ id });
     if (!user) {
       throw new NotFoundException({
         message: 'User not found',
@@ -355,7 +352,7 @@ export class UsersService implements OnModuleInit {
   }
 
   async removeInternal(where: FilterQuery<User>): Promise<void> {
-    const user = await this.usersRepository.findOne(where);
+    const user = await this.findOneInternal(where);
     if (!user) {
       throw new NotFoundException({
         message: 'User not found',
@@ -371,10 +368,7 @@ export class UsersService implements OnModuleInit {
   }
 
   async validatePassword(email: string, password: string): Promise<User> {
-    const user = await this.usersRepository.findOne(
-      { email },
-      { populate: ['hashedPassword', 'roles'] },
-    );
+    const user = await this.findOneInternal({ email });
     if (!user) {
       throw new BadRequestException({
         message: 'Invalid email or password',
