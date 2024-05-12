@@ -47,7 +47,7 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   password?: string;
 
   @ApiPropertyOptional({ example: 'P@ssw0rd!' })
-  @ValidateIf((o) => o.password)
+  @ValidateIf((object) => object.password)
   @IsString()
   oldPassword?: string;
 }

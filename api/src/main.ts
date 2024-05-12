@@ -15,6 +15,8 @@ async function bootstrap() {
   await app.get(MikroORM).getSchemaGenerator().updateSchema(); // TODO: Move to migrations in production
   app.useGlobalPipes(
     new ValidationPipe({
+      transform: true,
+      transformOptions: { enableImplicitConversion: true },
       errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
     }),
   );

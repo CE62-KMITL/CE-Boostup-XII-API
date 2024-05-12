@@ -103,7 +103,7 @@ export class UserResponse {
   roles?: Role[];
   displayName?: string;
   bio?: string;
-  group?: Group;
+  group?: { id: string; name: string } | null;
   totalScore?: number;
   problemSolvedCount?: number;
   lastProblemSolvedAt?: Date;
@@ -117,7 +117,9 @@ export class UserResponse {
     this.roles = user.roles;
     this.displayName = user.displayName;
     this.bio = user.bio;
-    this.group = user.group;
+    this.group = user.group
+      ? { id: user.group.id, name: user.group.name }
+      : null;
     this.totalScore = user.totalScore;
     this.problemSolvedCount = user.problemSolvedCount;
     this.lastProblemSolvedAt = user.lastProblemSolvedAt;

@@ -17,12 +17,15 @@ import {
 import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
 import { isRolesHigher, isSomeRolesIn } from 'src/auth/roles';
+import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
 import { Role } from 'src/shared/enums/role.enum';
 import { AuthenticatedUser } from 'src/shared/interfaces/authenticated-request.interface';
+import { parseSort } from 'src/shared/parse-sort';
 
 import { Group } from '../groups/entities/group.entity';
 
 import { CreateUserDto } from './dto/create-user.dto';
+import { FindAllDto } from './dto/find-all.dto';
 import { UpdateUserDto, UpdateUserInternalDto } from './dto/update-user.dto';
 import { User, UserResponse } from './entities/user.entity';
 
@@ -123,7 +126,23 @@ export class UsersService implements OnModuleInit {
     return new UserResponse(user);
   }
 
-  async findAll(originUser: AuthenticatedUser): Promise<User[]> {
+  async findAll(
+    originUser: AuthenticatedUser,
+    options: FindAllDto,
+  ): Promise<PaginatedResponse<UserResponse>> {
+    const where: FilterQuery<User> = {};
+    if (options.search) {
+      where.$or = [
+        { displayName: { $like: `%${options.search}%` } },
+        { email: { $like: `%${options.search}%` } },
+      ];
+    }
+    if (options.group !== undefined) {
+      where.group = options.group;
+    }
+    const offset = (options.page - 1) * options.perPage;
+    const limit = options.perPage;
+    let orderBy = null;
     if (isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])) {
       const populate = [
         'email',
@@ -136,7 +155,44 @@ export class UsersService implements OnModuleInit {
         'createdAt',
         'updatedAt',
       ] as const;
-      return await this.usersRepository.findAll({ populate });
+      if (options.sort) {
+        orderBy = parseSort(options.sort, [
+          'id',
+          'email',
+          'displayName',
+          'bio',
+          'totalScore',
+          'problemSolvedCount',
+          'lastProblemSolvedAt',
+          'createdAt',
+          'updatedAt',
+        ]);
+      }
+      if (orderBy) {
+        const [users, count] = await this.usersRepository.findAndCount(where, {
+          populate,
+          offset,
+          limit,
+          orderBy,
+        });
+        return {
+          data: users.map((user) => new UserResponse(user)),
+          page: options.page,
+          perPage: options.perPage,
+          total: count,
+        };
+      }
+      const [users, count] = await this.usersRepository.findAndCount(where, {
+        populate,
+        offset,
+        limit,
+      });
+      return {
+        data: users.map((user) => new UserResponse(user)),
+        page: options.page,
+        perPage: options.perPage,
+        total: count,
+      };
     }
     const populate = [
       'bio',
@@ -144,13 +200,47 @@ export class UsersService implements OnModuleInit {
       'totalScore',
       'problemSolvedCount',
       'lastProblemSolvedAt',
-      'createdAt',
-      'updatedAt',
     ] as const;
-    return await this.usersRepository.findAll({ populate });
+    if (options.sort) {
+      orderBy = parseSort(options.sort, [
+        'displayName',
+        'bio',
+        'totalScore',
+        'problemSolvedCount',
+        'lastProblemSolvedAt',
+      ]);
+    }
+    if (orderBy) {
+      const [users, count] = await this.usersRepository.findAndCount(where, {
+        populate,
+        offset,
+        limit,
+        orderBy,
+      });
+      return {
+        data: users.map((user) => new UserResponse(user)),
+        page: options.page,
+        perPage: options.perPage,
+        total: count,
+      };
+    }
+    const [users, count] = await this.usersRepository.findAndCount(where, {
+      populate,
+      offset,
+      limit,
+    });
+    return {
+      data: users.map((user) => new UserResponse(user)),
+      page: options.page,
+      perPage: options.perPage,
+      total: count,
+    };
   }
 
-  async findOne(originUser: AuthenticatedUser, id: string): Promise<User> {
+  async findOne(
+    originUser: AuthenticatedUser,
+    id: string,
+  ): Promise<UserResponse> {
     if (isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])) {
       const populate = [
         'email',
@@ -171,7 +261,7 @@ export class UsersService implements OnModuleInit {
           errors: { id: 'User not found' },
         });
       }
-      return user;
+      return new UserResponse(user);
     }
     const populate = [
       'bio',
@@ -189,7 +279,7 @@ export class UsersService implements OnModuleInit {
         errors: { id: 'User not found' },
       });
     }
-    return user;
+    return new UserResponse(user);
   }
 
   async findOneInternal(where: FilterQuery<User>): Promise<User> {

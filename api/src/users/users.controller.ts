@@ -13,6 +13,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   Req,
   Res,
   StreamableFile,
@@ -27,6 +28,7 @@ import { AuthenticatedRequest } from 'src/shared/interfaces/authenticated-reques
 import { Roles } from '../auth/roles.decorator';
 
 import { CreateUserDto } from './dto/create-user.dto';
+import { FindAllDto } from './dto/find-all.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
 
@@ -50,8 +52,11 @@ export class UsersController {
 
   @Roles(Role.User, Role.Staff, Role.Admin)
   @Get()
-  async findAll(@Req() request: AuthenticatedRequest) {
-    return await this.usersService.findAll(request.user);
+  async findAll(
+    @Req() request: AuthenticatedRequest,
+    @Query() findAllDto: FindAllDto,
+  ) {
+    return await this.usersService.findAll(request.user, findAllDto);
   }
 
   @Roles(Role.User, Role.Staff)
