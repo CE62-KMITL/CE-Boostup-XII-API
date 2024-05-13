@@ -33,3 +33,23 @@ export class ProblemTag {
   @Property({ type: types.datetime, lazy: true, onUpdate: () => new Date() })
   updatedAt: Date = new Date();
 }
+
+export class ProblemTagResponse {
+  id: string;
+  name?: string;
+  description?: string;
+  owner?: { id: string; displayName: string };
+  createdAt?: Date;
+  updatedAt?: Date;
+
+  constructor(problemTag: ProblemTag) {
+    this.id = problemTag.id;
+    this.name = problemTag.name;
+    this.description = problemTag.description;
+    this.owner = problemTag.owner
+      ? { id: problemTag.owner.id, displayName: problemTag.owner.displayName }
+      : undefined;
+    this.createdAt = problemTag.createdAt;
+    this.updatedAt = problemTag.updatedAt;
+  }
+}

@@ -16,6 +16,7 @@ import {
   Res,
   StreamableFile,
   Req,
+  Query,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
@@ -26,6 +27,7 @@ import { Role } from 'src/shared/enums/role.enum';
 import { AuthenticatedRequest } from 'src/shared/interfaces/authenticated-request.interface';
 
 import { CreateGroupDto } from './dto/create-group.dto';
+import { FindAllDto } from './dto/find-all.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { GroupsService } from './groups.service';
 
@@ -45,8 +47,11 @@ export class GroupsController {
   }
 
   @Get()
-  async findAll(@Req() request: AuthenticatedRequest) {
-    return await this.groupsService.findAll(request.user);
+  async findAll(
+    @Req() request: AuthenticatedRequest,
+    @Query() findAllDto: FindAllDto,
+  ) {
+    return await this.groupsService.findAll(request.user, findAllDto);
   }
 
   @Get(':id')

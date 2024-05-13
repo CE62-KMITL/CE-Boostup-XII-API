@@ -137,5 +137,88 @@ export class Problem {
   updatedAt: Date = new Date();
 }
 
+export class ProblemResponse {
+  id: string;
+  number?: number;
+  title?: string;
+  description?: string;
+  input?: string;
+  output?: string;
+  hint?: string;
+  hintCost?: number;
+  testcases?: { input: string; output: string }[];
+  exampleTestcases?: { input: string; output: string }[];
+  starterCode?: string;
+  solution?: string;
+  solutionLanguage?: ProgrammingLanguage;
+  allowedHeaders?: string[];
+  bannedFunctions?: string[];
+  timeLimit?: number;
+  memoryLimit?: number;
+  difficulty?: number;
+  score?: number;
+  optimizationLevel?: OptimizationLevel;
+  attachments?: {
+    id: string;
+    name: string;
+    type: string;
+    size: number;
+    url: string;
+  }[];
+  tags?: { id: string; name: string }[];
+  owner?: { id: string; displayName: string };
+  credits?: string;
+  publicationStatus?: PublicationStatus;
+  userSolvedCount?: number;
+  createdAt?: Date;
+  updatedAt?: Date;
+
+  constructor(problem: Problem) {
+    this.id = problem.id;
+    this.number = problem.number;
+    this.title = problem.title;
+    this.description = problem.description;
+    this.input = problem.input;
+    this.output = problem.output;
+    this.hint = problem.hint;
+    this.hintCost = problem.hintCost;
+    this.testcases = problem.testcases;
+    this.exampleTestcases = problem.exampleTestcases;
+    this.starterCode = problem.starterCode;
+    this.solution = problem.solution;
+    this.solutionLanguage = problem.solutionLanguage;
+    this.allowedHeaders = problem.allowedHeaders;
+    this.bannedFunctions = problem.bannedFunctions;
+    this.timeLimit = problem.timeLimit;
+    this.memoryLimit = problem.memoryLimit;
+    this.difficulty = problem.difficulty;
+    this.score = problem.score;
+    this.optimizationLevel = problem.optimizationLevel;
+    this.attachments = problem.attachments
+      ? problem.attachments.map((attachment) => ({
+          id: attachment.id,
+          name: attachment.name,
+          type: attachment.type,
+          size: attachment.size,
+          url: attachment.url,
+        }))
+      : undefined;
+    this.tags = problem.tags
+      ? problem.tags.map((tag) => ({ id: tag.id, name: tag.name }))
+      : undefined;
+    this.owner = problem.owner
+      ? {
+          id: problem.owner.id,
+          displayName: problem.owner.displayName,
+        }
+      : undefined;
+    this.credits = problem.credits;
+    this.publicationStatus = problem.publicationStatus;
+    this.userSolvedCount = problem.userSolvedCount;
+    this.createdAt = problem.createdAt;
+    this.updatedAt = problem.updatedAt;
+  }
+}
+
 export { OptimizationLevel } from 'src/shared/enums/optimization-level.enum';
 export { PublicationStatus } from 'src/shared/enums/publication-status.enum';

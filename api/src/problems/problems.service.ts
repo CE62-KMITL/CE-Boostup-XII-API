@@ -14,14 +14,17 @@ import {
 import { Attachment } from 'src/attachments/entities/attachment.entity';
 import { isSomeRolesIn } from 'src/auth/roles';
 import { ProblemTag } from 'src/problem-tags/entities/problem-tag.entity';
+import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
 import { PublicationStatus } from 'src/shared/enums/publication-status.enum';
 import { Role } from 'src/shared/enums/role.enum';
 import { AuthenticatedUser } from 'src/shared/interfaces/authenticated-request.interface';
+import { parseSort } from 'src/shared/parse-sort';
 import { UsersService } from 'src/users/users.service';
 
 import { CreateProblemDto } from './dto/create-problem.dto';
+import { FindAllDto } from './dto/find-all.dto';
 import { UpdateProblemDto } from './dto/update-problem.dto';
-import { Problem } from './entities/problem.entity';
+import { Problem, ProblemResponse } from './entities/problem.entity';
 
 @Injectable()
 export class ProblemsService {
@@ -35,7 +38,7 @@ export class ProblemsService {
   async create(
     originUser: AuthenticatedUser,
     createProblemDto: CreateProblemDto,
-  ): Promise<Problem> {
+  ): Promise<ProblemResponse> {
     const user = await this.usersService.findOneInternal({ id: originUser.id });
     if (!user) {
       throw new UnauthorizedException({
@@ -78,10 +81,29 @@ export class ProblemsService {
       publicationStatus: PublicationStatus.Draft,
     });
     await this.entityManager.persistAndFlush(problem);
-    return problem;
+    return new ProblemResponse(problem);
   }
 
-  async findAll(originUser: AuthenticatedUser): Promise<Problem[]> {
+  async findAll(
+    originUser: AuthenticatedUser,
+    findAllDto: FindAllDto,
+  ): Promise<PaginatedResponse<ProblemResponse>> {
+    const where: FilterQuery<Problem> = {};
+    if (findAllDto.search) {
+      where.$or = [{ title: { $like: `%${findAllDto.search}%` } }];
+      if (!isNaN(parseInt(findAllDto.search))) {
+        where.$or.push({ number: parseInt(findAllDto.search) });
+      }
+    }
+    if (findAllDto.tags) {
+      where.tags = { $none: { id: { $nin: findAllDto.tags } } };
+    }
+    if (findAllDto.difficulties) {
+      where.difficulty = { $in: findAllDto.difficulties };
+    }
+    const offset: number = (findAllDto.page - 1) * findAllDto.perPage;
+    const limit: number = findAllDto.perPage;
+    let orderBy: Record<string, 'asc' | 'desc'> | null = null;
     if (
       isSomeRolesIn(originUser.roles, [Role.Staff, Role.Admin, Role.SuperAdmin])
     ) {
@@ -93,7 +115,49 @@ export class ProblemsService {
         'createdAt',
         'updatedAt',
       ] as const;
-      return await this.problemsRepository.findAll({ populate });
+      if (findAllDto.sort) {
+        orderBy = parseSort(findAllDto.sort, [
+          'number',
+          'title',
+          'difficulty',
+          'score',
+          'publicationStatus',
+          'userSolvedCount',
+          'createdAt',
+          'updatedAt',
+        ]);
+      }
+      if (orderBy) {
+        const [problems, count] = await this.problemsRepository.findAndCount(
+          where,
+          {
+            populate,
+            offset,
+            limit,
+            orderBy,
+          },
+        );
+        return {
+          data: problems.map((problem) => new ProblemResponse(problem)),
+          page: findAllDto.page,
+          perPage: findAllDto.perPage,
+          total: count,
+        };
+      }
+      const [problems, count] = await this.problemsRepository.findAndCount(
+        where,
+        {
+          populate,
+          offset,
+          limit,
+        },
+      );
+      return {
+        data: problems.map((problem) => new ProblemResponse(problem)),
+        page: findAllDto.page,
+        perPage: findAllDto.perPage,
+        total: count,
+      };
     }
     const populate = [
       'description',
@@ -102,13 +166,55 @@ export class ProblemsService {
       'createdAt',
       'updatedAt',
     ] as const;
-    return await this.problemsRepository.findAll({
-      where: { publicationStatus: PublicationStatus.Published },
-      populate,
-    });
+    where.publicationStatus = PublicationStatus.Published;
+    if (findAllDto.sort) {
+      orderBy = parseSort(findAllDto.sort, [
+        'number',
+        'title',
+        'difficulty',
+        'score',
+        'userSolvedCount',
+        'createdAt',
+        'updatedAt',
+      ]);
+    }
+    if (orderBy) {
+      const [problems, count] = await this.problemsRepository.findAndCount(
+        where,
+        {
+          populate,
+          offset,
+          limit,
+          orderBy,
+        },
+      );
+      return {
+        data: problems.map((problem) => new ProblemResponse(problem)),
+        page: findAllDto.page,
+        perPage: findAllDto.perPage,
+        total: count,
+      };
+    }
+    const [problems, count] = await this.problemsRepository.findAndCount(
+      where,
+      {
+        populate,
+        offset,
+        limit,
+      },
+    );
+    return {
+      data: problems.map((problem) => new ProblemResponse(problem)),
+      page: findAllDto.page,
+      perPage: findAllDto.perPage,
+      total: count,
+    };
   }
 
-  async findOne(originUser: AuthenticatedUser, id: string): Promise<Problem> {
+  async findOne(
+    originUser: AuthenticatedUser,
+    id: string,
+  ): Promise<ProblemResponse> {
     if (
       isSomeRolesIn(originUser.roles, [Role.Staff, Role.Admin, Role.SuperAdmin])
     ) {
@@ -147,7 +253,7 @@ export class ProblemsService {
           errors: { id: 'Problem not found' },
         });
       }
-      return problem;
+      return new ProblemResponse(problem);
     }
     const populate = [
       'description',
@@ -180,7 +286,7 @@ export class ProblemsService {
       // TODO: If user has unlocked hint
       this.problemsRepository.populate(problem, ['hint']);
     }
-    return problem;
+    return new ProblemResponse(problem);
   }
 
   async findOneInternal(where: FilterQuery<Problem>): Promise<Problem> {
@@ -223,7 +329,7 @@ export class ProblemsService {
     originUser: AuthenticatedUser,
     id: string,
     updateProblemDto: UpdateProblemDto,
-  ): Promise<Problem> {
+  ): Promise<ProblemResponse> {
     const problem = await this.findOneInternal({ id });
     if (!problem) {
       throw new NotFoundException({
@@ -418,10 +524,10 @@ export class ProblemsService {
     }
     Object.assign(problem, updateProblemDto);
     await this.entityManager.flush();
-    return problem;
+    return new ProblemResponse(problem);
   }
 
-  async remove(originUser: AuthenticatedUser, id: string) {
+  async remove(originUser: AuthenticatedUser, id: string): Promise<void> {
     const problem = await this.findOneInternal({ id });
     if (!problem) {
       throw new NotFoundException({

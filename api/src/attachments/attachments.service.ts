@@ -24,7 +24,7 @@ import { UsersService } from 'src/users/users.service';
 
 import { CreateAttachmentDto } from './dto/create-attachment.dto';
 import { FindAllDto } from './dto/find-all.dto';
-import { Attachment } from './entities/attachment.entity';
+import { Attachment, AttachmentResponse } from './entities/attachment.entity';
 
 @Injectable()
 export class AttachmentsService implements OnModuleInit {
@@ -36,7 +36,7 @@ export class AttachmentsService implements OnModuleInit {
     private readonly usersService: UsersService,
   ) {}
 
-  onModuleInit() {
+  onModuleInit(): void {
     this.createAttachmentDirectory();
   }
 
@@ -55,7 +55,7 @@ export class AttachmentsService implements OnModuleInit {
     originUser: AuthenticatedUser,
     createAttachmentDto: CreateAttachmentDto,
     file: Express.Multer.File,
-  ): Promise<Attachment> {
+  ): Promise<AttachmentResponse> {
     // TODO: Add rate limiting
     const user = await this.usersService.findOneInternal({ id: originUser.id });
     if (!user) {
@@ -74,13 +74,13 @@ export class AttachmentsService implements OnModuleInit {
     attachment.size = file.size;
     attachment.owner = user;
     await this.entityManager.persistAndFlush(attachment);
-    return attachment;
+    return new AttachmentResponse(attachment);
   }
 
   async findAll(
     originUser: AuthenticatedUser,
     findAllDto: FindAllDto,
-  ): Promise<PaginatedResponse<Attachment>> {
+  ): Promise<PaginatedResponse<AttachmentResponse>> {
     const where: FilterQuery<Attachment> = {};
     if (findAllDto.owner) {
       where.owner = findAllDto.owner;
@@ -110,7 +110,9 @@ export class AttachmentsService implements OnModuleInit {
             orderBy,
           });
         return {
-          data: attachments,
+          data: attachments.map(
+            (attachment) => new AttachmentResponse(attachment),
+          ),
           page: findAllDto.page,
           perPage: findAllDto.perPage,
           total: count,
@@ -123,7 +125,9 @@ export class AttachmentsService implements OnModuleInit {
           limit,
         });
       return {
-        data: attachments,
+        data: attachments.map(
+          (attachment) => new AttachmentResponse(attachment),
+        ),
         page: findAllDto.page,
         perPage: findAllDto.perPage,
         total: count,
@@ -142,7 +146,9 @@ export class AttachmentsService implements OnModuleInit {
           orderBy,
         });
       return {
-        data: attachments,
+        data: attachments.map(
+          (attachment) => new AttachmentResponse(attachment),
+        ),
         page: findAllDto.page,
         perPage: findAllDto.perPage,
         total: count,
@@ -157,7 +163,7 @@ export class AttachmentsService implements OnModuleInit {
       },
     );
     return {
-      data: attachments,
+      data: attachments.map((attachment) => new AttachmentResponse(attachment)),
       page: findAllDto.page,
       perPage: findAllDto.perPage,
       total: count,
@@ -167,7 +173,7 @@ export class AttachmentsService implements OnModuleInit {
   async findOne(
     originUser: AuthenticatedUser,
     id: string,
-  ): Promise<Attachment> {
+  ): Promise<AttachmentResponse> {
     if (isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])) {
       const populate = ['owner', 'filename', 'createdAt'] as const;
       const attachment = await this.attachmentsRepository.findOne(
@@ -180,7 +186,7 @@ export class AttachmentsService implements OnModuleInit {
           errors: { id: 'Attachment not found' },
         });
       }
-      return attachment;
+      return new AttachmentResponse(attachment);
     }
     const populate = ['owner'] as const;
     const attachment = await this.attachmentsRepository.findOne(
@@ -193,7 +199,7 @@ export class AttachmentsService implements OnModuleInit {
         errors: { id: 'Attachment not found' },
       });
     }
-    return attachment;
+    return new AttachmentResponse(attachment);
   }
 
   async findOneInternal(where: FilterQuery<Attachment>): Promise<Attachment> {

@@ -98,7 +98,7 @@ export class User {
 }
 
 export class UserResponse {
-  id?: string;
+  id: string;
   email?: string;
   roles?: Role[];
   displayName?: string;

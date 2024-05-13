@@ -14,12 +14,15 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { isSomeRolesIn } from 'src/auth/roles';
+import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
 import { Role } from 'src/shared/enums/role.enum';
 import { AuthenticatedUser } from 'src/shared/interfaces/authenticated-request.interface';
+import { parseSort } from 'src/shared/parse-sort';
 
 import { CreateGroupDto } from './dto/create-group.dto';
+import { FindAllDto } from './dto/find-all.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
-import { Group } from './entities/group.entity';
+import { Group, GroupResponse } from './entities/group.entity';
 
 @Injectable()
 export class GroupsService {
@@ -30,7 +33,7 @@ export class GroupsService {
     private readonly configService: ConfigService,
   ) {}
 
-  async create(createGroupDto: CreateGroupDto): Promise<Group> {
+  async create(createGroupDto: CreateGroupDto): Promise<GroupResponse> {
     const nameExists = await this.groupsRepository.count({
       name: createGroupDto.name,
     });
@@ -44,10 +47,20 @@ export class GroupsService {
     group.name = createGroupDto.name;
     group.description = createGroupDto.description;
     await this.entityManager.persistAndFlush(group);
-    return group;
+    return new GroupResponse(group);
   }
 
-  async findAll(originUser: AuthenticatedUser): Promise<Group[]> {
+  async findAll(
+    originUser: AuthenticatedUser,
+    findAllDto: FindAllDto,
+  ): Promise<PaginatedResponse<GroupResponse>> {
+    const where: FilterQuery<Group> = {};
+    if (findAllDto.search) {
+      where.$or = [{ name: { $like: `%${findAllDto.search}%` } }];
+    }
+    const offset: number = (findAllDto.page - 1) * findAllDto.perPage;
+    const limit: number = findAllDto.perPage;
+    let orderBy: Record<string, 'asc' | 'desc'> | null = null;
     if (isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])) {
       const populate = [
         'memberCount',
@@ -59,7 +72,47 @@ export class GroupsService {
         'createdAt',
         'updatedAt',
       ] as const;
-      return await this.groupsRepository.findAll({ populate });
+      if (findAllDto.sort) {
+        orderBy = parseSort(findAllDto.sort, [
+          'name',
+          'memberCount',
+          'totalScore',
+          'uniqueTotalScore',
+          'problemSolvedCount',
+          'uniqueProblemSolvedCount',
+          'lastProblemSolvedAt',
+          'createdAt',
+          'updatedAt',
+        ]);
+      }
+      if (orderBy) {
+        const [groups, count] = await this.groupsRepository.findAndCount(
+          where,
+          {
+            populate,
+            offset,
+            limit,
+            orderBy,
+          },
+        );
+        return {
+          data: groups.map((group) => new GroupResponse(group)),
+          page: findAllDto.page,
+          perPage: findAllDto.perPage,
+          total: count,
+        };
+      }
+      const [groups, count] = await this.groupsRepository.findAndCount(where, {
+        populate,
+        offset,
+        limit,
+      });
+      return {
+        data: groups.map((group) => new GroupResponse(group)),
+        page: findAllDto.page,
+        perPage: findAllDto.perPage,
+        total: count,
+      };
     }
     const populate = [
       'memberCount',
@@ -69,10 +122,48 @@ export class GroupsService {
       'uniqueProblemSolvedCount',
       'lastProblemSolvedAt',
     ] as const;
-    return await this.groupsRepository.findAll({ populate });
+    if (findAllDto.sort) {
+      orderBy = parseSort(findAllDto.sort, [
+        'name',
+        'memberCount',
+        'totalScore',
+        'uniqueTotalScore',
+        'problemSolvedCount',
+        'uniqueProblemSolvedCount',
+        'lastProblemSolvedAt',
+      ]);
+    }
+    if (orderBy) {
+      const [groups, count] = await this.groupsRepository.findAndCount(where, {
+        populate,
+        offset,
+        limit,
+        orderBy,
+      });
+      return {
+        data: groups.map((group) => new GroupResponse(group)),
+        page: findAllDto.page,
+        perPage: findAllDto.perPage,
+        total: count,
+      };
+    }
+    const [groups, count] = await this.groupsRepository.findAndCount(where, {
+      populate,
+      offset,
+      limit,
+    });
+    return {
+      data: groups.map((group) => new GroupResponse(group)),
+      page: findAllDto.page,
+      perPage: findAllDto.perPage,
+      total: count,
+    };
   }
 
-  async findOne(originUser: AuthenticatedUser, id: string): Promise<Group> {
+  async findOne(
+    originUser: AuthenticatedUser,
+    id: string,
+  ): Promise<GroupResponse> {
     if (isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])) {
       const populate = [
         'description',
@@ -91,7 +182,7 @@ export class GroupsService {
           errors: { id: 'Group not found' },
         });
       }
-      return group;
+      return new GroupResponse(group);
     }
     const populate = [
       'members',
@@ -111,7 +202,7 @@ export class GroupsService {
         errors: { id: 'Group not found' },
       });
     }
-    return group;
+    return new GroupResponse(group);
   }
 
   async findOneInternal(where: FilterQuery<Group>): Promise<Group> {
@@ -133,7 +224,10 @@ export class GroupsService {
     return group;
   }
 
-  async update(id: string, updateGroupDto: UpdateGroupDto): Promise<Group> {
+  async update(
+    id: string,
+    updateGroupDto: UpdateGroupDto,
+  ): Promise<GroupResponse> {
     const group = await this.findOneInternal({ id });
     if (!group) {
       throw new NotFoundException({
@@ -174,7 +268,7 @@ export class GroupsService {
     }
     Object.assign(group, updateGroupDto);
     await this.entityManager.flush();
-    return group;
+    return new GroupResponse(group);
   }
 
   async remove(id: string): Promise<void> {

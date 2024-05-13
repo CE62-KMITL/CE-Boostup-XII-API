@@ -38,7 +38,7 @@ export class UsersService implements OnModuleInit {
     private readonly configService: ConfigService,
   ) {}
 
-  onModuleInit() {
+  onModuleInit(): void {
     this.createSuperAdmin();
     this.createAvatarDirectory();
   }
@@ -138,12 +138,6 @@ export class UsersService implements OnModuleInit {
     const limit: number = findAllDto.perPage;
     let orderBy: Record<string, 'asc' | 'desc'> | null = null;
     if (isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])) {
-      if (findAllDto.search) {
-        where.$or = [
-          { displayName: { $like: `%${findAllDto.search}%` } },
-          { email: { $like: `%${findAllDto.search}%` } },
-        ];
-      }
       const populate = [
         'email',
         'roles',
@@ -155,9 +149,14 @@ export class UsersService implements OnModuleInit {
         'createdAt',
         'updatedAt',
       ] as const;
+      if (findAllDto.search) {
+        where.$or = [
+          { displayName: { $like: `%${findAllDto.search}%` } },
+          { email: { $like: `%${findAllDto.search}%` } },
+        ];
+      }
       if (findAllDto.sort) {
         orderBy = parseSort(findAllDto.sort, [
-          'id',
           'email',
           'displayName',
           'bio',
@@ -194,9 +193,6 @@ export class UsersService implements OnModuleInit {
         total: count,
       };
     }
-    if (findAllDto.search) {
-      where.$or = [{ displayName: { $like: `%${findAllDto.search}%` } }];
-    }
     const populate = [
       'bio',
       'group',
@@ -204,6 +200,9 @@ export class UsersService implements OnModuleInit {
       'problemSolvedCount',
       'lastProblemSolvedAt',
     ] as const;
+    if (findAllDto.search) {
+      where.$or = [{ displayName: { $like: `%${findAllDto.search}%` } }];
+    }
     if (findAllDto.sort) {
       orderBy = parseSort(findAllDto.sort, [
         'displayName',

@@ -10,6 +10,7 @@ import {
   HttpStatus,
   ParseUUIDPipe,
   Req,
+  Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Roles } from 'src/auth/roles.decorator';
@@ -17,6 +18,7 @@ import { Role } from 'src/shared/enums/role.enum';
 import { AuthenticatedRequest } from 'src/shared/interfaces/authenticated-request.interface';
 
 import { CreateProblemTagDto } from './dto/create-problem-tag.dto';
+import { FindAllDto } from './dto/find-all.dto';
 import { UpdateProblemTagDto } from './dto/update-problem-tag.dto';
 import { ProblemTagsService } from './problem-tags.service';
 
@@ -39,8 +41,11 @@ export class ProblemTagsController {
   }
 
   @Get()
-  async findAll(@Req() request: AuthenticatedRequest) {
-    return await this.problemTagsService.findAll(request.user);
+  async findAll(
+    @Req() request: AuthenticatedRequest,
+    @Query() findAllDto: FindAllDto,
+  ) {
+    return await this.problemTagsService.findAll(request.user, findAllDto);
   }
 
   @Get(':id')

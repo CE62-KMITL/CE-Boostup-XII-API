@@ -33,6 +33,8 @@ export const ConfigConstants = {
     maxSolutionLength: 65535, // Must be less than or equal to 65535
     maxTimeLimit: 30,
     maxMemoryLimit: 262144, // Must be less than or equal to 2147483648
+    minDifficulty: 1,
+    maxDifficulty: 5,
     maxCreditsLength: 255, // Must be less than or equal to 65535
   },
   save: {
