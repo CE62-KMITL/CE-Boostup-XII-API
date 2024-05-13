@@ -17,6 +17,7 @@ import {
   UploadedFile,
   UseInterceptors,
   Req,
+  Query,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -30,6 +31,7 @@ import { AuthenticatedRequest } from 'src/shared/interfaces/authenticated-reques
 
 import { AttachmentsService } from './attachments.service';
 import { CreateAttachmentDto } from './dto/create-attachment.dto';
+import { FindAllDto } from './dto/find-all.dto';
 
 @ApiBearerAuth()
 @ApiTags('attachments')
@@ -62,8 +64,11 @@ export class AttachmentsController {
 
   @Roles(Role.Admin)
   @Get()
-  async findAll(@Req() request: AuthenticatedRequest) {
-    return await this.attachmentsService.findAll(request.user);
+  async findAll(
+    @Req() request: AuthenticatedRequest,
+    @Query() findAllDto: FindAllDto,
+  ) {
+    return await this.attachmentsService.findAll(request.user, findAllDto);
   }
 
   @Public()

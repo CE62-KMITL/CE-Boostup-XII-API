@@ -22,6 +22,10 @@ import { UsersService } from 'src/users/users.service';
 
 import { CreateAttachmentDto } from './dto/create-attachment.dto';
 import { Attachment } from './entities/attachment.entity';
+import { FindAllDto } from './dto/find-all.dto';
+import { find } from 'rxjs';
+import { parseSort } from 'src/shared/parse-sort';
+import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
 
 @Injectable()
 export class AttachmentsService implements OnModuleInit {
@@ -74,13 +78,91 @@ export class AttachmentsService implements OnModuleInit {
     return attachment;
   }
 
-  async findAll(originUser: AuthenticatedUser): Promise<Attachment[]> {
+  async findAll(
+    originUser: AuthenticatedUser,
+    findAllDto: FindAllDto,
+  ): Promise<PaginatedResponse<Attachment>> {
+    const where: FilterQuery<Attachment> = {};
+    if (findAllDto.owner) {
+      where.owner = findAllDto.owner;
+    }
+    if (findAllDto.search) {
+      where.$or = [{ name: { $like: `%${findAllDto.search}%` } }];
+    }
+    const offset: number = (findAllDto.page - 1) * findAllDto.perPage;
+    const limit: number = findAllDto.perPage;
+    let orderBy: Record<string, 'asc' | 'desc'> | null = null;
     if (isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])) {
       const populate = ['owner', 'filename', 'createdAt'] as const;
-      return await this.attachmentsRepository.findAll({ populate });
+      if (findAllDto.sort) {
+        orderBy = parseSort(findAllDto.sort, [
+          'name',
+          'type',
+          'size',
+          'createdAt',
+        ]);
+      }
+      if (orderBy) {
+        const [attachments, count] =
+          await this.attachmentsRepository.findAndCount(where, {
+            populate,
+            offset,
+            limit,
+            orderBy,
+          });
+        return {
+          data: attachments,
+          page: findAllDto.page,
+          perPage: findAllDto.perPage,
+          total: count,
+        };
+      }
+      const [attachments, count] =
+        await this.attachmentsRepository.findAndCount(where, {
+          populate,
+          offset,
+          limit,
+        });
+      return {
+        data: attachments,
+        page: findAllDto.page,
+        perPage: findAllDto.perPage,
+        total: count,
+      };
     }
     const populate = ['owner'] as const;
-    return await this.attachmentsRepository.findAll({ populate });
+    if (findAllDto.sort) {
+      orderBy = parseSort(findAllDto.sort, ['name', 'type', 'size']);
+    }
+    if (orderBy) {
+      const [attachments, count] =
+        await this.attachmentsRepository.findAndCount(where, {
+          populate,
+          offset,
+          limit,
+          orderBy,
+        });
+      return {
+        data: attachments,
+        page: findAllDto.page,
+        perPage: findAllDto.perPage,
+        total: count,
+      };
+    }
+    const [attachments, count] = await this.attachmentsRepository.findAndCount(
+      where,
+      {
+        populate,
+        offset,
+        limit,
+      },
+    );
+    return {
+      data: attachments,
+      page: findAllDto.page,
+      perPage: findAllDto.perPage,
+      total: count,
+    };
   }
 
   async findOne(

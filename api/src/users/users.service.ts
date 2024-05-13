@@ -128,20 +128,20 @@ export class UsersService implements OnModuleInit {
 
   async findAll(
     originUser: AuthenticatedUser,
-    options: FindAllDto,
+    findAllDto: FindAllDto,
   ): Promise<PaginatedResponse<UserResponse>> {
     const where: FilterQuery<User> = {};
-    if (options.group !== undefined) {
-      where.group = options.group;
+    if (findAllDto.group !== undefined) {
+      where.group = findAllDto.group;
     }
-    const offset = (options.page - 1) * options.perPage;
-    const limit = options.perPage;
-    let orderBy = null;
+    const offset: number = (findAllDto.page - 1) * findAllDto.perPage;
+    const limit: number = findAllDto.perPage;
+    let orderBy: Record<string, 'asc' | 'desc'> | null = null;
     if (isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])) {
-      if (options.search) {
+      if (findAllDto.search) {
         where.$or = [
-          { displayName: { $like: `%${options.search}%` } },
-          { email: { $like: `%${options.search}%` } },
+          { displayName: { $like: `%${findAllDto.search}%` } },
+          { email: { $like: `%${findAllDto.search}%` } },
         ];
       }
       const populate = [
@@ -155,8 +155,8 @@ export class UsersService implements OnModuleInit {
         'createdAt',
         'updatedAt',
       ] as const;
-      if (options.sort) {
-        orderBy = parseSort(options.sort, [
+      if (findAllDto.sort) {
+        orderBy = parseSort(findAllDto.sort, [
           'id',
           'email',
           'displayName',
@@ -177,8 +177,8 @@ export class UsersService implements OnModuleInit {
         });
         return {
           data: users.map((user) => new UserResponse(user)),
-          page: options.page,
-          perPage: options.perPage,
+          page: findAllDto.page,
+          perPage: findAllDto.perPage,
           total: count,
         };
       }
@@ -189,13 +189,13 @@ export class UsersService implements OnModuleInit {
       });
       return {
         data: users.map((user) => new UserResponse(user)),
-        page: options.page,
-        perPage: options.perPage,
+        page: findAllDto.page,
+        perPage: findAllDto.perPage,
         total: count,
       };
     }
-    if (options.search) {
-      where.$or = [{ displayName: { $like: `%${options.search}%` } }];
+    if (findAllDto.search) {
+      where.$or = [{ displayName: { $like: `%${findAllDto.search}%` } }];
     }
     const populate = [
       'bio',
@@ -204,8 +204,8 @@ export class UsersService implements OnModuleInit {
       'problemSolvedCount',
       'lastProblemSolvedAt',
     ] as const;
-    if (options.sort) {
-      orderBy = parseSort(options.sort, [
+    if (findAllDto.sort) {
+      orderBy = parseSort(findAllDto.sort, [
         'displayName',
         'bio',
         'totalScore',
@@ -222,8 +222,8 @@ export class UsersService implements OnModuleInit {
       });
       return {
         data: users.map((user) => new UserResponse(user)),
-        page: options.page,
-        perPage: options.perPage,
+        page: findAllDto.page,
+        perPage: findAllDto.perPage,
         total: count,
       };
     }
@@ -234,8 +234,8 @@ export class UsersService implements OnModuleInit {
     });
     return {
       data: users.map((user) => new UserResponse(user)),
-      page: options.page,
-      perPage: options.perPage,
+      page: findAllDto.page,
+      perPage: findAllDto.perPage,
       total: count,
     };
   }
