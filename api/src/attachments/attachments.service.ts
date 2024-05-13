@@ -16,16 +16,15 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { isSomeRolesIn } from 'src/auth/roles';
+import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
 import { Role } from 'src/shared/enums/role.enum';
 import { AuthenticatedUser } from 'src/shared/interfaces/authenticated-request.interface';
+import { parseSort } from 'src/shared/parse-sort';
 import { UsersService } from 'src/users/users.service';
 
 import { CreateAttachmentDto } from './dto/create-attachment.dto';
-import { Attachment } from './entities/attachment.entity';
 import { FindAllDto } from './dto/find-all.dto';
-import { find } from 'rxjs';
-import { parseSort } from 'src/shared/parse-sort';
-import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
+import { Attachment } from './entities/attachment.entity';
 
 @Injectable()
 export class AttachmentsService implements OnModuleInit {
