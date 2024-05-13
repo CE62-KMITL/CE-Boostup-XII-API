@@ -25,7 +25,7 @@ export class Attachment {
   size: number;
 
   @Property({ persist: false })
-  get url() {
+  get url(): string {
     return `/attachments/${this.id}/${this.name}`;
   }
 
