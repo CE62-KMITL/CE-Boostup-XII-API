@@ -8,6 +8,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { isSomeRolesIn } from 'src/auth/roles';
 import { Problem } from 'src/problems/entities/problem.entity';
@@ -17,7 +18,10 @@ import { UsersService } from 'src/users/users.service';
 
 import { CreateSaveDto } from './dto/create-save.dto';
 import { UpdateSaveDto } from './dto/update-save.dto';
-import { Save } from './entities/save.entity';
+import { Save, SaveResponse } from './entities/save.entity';
+import { FindAllDto } from './dto/find-all.dto';
+import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
+import { parseSort } from 'src/shared/parse-sort';
 
 @Injectable()
 export class SavesService {
@@ -31,9 +35,15 @@ export class SavesService {
   async create(
     originUser: AuthenticatedUser,
     createSaveDto: CreateSaveDto,
-  ): Promise<Save> {
+  ): Promise<SaveResponse> {
     // TODO: Add rate limiting
     const user = await this.usersService.findOneInternal({ id: originUser.id });
+    if (!user) {
+      throw new UnauthorizedException({
+        message: 'Invalid token',
+        errors: { token: 'Invalid token' },
+      });
+    }
     const problem = await this.entityManager
       .getRepository(Problem)
       .findOne({ id: createSaveDto.problemId });
@@ -48,20 +58,110 @@ export class SavesService {
     save.problem = problem;
     save.code = createSaveDto.code;
     await this.entityManager.persistAndFlush(save);
-    return save;
+    return new SaveResponse(save);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async findAll(originUser: AuthenticatedUser): Promise<Save[]> {
-    // TODO: Add permission control
-    const populate = ['owner', 'problem'] as const;
-    return await this.savesRepository.findAll({ populate });
+  async findAll(
+    originUser: AuthenticatedUser,
+    findAllDto: FindAllDto,
+  ): Promise<PaginatedResponse<SaveResponse>> {
+    const where: FilterQuery<Save> = {};
+    if (findAllDto.owner) {
+      where.owner = findAllDto.owner;
+    }
+    if (findAllDto.problem) {
+      where.problem = findAllDto.problem;
+    }
+    const offset = (findAllDto.page - 1) * findAllDto.perPage;
+    const limit = findAllDto.perPage;
+    let orderBy: Record<string, 'asc' | 'desc'> | null = null;
+    if (isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])) {
+      const populate = ['owner', 'problem', 'createdAt', 'updatedAt'] as const;
+      if (findAllDto.sort) {
+        orderBy = parseSort(findAllDto.sort, ['createdAt', 'updatedAt']);
+      }
+      if (orderBy) {
+        const [saves, count] = await this.savesRepository.findAndCount(where, {
+          populate,
+          offset,
+          limit,
+          orderBy,
+        });
+        return {
+          data: saves.map((save) => new SaveResponse(save)),
+          page: findAllDto.page,
+          perPage: findAllDto.perPage,
+          total: count,
+        };
+      }
+      const [saves, count] = await this.savesRepository.findAndCount(where, {
+        populate,
+        offset,
+        limit,
+      });
+      return {
+        data: saves.map((save) => new SaveResponse(save)),
+        page: findAllDto.page,
+        perPage: findAllDto.perPage,
+        total: count,
+      };
+    }
+    const populate = ['problem', 'createdAt', 'updatedAt'] as const;
+    if (!findAllDto.owner) {
+      where.owner = originUser.id;
+    }
+    if (findAllDto.sort) {
+      orderBy = parseSort(findAllDto.sort, ['createdAt', 'updatedAt']);
+    }
+    if (orderBy) {
+      const [saves, count] = await this.savesRepository.findAndCount(where, {
+        populate,
+        offset,
+        limit,
+        orderBy,
+      });
+      return {
+        data: saves.map((save) => new SaveResponse(save)),
+        page: findAllDto.page,
+        perPage: findAllDto.perPage,
+        total: count,
+      };
+    }
+    const [saves, count] = await this.savesRepository.findAndCount(where, {
+      populate,
+      offset,
+      limit,
+    });
+    return {
+      data: saves.map((save) => new SaveResponse(save)),
+      page: findAllDto.page,
+      perPage: findAllDto.perPage,
+      total: count,
+    };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async findOne(originUser: AuthenticatedUser, id: string): Promise<Save> {
-    // TODO: Add permission control
-    const populate = ['owner', 'problem', 'code'] as const;
+  async findOne(
+    originUser: AuthenticatedUser,
+    id: string,
+  ): Promise<SaveResponse> {
+    if (isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])) {
+      const populate = [
+        'owner',
+        'problem',
+        'code',
+        'createdAt',
+        'updatedAt',
+      ] as const;
+      const save = await this.savesRepository.findOne({ id }, { populate });
+      if (!save) {
+        throw new NotFoundException({
+          message: 'Save not found',
+          errors: { id: 'Save not found' },
+        });
+      }
+      return new SaveResponse(save);
+    }
+    const populate = ['problem', 'code', 'createdAt', 'updatedAt'] as const;
     const save = await this.savesRepository.findOne({ id }, { populate });
     if (!save) {
       throw new NotFoundException({
@@ -69,7 +169,7 @@ export class SavesService {
         errors: { id: 'Save not found' },
       });
     }
-    return save;
+    return new SaveResponse(save);
   }
 
   async findOneInternal(where: FilterQuery<Save>): Promise<Save> {
@@ -89,7 +189,7 @@ export class SavesService {
     originUser: AuthenticatedUser,
     id: string,
     updateSaveDto: UpdateSaveDto,
-  ): Promise<Save> {
+  ): Promise<SaveResponse> {
     const save = await this.findOneInternal({ id });
     if (!save) {
       throw new NotFoundException({
@@ -108,7 +208,7 @@ export class SavesService {
     }
     Object.assign(save, updateSaveDto);
     await this.entityManager.flush();
-    return save;
+    return new SaveResponse(save);
   }
 
   async remove(originUser: AuthenticatedUser, id: string): Promise<void> {

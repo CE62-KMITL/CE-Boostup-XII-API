@@ -12,6 +12,7 @@ import {
 import { Attachment } from 'src/attachments/entities/attachment.entity';
 import { ConfigConstants } from 'src/config/config-constants';
 import { ProblemTag } from 'src/problem-tags/entities/problem-tag.entity';
+import { CompletionStatus } from 'src/shared/enums/completion-status.enum';
 import { OptimizationLevel } from 'src/shared/enums/optimization-level.enum';
 import { PublicationStatus } from 'src/shared/enums/publication-status.enum';
 import { ProgrammingLanguage } from 'src/submissions/entities/submission.entity';
@@ -169,11 +170,12 @@ export class ProblemResponse {
   owner?: { id: string; displayName: string };
   credits?: string;
   publicationStatus?: PublicationStatus;
+  completionStatus?: CompletionStatus;
   userSolvedCount?: number;
   createdAt?: Date;
   updatedAt?: Date;
 
-  constructor(problem: Problem) {
+  constructor(problem: Problem, completionStatus?: CompletionStatus) {
     this.id = problem.id;
     this.number = problem.number;
     this.title = problem.title;
@@ -214,6 +216,7 @@ export class ProblemResponse {
       : undefined;
     this.credits = problem.credits;
     this.publicationStatus = problem.publicationStatus;
+    this.completionStatus = completionStatus ? completionStatus : undefined;
     this.userSolvedCount = problem.userSolvedCount;
     this.createdAt = problem.createdAt;
     this.updatedAt = problem.updatedAt;

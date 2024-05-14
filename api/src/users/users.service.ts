@@ -203,6 +203,7 @@ export class UsersService implements OnModuleInit {
     if (findAllDto.search) {
       where.$or = [{ displayName: { $like: `%${findAllDto.search}%` } }];
     }
+    where.roles = { $every: Role.User };
     if (findAllDto.sort) {
       orderBy = parseSort(findAllDto.sort, [
         'displayName',

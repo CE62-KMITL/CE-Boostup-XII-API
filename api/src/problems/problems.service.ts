@@ -15,10 +15,13 @@ import { Attachment } from 'src/attachments/entities/attachment.entity';
 import { isSomeRolesIn } from 'src/auth/roles';
 import { ProblemTag } from 'src/problem-tags/entities/problem-tag.entity';
 import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
+import { CompletionStatus } from 'src/shared/enums/completion-status.enum';
 import { PublicationStatus } from 'src/shared/enums/publication-status.enum';
 import { Role } from 'src/shared/enums/role.enum';
 import { AuthenticatedUser } from 'src/shared/interfaces/authenticated-request.interface';
 import { parseSort } from 'src/shared/parse-sort';
+import { Submission } from 'src/submissions/entities/submission.entity';
+import { User } from 'src/users/entities/user.entity';
 import { UsersService } from 'src/users/users.service';
 
 import { CreateProblemDto } from './dto/create-problem.dto';
@@ -88,6 +91,13 @@ export class ProblemsService {
     originUser: AuthenticatedUser,
     findAllDto: FindAllDto,
   ): Promise<PaginatedResponse<ProblemResponse>> {
+    const user = await this.usersService.findOneInternal({ id: originUser.id });
+    if (!user) {
+      throw new UnauthorizedException({
+        message: 'Invalid token',
+        errors: { token: 'Invalid token' },
+      });
+    }
     const where: FilterQuery<Problem> = {};
     if (findAllDto.search) {
       where.$or = [{ title: { $like: `%${findAllDto.search}%` } }];
@@ -138,7 +148,15 @@ export class ProblemsService {
           },
         );
         return {
-          data: problems.map((problem) => new ProblemResponse(problem)),
+          data: await Promise.all(
+            problems.map(
+              async (problem) =>
+                new ProblemResponse(
+                  problem,
+                  await this.getCompletionStatus(problem, user),
+                ),
+            ),
+          ),
           page: findAllDto.page,
           perPage: findAllDto.perPage,
           total: count,
@@ -153,7 +171,15 @@ export class ProblemsService {
         },
       );
       return {
-        data: problems.map((problem) => new ProblemResponse(problem)),
+        data: await Promise.all(
+          problems.map(
+            async (problem) =>
+              new ProblemResponse(
+                problem,
+                await this.getCompletionStatus(problem, user),
+              ),
+          ),
+        ),
         page: findAllDto.page,
         perPage: findAllDto.perPage,
         total: count,
@@ -189,7 +215,15 @@ export class ProblemsService {
         },
       );
       return {
-        data: problems.map((problem) => new ProblemResponse(problem)),
+        data: await Promise.all(
+          problems.map(
+            async (problem) =>
+              new ProblemResponse(
+                problem,
+                await this.getCompletionStatus(problem, user),
+              ),
+          ),
+        ),
         page: findAllDto.page,
         perPage: findAllDto.perPage,
         total: count,
@@ -204,7 +238,15 @@ export class ProblemsService {
       },
     );
     return {
-      data: problems.map((problem) => new ProblemResponse(problem)),
+      data: await Promise.all(
+        problems.map(
+          async (problem) =>
+            new ProblemResponse(
+              problem,
+              await this.getCompletionStatus(problem, user),
+            ),
+        ),
+      ),
       page: findAllDto.page,
       perPage: findAllDto.perPage,
       total: count,
@@ -546,5 +588,25 @@ export class ProblemsService {
     }
     await this.entityManager.removeAndFlush(problem);
     return;
+  }
+
+  private async getCompletionStatus(
+    problem: Problem,
+    user: User,
+  ): Promise<CompletionStatus> {
+    // Switch this to submission service
+    const acceptedSubmissions = await this.entityManager
+      .getRepository(Submission)
+      .count({ problem, user, accepted: true });
+    if (acceptedSubmissions) {
+      return CompletionStatus.Solved;
+    }
+    const submissions = await this.entityManager
+      .getRepository(Submission)
+      .count({ problem, user });
+    if (submissions) {
+      return CompletionStatus.Attempted;
+    }
+    return CompletionStatus.Unattempted;
   }
 }
