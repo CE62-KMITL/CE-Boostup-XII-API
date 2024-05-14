@@ -97,19 +97,17 @@ export class Problem {
     inverseJoinColumn: 'problem_id',
     owner: true,
   })
-  attachments: Collection<Attachment, object> = new Collection<Attachment>(
-    this,
-  );
+  attachments: Collection<Attachment> = new Collection<Attachment>(this);
 
   @ManyToMany({
     entity: () => ProblemTag,
     pivotTable: 'problem_tags',
-    joinColumn: 'problem_tag_id',
+    joinColumn: 'tag_id',
     inverseJoinColumn: 'problem_id',
     owner: true,
     eager: true,
   })
-  tags: Collection<ProblemTag, object> = new Collection<ProblemTag>(this);
+  tags: Collection<ProblemTag> = new Collection<ProblemTag>(this);
 
   @ManyToOne({ entity: () => User })
   owner: User;
@@ -175,7 +173,10 @@ export class ProblemResponse {
   createdAt?: Date;
   updatedAt?: Date;
 
-  constructor(problem: Problem, completionStatus?: CompletionStatus) {
+  constructor(
+    problem: Problem,
+    extra: { completionStatus?: CompletionStatus } = {},
+  ) {
     this.id = problem.id;
     this.number = problem.number;
     this.title = problem.title;
@@ -216,7 +217,9 @@ export class ProblemResponse {
       : undefined;
     this.credits = problem.credits;
     this.publicationStatus = problem.publicationStatus;
-    this.completionStatus = completionStatus ? completionStatus : undefined;
+    this.completionStatus = extra.completionStatus
+      ? extra.completionStatus
+      : undefined;
     this.userSolvedCount = problem.userSolvedCount;
     this.createdAt = problem.createdAt;
     this.updatedAt = problem.updatedAt;

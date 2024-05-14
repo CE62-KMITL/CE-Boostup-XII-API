@@ -144,6 +144,7 @@ export class UsersService implements OnModuleInit {
         'bio',
         'group',
         'totalScore',
+        'totalScoreOffset',
         'problemSolvedCount',
         'lastProblemSolvedAt',
         'createdAt',
@@ -251,6 +252,7 @@ export class UsersService implements OnModuleInit {
         'bio',
         'group',
         'totalScore',
+        'totalScoreOffset',
         'problemSolvedCount',
         'lastProblemSolvedAt',
         'lastEmailRequestedAt',
@@ -292,6 +294,8 @@ export class UsersService implements OnModuleInit {
         'roles',
         'hashedPassword',
         'bio',
+        'totalScoreOffset',
+        'unlockedHints',
         'lastEmailRequestedAt',
         'avatarFilename',
         'createdAt',
@@ -401,7 +405,7 @@ export class UsersService implements OnModuleInit {
     }
     Object.assign(user, updateUserDto);
     await this.entityManager.flush();
-    return new UserResponse(user);
+    return await this.findOne(originUser, id);
   }
 
   async updateInternal(

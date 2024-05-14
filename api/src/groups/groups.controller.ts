@@ -74,6 +74,7 @@ export class GroupsController {
   @Roles(Role.Admin)
   @Patch(':id')
   async update(
+    @Req() request: AuthenticatedRequest,
     @Param(
       'id',
       new ParseUUIDPipe({
@@ -84,7 +85,7 @@ export class GroupsController {
     id: string,
     @Body() updateGroupDto: UpdateGroupDto,
   ): Promise<GroupResponse> {
-    return await this.groupsService.update(id, updateGroupDto);
+    return await this.groupsService.update(request.user, id, updateGroupDto);
   }
 
   @Roles(Role.Admin)

@@ -151,10 +151,12 @@ export class ProblemsService {
           data: await Promise.all(
             problems.map(
               async (problem) =>
-                new ProblemResponse(
-                  problem,
-                  await this.getCompletionStatus(problem, user),
-                ),
+                new ProblemResponse(problem, {
+                  completionStatus: await this.getCompletionStatus(
+                    problem,
+                    user,
+                  ),
+                }),
             ),
           ),
           page: findAllDto.page,
@@ -174,10 +176,9 @@ export class ProblemsService {
         data: await Promise.all(
           problems.map(
             async (problem) =>
-              new ProblemResponse(
-                problem,
-                await this.getCompletionStatus(problem, user),
-              ),
+              new ProblemResponse(problem, {
+                completionStatus: await this.getCompletionStatus(problem, user),
+              }),
           ),
         ),
         page: findAllDto.page,
@@ -218,10 +219,9 @@ export class ProblemsService {
         data: await Promise.all(
           problems.map(
             async (problem) =>
-              new ProblemResponse(
-                problem,
-                await this.getCompletionStatus(problem, user),
-              ),
+              new ProblemResponse(problem, {
+                completionStatus: await this.getCompletionStatus(problem, user),
+              }),
           ),
         ),
         page: findAllDto.page,
@@ -241,10 +241,9 @@ export class ProblemsService {
       data: await Promise.all(
         problems.map(
           async (problem) =>
-            new ProblemResponse(
-              problem,
-              await this.getCompletionStatus(problem, user),
-            ),
+            new ProblemResponse(problem, {
+              completionStatus: await this.getCompletionStatus(problem, user),
+            }),
         ),
       ),
       page: findAllDto.page,
@@ -277,7 +276,6 @@ export class ProblemsService {
         'memoryLimit',
         'optimizationLevel',
         'attachments',
-        'tags',
         'owner',
         'credits',
         'publicationStatus',
@@ -310,7 +308,6 @@ export class ProblemsService {
       'memoryLimit',
       'optimizationLevel',
       'attachments',
-      'tags',
       'owner',
       'credits',
       'userSolvedCount',
@@ -324,8 +321,11 @@ export class ProblemsService {
         errors: { id: 'Problem not found' },
       });
     }
-    if (true) {
-      // TODO: If user has unlocked hint
+    const userUnlockedHint = await this.usersService.findOneInternal({
+      id: originUser.id,
+      unlockedHints: { $some: problem },
+    });
+    if (userUnlockedHint) {
       this.problemsRepository.populate(problem, ['hint']);
     }
     return new ProblemResponse(problem);
@@ -378,6 +378,36 @@ export class ProblemsService {
         message: 'Problem not found',
         errors: { id: 'Problem not found' },
       });
+    }
+    if (updateProblemDto.unlockHint) {
+      const user = await this.usersService.findOneInternal({
+        id: originUser.id,
+      });
+      if (!user) {
+        throw new UnauthorizedException({
+          message: 'Invalid token',
+          errors: { token: 'Invalid token' },
+        });
+      }
+      if (user.unlockedHints.contains(problem)) {
+        throw new BadRequestException({
+          message: 'Hint already unlocked',
+          errors: { unlockHint: 'Hint already unlocked' },
+        });
+      }
+      if (user.totalScore < problem.hintCost) {
+        throw new BadRequestException({
+          message: 'Insufficient score',
+          errors: { unlockHint: 'Insufficient score' },
+        });
+      }
+      await this.usersService.updateInternal(
+        { id: user.id },
+        {
+          totalScoreOffset: user.totalScoreOffset - problem.hintCost,
+          unlockedHints: [...user.unlockedHints, problem],
+        },
+      );
     }
     if (updateProblemDto.publicationStatus) {
       switch (problem.publicationStatus) {
@@ -566,7 +596,7 @@ export class ProblemsService {
     }
     Object.assign(problem, updateProblemDto);
     await this.entityManager.flush();
-    return new ProblemResponse(problem);
+    return await this.findOne(originUser, id);
   }
 
   async remove(originUser: AuthenticatedUser, id: string): Promise<void> {

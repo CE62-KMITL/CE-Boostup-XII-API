@@ -228,7 +228,7 @@ export class ProblemTagsService {
     }
     Object.assign(problemTag, updateProblemTagDto);
     await this.entityManager.flush();
-    return new ProblemTagResponse(problemTag);
+    return await this.findOne(originUser, id);
   }
 
   async remove(originUser: AuthenticatedUser, id: string): Promise<void> {

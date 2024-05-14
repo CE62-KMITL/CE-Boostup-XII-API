@@ -27,7 +27,7 @@ export class Group {
   description: string;
 
   @OneToMany({ entity: () => User, mappedBy: (user) => user.group })
-  members: Collection<User, object> = new Collection<User>(this);
+  members: Collection<User> = new Collection<User>(this);
 
   @Formula(
     (alias) =>

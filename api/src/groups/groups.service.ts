@@ -225,6 +225,7 @@ export class GroupsService {
   }
 
   async update(
+    originUser: AuthenticatedUser,
     id: string,
     updateGroupDto: UpdateGroupDto,
   ): Promise<GroupResponse> {
@@ -268,7 +269,7 @@ export class GroupsService {
     }
     Object.assign(group, updateGroupDto);
     await this.entityManager.flush();
-    return new GroupResponse(group);
+    return await this.findOne(originUser, id);
   }
 
   async remove(id: string): Promise<void> {

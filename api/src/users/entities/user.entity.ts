@@ -1,7 +1,9 @@
 import {
+  Collection,
   Entity,
   Enum,
   Formula,
+  ManyToMany,
   ManyToOne,
   PrimaryKey,
   Property,
@@ -9,6 +11,7 @@ import {
 } from '@mikro-orm/mariadb';
 import { ConfigConstants } from 'src/config/config-constants';
 import { Group } from 'src/groups/entities/group.entity';
+import { Problem } from 'src/problems/entities/problem.entity';
 import { Role } from 'src/shared/enums/role.enum';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -49,12 +52,24 @@ export class User {
   })
   group?: Group;
 
+  @ManyToMany({
+    entity: () => Problem,
+    pivotTable: 'user_unlocked_hints',
+    joinColumn: 'problem_id',
+    inverseJoinColumn: 'user_id',
+    owner: true,
+  })
+  unlockedHints: Collection<Problem> = new Collection<Problem>(this);
+
   @Formula(
     (alias) =>
-      `(SELECT SUM(\`score\`) FROM \`problem\` WHERE \`problem\`.\`id\` IN (SELECT DISTINCT \`problem_id\` FROM \`submission\` WHERE \`submission\`.\`user_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1))`,
+      `(SELECT SUM(\`score\`) - ${alias}.\`totalScoreOffset\` FROM \`problem\` WHERE \`problem\`.\`id\` IN (SELECT DISTINCT \`problem_id\` FROM \`submission\` WHERE \`submission\`.\`user_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1))`,
     { type: types.integer, serializer: (value) => +value, lazy: true },
   )
   totalScore: number;
+
+  @Property({ type: types.integer, lazy: true })
+  totalScoreOffset: number = 0;
 
   @Formula(
     (alias) =>
