@@ -12,13 +12,16 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { isSomeRolesIn } from 'src/auth/roles';
+import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
 import { Role } from 'src/shared/enums/role.enum';
 import { AuthenticatedUser } from 'src/shared/interfaces/authenticated-request.interface';
+import { parseSort } from 'src/shared/parse-sort';
 import { UsersService } from 'src/users/users.service';
 
 import { CreateProblemTagDto } from './dto/create-problem-tag.dto';
+import { FindAllDto } from './dto/find-all.dto';
 import { UpdateProblemTagDto } from './dto/update-problem-tag.dto';
-import { ProblemTag } from './entities/problem-tag.entity';
+import { ProblemTag, ProblemTagResponse } from './entities/problem-tag.entity';
 
 @Injectable()
 export class ProblemTagsService {
@@ -32,7 +35,7 @@ export class ProblemTagsService {
   async create(
     originUser: AuthenticatedUser,
     createProblemTagDto: CreateProblemTagDto,
-  ): Promise<ProblemTag> {
+  ): Promise<ProblemTagResponse> {
     const user = await this.usersService.findOneInternal({ id: originUser.id });
     if (!user) {
       throw new UnauthorizedException({
@@ -54,22 +57,108 @@ export class ProblemTagsService {
     problemTag.description = createProblemTagDto.description;
     problemTag.owner = user;
     await this.entityManager.persistAndFlush(problemTag);
-    return problemTag;
+    return new ProblemTagResponse(problemTag);
   }
 
-  async findAll(originUser: AuthenticatedUser): Promise<ProblemTag[]> {
+  async findAll(
+    originUser: AuthenticatedUser,
+    findAllDto: FindAllDto,
+  ): Promise<PaginatedResponse<ProblemTagResponse>> {
+    const where: FilterQuery<ProblemTag> = {};
+    if (findAllDto.search) {
+      where.$or = [{ name: { $like: `%${findAllDto.search}%` } }];
+    }
+    const offset = (findAllDto.page - 1) * findAllDto.perPage;
+    const limit = findAllDto.perPage;
+    let orderBy: Record<string, 'asc' | 'desc'> | null = null;
     if (isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])) {
       const populate = ['description', 'createdAt', 'updatedAt'] as const;
-      return await this.problemTagsRepository.findAll({ populate });
+      if (findAllDto.owner) {
+        where.owner = findAllDto.owner;
+      }
+      if (findAllDto.sort) {
+        orderBy = parseSort(findAllDto.sort, [
+          'name',
+          'owner',
+          'createdAt',
+          'updatedAt',
+        ]);
+      }
+      if (orderBy) {
+        const [problemTags, count] =
+          await this.problemTagsRepository.findAndCount(where, {
+            populate,
+            offset,
+            limit,
+            orderBy,
+          });
+        return {
+          data: problemTags.map(
+            (problemTag) => new ProblemTagResponse(problemTag),
+          ),
+          page: findAllDto.page,
+          perPage: findAllDto.perPage,
+          total: count,
+        };
+      }
+      const [problemTags, count] =
+        await this.problemTagsRepository.findAndCount(where, {
+          populate,
+          offset,
+          limit,
+        });
+      return {
+        data: problemTags.map(
+          (problemTag) => new ProblemTagResponse(problemTag),
+        ),
+        page: findAllDto.page,
+        perPage: findAllDto.perPage,
+        total: count,
+      };
     }
     const populate = ['description'] as const;
-    return await this.problemTagsRepository.findAll({ populate });
+    if (findAllDto.owner) {
+      throw new ForbiddenException({
+        message: 'Insufficient permissions',
+        errors: { owner: 'Insufficient permissions' },
+      });
+    }
+    if (findAllDto.sort) {
+      orderBy = parseSort(findAllDto.sort, ['name']);
+    }
+    if (orderBy) {
+      const [problemTags, count] =
+        await this.problemTagsRepository.findAndCount(where, {
+          populate,
+          offset,
+          limit,
+          orderBy,
+        });
+      return {
+        data: problemTags.map(
+          (problemTag) => new ProblemTagResponse(problemTag),
+        ),
+        page: findAllDto.page,
+        perPage: findAllDto.perPage,
+        total: count,
+      };
+    }
+    const [problemTags, count] = await this.problemTagsRepository.findAndCount(
+      where,
+      { populate, offset, limit },
+    );
+    return {
+      data: problemTags.map((problemTag) => new ProblemTagResponse(problemTag)),
+      page: findAllDto.page,
+      perPage: findAllDto.perPage,
+      total: count,
+    };
   }
 
   async findOne(
     originUser: AuthenticatedUser,
     id: string,
-  ): Promise<ProblemTag> {
+  ): Promise<ProblemTagResponse> {
     if (isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])) {
       const populate = [
         'description',
@@ -87,7 +176,7 @@ export class ProblemTagsService {
           errors: { id: 'ProblemTag not found' },
         });
       }
-      return problemTag;
+      return new ProblemTagResponse(problemTag);
     }
     const populate = ['description'] as const;
     const problemTag = await this.problemTagsRepository.findOne(
@@ -100,7 +189,7 @@ export class ProblemTagsService {
         errors: { id: 'ProblemTag not found' },
       });
     }
-    return problemTag;
+    return new ProblemTagResponse(problemTag);
   }
 
   async findOneInternal(where: FilterQuery<ProblemTag>): Promise<ProblemTag> {
@@ -120,7 +209,7 @@ export class ProblemTagsService {
     originUser: AuthenticatedUser,
     id: string,
     updateProblemTagDto: UpdateProblemTagDto,
-  ): Promise<ProblemTag> {
+  ): Promise<ProblemTagResponse> {
     const problemTag = await this.findOneInternal({ id });
     if (!problemTag) {
       throw new NotFoundException({
@@ -139,7 +228,7 @@ export class ProblemTagsService {
     }
     Object.assign(problemTag, updateProblemTagDto);
     await this.entityManager.flush();
-    return problemTag;
+    return await this.findOne(originUser, id);
   }
 
   async remove(originUser: AuthenticatedUser, id: string): Promise<void> {

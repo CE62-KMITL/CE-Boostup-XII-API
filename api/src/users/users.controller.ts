@@ -13,6 +13,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   Req,
   Res,
   StreamableFile,
@@ -21,13 +22,16 @@ import { ConfigService } from '@nestjs/config';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { Public } from 'src/auth/public.decorator';
+import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
 import { Role } from 'src/shared/enums/role.enum';
 import { AuthenticatedRequest } from 'src/shared/interfaces/authenticated-request.interface';
 
 import { Roles } from '../auth/roles.decorator';
 
 import { CreateUserDto } from './dto/create-user.dto';
+import { FindAllDto } from './dto/find-all.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UserResponse } from './entities/user.entity';
 import { UsersService } from './users.service';
 
 @ApiBearerAuth()
@@ -44,14 +48,17 @@ export class UsersController {
   async create(
     @Req() request: AuthenticatedRequest,
     @Body() createUserDto: CreateUserDto,
-  ) {
+  ): Promise<UserResponse> {
     return await this.usersService.create(request.user, createUserDto);
   }
 
   @Roles(Role.User, Role.Staff, Role.Admin)
   @Get()
-  async findAll(@Req() request: AuthenticatedRequest) {
-    return await this.usersService.findAll(request.user);
+  async findAll(
+    @Req() request: AuthenticatedRequest,
+    @Query() findAllDto: FindAllDto,
+  ): Promise<PaginatedResponse<UserResponse>> {
+    return await this.usersService.findAll(request.user, findAllDto);
   }
 
   @Roles(Role.User, Role.Staff)
@@ -66,7 +73,7 @@ export class UsersController {
       }),
     )
     id: string,
-  ) {
+  ): Promise<UserResponse> {
     return await this.usersService.findOne(request.user, id);
   }
 
@@ -83,7 +90,7 @@ export class UsersController {
     )
     id: string,
     @Body() updateUserDto: UpdateUserDto,
-  ) {
+  ): Promise<UserResponse> {
     return await this.usersService.update(request.user, id, updateUserDto);
   }
 
@@ -100,7 +107,7 @@ export class UsersController {
       }),
     )
     id: string,
-  ) {
+  ): Promise<void> {
     return await this.usersService.remove(request.user, id);
   }
 

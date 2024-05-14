@@ -17,6 +17,7 @@ import {
   UploadedFile,
   UseInterceptors,
   Req,
+  Query,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -25,11 +26,14 @@ import { Express } from 'express';
 import type { Response } from 'express';
 import { Public } from 'src/auth/public.decorator';
 import { Roles } from 'src/auth/roles.decorator';
+import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
 import { Role } from 'src/shared/enums/role.enum';
 import { AuthenticatedRequest } from 'src/shared/interfaces/authenticated-request.interface';
 
 import { AttachmentsService } from './attachments.service';
 import { CreateAttachmentDto } from './dto/create-attachment.dto';
+import { FindAllDto } from './dto/find-all.dto';
+import { AttachmentResponse } from './entities/attachment.entity';
 
 @ApiBearerAuth()
 @ApiTags('attachments')
@@ -52,7 +56,7 @@ export class AttachmentsController {
         .build({ errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY }),
     )
     file: Express.Multer.File,
-  ) {
+  ): Promise<AttachmentResponse> {
     return await this.attachmentsService.create(
       request.user,
       createAttachmentDto,
@@ -62,8 +66,11 @@ export class AttachmentsController {
 
   @Roles(Role.Admin)
   @Get()
-  async findAll(@Req() request: AuthenticatedRequest) {
-    return await this.attachmentsService.findAll(request.user);
+  async findAll(
+    @Req() request: AuthenticatedRequest,
+    @Query() findAllDto: FindAllDto,
+  ): Promise<PaginatedResponse<AttachmentResponse>> {
+    return await this.attachmentsService.findAll(request.user, findAllDto);
   }
 
   @Public()
@@ -78,7 +85,7 @@ export class AttachmentsController {
       }),
     )
     id: string,
-  ) {
+  ): Promise<AttachmentResponse> {
     return await this.attachmentsService.findOne(request.user, id);
   }
 
@@ -94,7 +101,7 @@ export class AttachmentsController {
       }),
     )
     id: string,
-  ) {
+  ): Promise<void> {
     return await this.attachmentsService.remove(request.user, id);
   }
 

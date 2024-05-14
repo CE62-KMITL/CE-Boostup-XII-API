@@ -12,6 +12,7 @@ import {
 import { Attachment } from 'src/attachments/entities/attachment.entity';
 import { ConfigConstants } from 'src/config/config-constants';
 import { ProblemTag } from 'src/problem-tags/entities/problem-tag.entity';
+import { CompletionStatus } from 'src/shared/enums/completion-status.enum';
 import { OptimizationLevel } from 'src/shared/enums/optimization-level.enum';
 import { PublicationStatus } from 'src/shared/enums/publication-status.enum';
 import { ProgrammingLanguage } from 'src/submissions/entities/submission.entity';
@@ -96,19 +97,17 @@ export class Problem {
     inverseJoinColumn: 'problem_id',
     owner: true,
   })
-  attachments: Collection<Attachment, object> = new Collection<Attachment>(
-    this,
-  );
+  attachments: Collection<Attachment> = new Collection<Attachment>(this);
 
   @ManyToMany({
     entity: () => ProblemTag,
     pivotTable: 'problem_tags',
-    joinColumn: 'problem_tag_id',
+    joinColumn: 'tag_id',
     inverseJoinColumn: 'problem_id',
     owner: true,
     eager: true,
   })
-  tags: Collection<ProblemTag, object> = new Collection<ProblemTag>(this);
+  tags: Collection<ProblemTag> = new Collection<ProblemTag>(this);
 
   @ManyToOne({ entity: () => User })
   owner: User;
@@ -135,6 +134,96 @@ export class Problem {
 
   @Property({ type: types.datetime, lazy: true, onUpdate: () => new Date() })
   updatedAt: Date = new Date();
+}
+
+export class ProblemResponse {
+  id: string;
+  number?: number;
+  title?: string;
+  description?: string;
+  input?: string;
+  output?: string;
+  hint?: string;
+  hintCost?: number;
+  testcases?: { input: string; output: string }[];
+  exampleTestcases?: { input: string; output: string }[];
+  starterCode?: string;
+  solution?: string;
+  solutionLanguage?: ProgrammingLanguage;
+  allowedHeaders?: string[];
+  bannedFunctions?: string[];
+  timeLimit?: number;
+  memoryLimit?: number;
+  difficulty?: number;
+  score?: number;
+  optimizationLevel?: OptimizationLevel;
+  attachments?: {
+    id: string;
+    name: string;
+    type: string;
+    size: number;
+    url: string;
+  }[];
+  tags?: { id: string; name: string }[];
+  owner?: { id: string; displayName: string };
+  credits?: string;
+  publicationStatus?: PublicationStatus;
+  completionStatus?: CompletionStatus;
+  userSolvedCount?: number;
+  createdAt?: Date;
+  updatedAt?: Date;
+
+  constructor(
+    problem: Problem,
+    extra: { completionStatus?: CompletionStatus } = {},
+  ) {
+    this.id = problem.id;
+    this.number = problem.number;
+    this.title = problem.title;
+    this.description = problem.description;
+    this.input = problem.input;
+    this.output = problem.output;
+    this.hint = problem.hint;
+    this.hintCost = problem.hintCost;
+    this.testcases = problem.testcases;
+    this.exampleTestcases = problem.exampleTestcases;
+    this.starterCode = problem.starterCode;
+    this.solution = problem.solution;
+    this.solutionLanguage = problem.solutionLanguage;
+    this.allowedHeaders = problem.allowedHeaders;
+    this.bannedFunctions = problem.bannedFunctions;
+    this.timeLimit = problem.timeLimit;
+    this.memoryLimit = problem.memoryLimit;
+    this.difficulty = problem.difficulty;
+    this.score = problem.score;
+    this.optimizationLevel = problem.optimizationLevel;
+    this.attachments = problem.attachments
+      ? problem.attachments.map((attachment) => ({
+          id: attachment.id,
+          name: attachment.name,
+          type: attachment.type,
+          size: attachment.size,
+          url: attachment.url,
+        }))
+      : undefined;
+    this.tags = problem.tags
+      ? problem.tags.map((tag) => ({ id: tag.id, name: tag.name }))
+      : undefined;
+    this.owner = problem.owner
+      ? {
+          id: problem.owner.id,
+          displayName: problem.owner.displayName,
+        }
+      : undefined;
+    this.credits = problem.credits;
+    this.publicationStatus = problem.publicationStatus;
+    this.completionStatus = extra.completionStatus
+      ? extra.completionStatus
+      : undefined;
+    this.userSolvedCount = problem.userSolvedCount;
+    this.createdAt = problem.createdAt;
+    this.updatedAt = problem.updatedAt;
+  }
 }
 
 export { OptimizationLevel } from 'src/shared/enums/optimization-level.enum';

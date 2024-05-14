@@ -5,7 +5,7 @@ import { MailerService } from '@nestjs-modules/mailer';
 export class MailService {
   constructor(private readonly mailerService: MailerService) {}
 
-  async sendAccountCreationEmail(email: string, url: string) {
+  async sendAccountCreationEmail(email: string, url: string): Promise<void> {
     try {
       await this.mailerService.sendMail({
         to: email,
@@ -25,7 +25,7 @@ export class MailService {
     }
   }
 
-  async sendPasswordResetEmail(email: string, url: string) {
+  async sendPasswordResetEmail(email: string, url: string): Promise<void> {
     try {
       await this.mailerService.sendMail({
         to: email,

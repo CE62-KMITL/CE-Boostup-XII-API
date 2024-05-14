@@ -10,14 +10,18 @@ import {
   HttpStatus,
   ParseUUIDPipe,
   Req,
+  Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Roles } from 'src/auth/roles.decorator';
+import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
 import { Role } from 'src/shared/enums/role.enum';
 import { AuthenticatedRequest } from 'src/shared/interfaces/authenticated-request.interface';
 
 import { CreateProblemDto } from './dto/create-problem.dto';
+import { FindAllDto } from './dto/find-all.dto';
 import { UpdateProblemDto } from './dto/update-problem.dto';
+import { ProblemResponse } from './entities/problem.entity';
 import { ProblemsService } from './problems.service';
 
 @ApiBearerAuth()
@@ -31,13 +35,16 @@ export class ProblemsController {
   async create(
     @Req() request: AuthenticatedRequest,
     @Body() createProblemDto: CreateProblemDto,
-  ) {
+  ): Promise<ProblemResponse> {
     return await this.problemsService.create(request.user, createProblemDto);
   }
 
   @Get()
-  async findAll(@Req() request: AuthenticatedRequest) {
-    return await this.problemsService.findAll(request.user);
+  async findAll(
+    @Req() request: AuthenticatedRequest,
+    @Query() findAllDto: FindAllDto,
+  ): Promise<PaginatedResponse<ProblemResponse>> {
+    return await this.problemsService.findAll(request.user, findAllDto);
   }
 
   @Get(':id')
@@ -51,7 +58,7 @@ export class ProblemsController {
       }),
     )
     id: string,
-  ) {
+  ): Promise<ProblemResponse> {
     return await this.problemsService.findOne(request.user, id);
   }
 
@@ -68,7 +75,7 @@ export class ProblemsController {
     )
     id: string,
     @Body() updateProblemDto: UpdateProblemDto,
-  ) {
+  ): Promise<ProblemResponse> {
     return await this.problemsService.update(
       request.user,
       id,
@@ -89,7 +96,7 @@ export class ProblemsController {
       }),
     )
     id: string,
-  ) {
+  ): Promise<void> {
     return await this.problemsService.remove(request.user, id);
   }
 }

@@ -17,7 +17,7 @@ export class AuthController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @Post('login')
-  async login(@Body() loginDto: LoginDto) {
+  async login(@Body() loginDto: LoginDto): Promise<{ token: string }> {
     return await this.authService.login(loginDto.username, loginDto.password);
   }
 
@@ -26,7 +26,7 @@ export class AuthController {
   @Post('request-account-creation')
   async requestAccountCreation(
     @Body() requestAccountCreationDto: RequestAccountCreationDto,
-  ) {
+  ): Promise<{ message: string }> {
     return await this.authService.requestAccountCreation(
       requestAccountCreationDto.email,
       requestAccountCreationDto.siteUrl,
@@ -36,7 +36,9 @@ export class AuthController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @Post('create-account')
-  async createAccount(@Body() createAccountDto: CreateAccountDto) {
+  async createAccount(
+    @Body() createAccountDto: CreateAccountDto,
+  ): Promise<{ message: string }> {
     return await this.authService.createAccount(
       createAccountDto.token,
       createAccountDto.password,
@@ -48,7 +50,7 @@ export class AuthController {
   @Post('request-password-reset')
   async requestPasswordReset(
     @Body() requestPasswordResetDto: RequestPasswordResetDto,
-  ) {
+  ): Promise<{ message: string }> {
     return await this.authService.requestPasswordReset(
       requestPasswordResetDto.email,
       requestPasswordResetDto.siteUrl,
@@ -58,7 +60,9 @@ export class AuthController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @Post('reset-password')
-  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+  async resetPassword(
+    @Body() resetPasswordDto: ResetPasswordDto,
+  ): Promise<{ message: string }> {
     return await this.authService.resetPassword(
       resetPasswordDto.token,
       resetPasswordDto.password,

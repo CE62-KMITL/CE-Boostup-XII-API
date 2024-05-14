@@ -10,12 +10,16 @@ import {
   HttpStatus,
   ParseUUIDPipe,
   Req,
+  Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
 import { AuthenticatedRequest } from 'src/shared/interfaces/authenticated-request.interface';
 
 import { CreateSaveDto } from './dto/create-save.dto';
+import { FindAllDto } from './dto/find-all.dto';
 import { UpdateSaveDto } from './dto/update-save.dto';
+import { SaveResponse } from './entities/save.entity';
 import { SavesService } from './saves.service';
 
 @ApiBearerAuth()
@@ -28,13 +32,16 @@ export class SavesController {
   async create(
     @Req() request: AuthenticatedRequest,
     @Body() createSaveDto: CreateSaveDto,
-  ) {
+  ): Promise<SaveResponse> {
     return await this.savesService.create(request.user, createSaveDto);
   }
 
   @Get()
-  async findAll(@Req() request: AuthenticatedRequest) {
-    return await this.savesService.findAll(request.user);
+  async findAll(
+    @Req() request: AuthenticatedRequest,
+    @Query() findAllDto: FindAllDto,
+  ): Promise<PaginatedResponse<SaveResponse>> {
+    return await this.savesService.findAll(request.user, findAllDto);
   }
 
   @Get(':id')
@@ -48,7 +55,7 @@ export class SavesController {
       }),
     )
     id: string,
-  ) {
+  ): Promise<SaveResponse> {
     return await this.savesService.findOne(request.user, id);
   }
 
@@ -64,7 +71,7 @@ export class SavesController {
     )
     id: string,
     @Body() updateSaveDto: UpdateSaveDto,
-  ) {
+  ): Promise<SaveResponse> {
     return await this.savesService.update(request.user, id, updateSaveDto);
   }
 
@@ -80,7 +87,7 @@ export class SavesController {
       }),
     )
     id: string,
-  ) {
+  ): Promise<void> {
     return await this.savesService.remove(request.user, id);
   }
 }

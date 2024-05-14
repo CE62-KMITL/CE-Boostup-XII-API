@@ -17,12 +17,15 @@ import {
 import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
 import { isRolesHigher, isSomeRolesIn } from 'src/auth/roles';
+import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
 import { Role } from 'src/shared/enums/role.enum';
 import { AuthenticatedUser } from 'src/shared/interfaces/authenticated-request.interface';
+import { parseSort } from 'src/shared/parse-sort';
 
 import { Group } from '../groups/entities/group.entity';
 
 import { CreateUserDto } from './dto/create-user.dto';
+import { FindAllDto } from './dto/find-all.dto';
 import { UpdateUserDto, UpdateUserInternalDto } from './dto/update-user.dto';
 import { User, UserResponse } from './entities/user.entity';
 
@@ -35,7 +38,7 @@ export class UsersService implements OnModuleInit {
     private readonly configService: ConfigService,
   ) {}
 
-  onModuleInit() {
+  onModuleInit(): void {
     this.createSuperAdmin();
     this.createAvatarDirectory();
   }
@@ -123,7 +126,17 @@ export class UsersService implements OnModuleInit {
     return new UserResponse(user);
   }
 
-  async findAll(originUser: AuthenticatedUser): Promise<User[]> {
+  async findAll(
+    originUser: AuthenticatedUser,
+    findAllDto: FindAllDto,
+  ): Promise<PaginatedResponse<UserResponse>> {
+    const where: FilterQuery<User> = {};
+    if (findAllDto.group !== undefined) {
+      where.group = findAllDto.group;
+    }
+    const offset: number = (findAllDto.page - 1) * findAllDto.perPage;
+    const limit: number = findAllDto.perPage;
+    let orderBy: Record<string, 'asc' | 'desc'> | null = null;
     if (isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])) {
       const populate = [
         'email',
@@ -131,12 +144,55 @@ export class UsersService implements OnModuleInit {
         'bio',
         'group',
         'totalScore',
+        'totalScoreOffset',
         'problemSolvedCount',
         'lastProblemSolvedAt',
         'createdAt',
         'updatedAt',
       ] as const;
-      return await this.usersRepository.findAll({ populate });
+      if (findAllDto.search) {
+        where.$or = [
+          { displayName: { $like: `%${findAllDto.search}%` } },
+          { email: { $like: `%${findAllDto.search}%` } },
+        ];
+      }
+      if (findAllDto.sort) {
+        orderBy = parseSort(findAllDto.sort, [
+          'email',
+          'displayName',
+          'bio',
+          'totalScore',
+          'problemSolvedCount',
+          'lastProblemSolvedAt',
+          'createdAt',
+          'updatedAt',
+        ]);
+      }
+      if (orderBy) {
+        const [users, count] = await this.usersRepository.findAndCount(where, {
+          populate,
+          offset,
+          limit,
+          orderBy,
+        });
+        return {
+          data: users.map((user) => new UserResponse(user)),
+          page: findAllDto.page,
+          perPage: findAllDto.perPage,
+          total: count,
+        };
+      }
+      const [users, count] = await this.usersRepository.findAndCount(where, {
+        populate,
+        offset,
+        limit,
+      });
+      return {
+        data: users.map((user) => new UserResponse(user)),
+        page: findAllDto.page,
+        perPage: findAllDto.perPage,
+        total: count,
+      };
     }
     const populate = [
       'bio',
@@ -144,13 +200,51 @@ export class UsersService implements OnModuleInit {
       'totalScore',
       'problemSolvedCount',
       'lastProblemSolvedAt',
-      'createdAt',
-      'updatedAt',
     ] as const;
-    return await this.usersRepository.findAll({ populate });
+    if (findAllDto.search) {
+      where.$or = [{ displayName: { $like: `%${findAllDto.search}%` } }];
+    }
+    where.roles = { $every: Role.User };
+    if (findAllDto.sort) {
+      orderBy = parseSort(findAllDto.sort, [
+        'displayName',
+        'bio',
+        'totalScore',
+        'problemSolvedCount',
+        'lastProblemSolvedAt',
+      ]);
+    }
+    if (orderBy) {
+      const [users, count] = await this.usersRepository.findAndCount(where, {
+        populate,
+        offset,
+        limit,
+        orderBy,
+      });
+      return {
+        data: users.map((user) => new UserResponse(user)),
+        page: findAllDto.page,
+        perPage: findAllDto.perPage,
+        total: count,
+      };
+    }
+    const [users, count] = await this.usersRepository.findAndCount(where, {
+      populate,
+      offset,
+      limit,
+    });
+    return {
+      data: users.map((user) => new UserResponse(user)),
+      page: findAllDto.page,
+      perPage: findAllDto.perPage,
+      total: count,
+    };
   }
 
-  async findOne(originUser: AuthenticatedUser, id: string): Promise<User> {
+  async findOne(
+    originUser: AuthenticatedUser,
+    id: string,
+  ): Promise<UserResponse> {
     if (isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])) {
       const populate = [
         'email',
@@ -158,6 +252,7 @@ export class UsersService implements OnModuleInit {
         'bio',
         'group',
         'totalScore',
+        'totalScoreOffset',
         'problemSolvedCount',
         'lastProblemSolvedAt',
         'lastEmailRequestedAt',
@@ -171,7 +266,7 @@ export class UsersService implements OnModuleInit {
           errors: { id: 'User not found' },
         });
       }
-      return user;
+      return new UserResponse(user);
     }
     const populate = [
       'bio',
@@ -189,7 +284,7 @@ export class UsersService implements OnModuleInit {
         errors: { id: 'User not found' },
       });
     }
-    return user;
+    return new UserResponse(user);
   }
 
   async findOneInternal(where: FilterQuery<User>): Promise<User> {
@@ -199,6 +294,8 @@ export class UsersService implements OnModuleInit {
         'roles',
         'hashedPassword',
         'bio',
+        'totalScoreOffset',
+        'unlockedHints',
         'lastEmailRequestedAt',
         'avatarFilename',
         'createdAt',
@@ -308,7 +405,7 @@ export class UsersService implements OnModuleInit {
     }
     Object.assign(user, updateUserDto);
     await this.entityManager.flush();
-    return new UserResponse(user);
+    return await this.findOne(originUser, id);
   }
 
   async updateInternal(

@@ -158,10 +158,14 @@ export class CreateProblemDto {
   @Max(ConfigConstants.problem.maxMemoryLimit)
   memoryLimit: number;
 
-  @ApiProperty({ minimum: 0, maximum: 5, example: 1 })
+  @ApiProperty({
+    minimum: ConfigConstants.problem.minDifficulty,
+    maximum: ConfigConstants.problem.maxDifficulty,
+    example: 1,
+  })
   @IsNumber()
-  @Min(0)
-  @Max(5)
+  @Min(ConfigConstants.problem.minDifficulty)
+  @Max(ConfigConstants.problem.maxDifficulty)
   difficulty: number;
 
   @ApiProperty({ minimum: 0, example: 100 })
@@ -180,7 +184,6 @@ export class CreateProblemDto {
     example: ['28fdc367-e76c-4b60-912a-de937aa40f7f'],
   })
   @IsArray()
-  @IsString({ each: true })
   @IsUUID('4', { each: true })
   attachments: string[];
 
@@ -190,7 +193,6 @@ export class CreateProblemDto {
     example: ['28fdc367-e76c-4b60-912a-de937aa40f7f'],
   })
   @IsArray()
-  @IsString({ each: true })
   @IsUUID('4', { each: true })
   tags: string[];
 

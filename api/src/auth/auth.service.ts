@@ -23,7 +23,10 @@ export class AuthService {
     };
   }
 
-  async requestAccountCreation(email: string, siteUrl: string) {
+  async requestAccountCreation(
+    email: string,
+    siteUrl: string,
+  ): Promise<{ message: string }> {
     const user = await this.usersService.findOneInternal({ email });
     if (!user) {
       throw new BadRequestException({
@@ -62,7 +65,10 @@ export class AuthService {
     return { message: 'Email sent' };
   }
 
-  async createAccount(token: string, password: string) {
+  async createAccount(
+    token: string,
+    password: string,
+  ): Promise<{ message: string }> {
     let payload: { id: string; type: string } | undefined;
     try {
       payload = await this.jwtService.verifyAsync<{
@@ -95,7 +101,10 @@ export class AuthService {
     return { message: 'Account created' };
   }
 
-  async requestPasswordReset(email: string, siteUrl: string) {
+  async requestPasswordReset(
+    email: string,
+    siteUrl: string,
+  ): Promise<{ message: string }> {
     const user = await this.usersService.findOneInternal({ email });
     if (!user) {
       throw new BadRequestException({
@@ -134,7 +143,10 @@ export class AuthService {
     return { message: 'Email sent' };
   }
 
-  async resetPassword(token: string, password: string) {
+  async resetPassword(
+    token: string,
+    password: string,
+  ): Promise<{ message: string }> {
     let payload: { id: string; type: string } | undefined;
     try {
       payload = await this.jwtService.verifyAsync<{

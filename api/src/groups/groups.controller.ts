@@ -16,17 +16,21 @@ import {
   Res,
   StreamableFile,
   Req,
+  Query,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { Public } from 'src/auth/public.decorator';
 import { Roles } from 'src/auth/roles.decorator';
+import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
 import { Role } from 'src/shared/enums/role.enum';
 import { AuthenticatedRequest } from 'src/shared/interfaces/authenticated-request.interface';
 
 import { CreateGroupDto } from './dto/create-group.dto';
+import { FindAllDto } from './dto/find-all.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
+import { GroupResponse } from './entities/group.entity';
 import { GroupsService } from './groups.service';
 
 @ApiBearerAuth()
@@ -40,13 +44,16 @@ export class GroupsController {
 
   @Roles(Role.Admin)
   @Post()
-  async create(@Body() createGroupDto: CreateGroupDto) {
+  async create(@Body() createGroupDto: CreateGroupDto): Promise<GroupResponse> {
     return await this.groupsService.create(createGroupDto);
   }
 
   @Get()
-  async findAll(@Req() request: AuthenticatedRequest) {
-    return await this.groupsService.findAll(request.user);
+  async findAll(
+    @Req() request: AuthenticatedRequest,
+    @Query() findAllDto: FindAllDto,
+  ): Promise<PaginatedResponse<GroupResponse>> {
+    return await this.groupsService.findAll(request.user, findAllDto);
   }
 
   @Get(':id')
@@ -60,13 +67,14 @@ export class GroupsController {
       }),
     )
     id: string,
-  ) {
+  ): Promise<GroupResponse> {
     return await this.groupsService.findOne(request.user, id);
   }
 
   @Roles(Role.Admin)
   @Patch(':id')
   async update(
+    @Req() request: AuthenticatedRequest,
     @Param(
       'id',
       new ParseUUIDPipe({
@@ -76,8 +84,8 @@ export class GroupsController {
     )
     id: string,
     @Body() updateGroupDto: UpdateGroupDto,
-  ) {
-    return await this.groupsService.update(id, updateGroupDto);
+  ): Promise<GroupResponse> {
+    return await this.groupsService.update(request.user, id, updateGroupDto);
   }
 
   @Roles(Role.Admin)
@@ -92,7 +100,7 @@ export class GroupsController {
       }),
     )
     id: string,
-  ) {
+  ): Promise<void> {
     return await this.groupsService.remove(id);
   }
 

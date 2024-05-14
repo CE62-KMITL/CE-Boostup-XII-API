@@ -29,3 +29,25 @@ export class Save {
   @Property({ type: types.datetime, lazy: true, onUpdate: () => new Date() })
   updatedAt: Date = new Date();
 }
+
+export class SaveResponse {
+  id: string;
+  owner?: { id: string; displayName: string };
+  problem?: { id: string; title: string };
+  code?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+
+  constructor(save: Save) {
+    this.id = save.id;
+    this.owner = save.owner
+      ? { id: save.owner.id, displayName: save.owner.displayName }
+      : undefined;
+    this.problem = save.problem
+      ? { id: save.problem.id, title: save.problem.title }
+      : undefined;
+    this.code = save.code;
+    this.createdAt = save.createdAt;
+    this.updatedAt = save.updatedAt;
+  }
+}

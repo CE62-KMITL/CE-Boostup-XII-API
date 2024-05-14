@@ -24,8 +24,8 @@ export class Attachment {
   @Property({ type: types.integer })
   size: number;
 
-  @Property({ name: 'url' })
-  getUrl() {
+  @Property({ persist: false })
+  get url(): string {
     return `/attachments/${this.id}/${this.name}`;
   }
 
@@ -34,4 +34,29 @@ export class Attachment {
 
   @Property({ type: types.datetime, lazy: true })
   createdAt: Date = new Date();
+}
+
+export class AttachmentResponse {
+  id: string;
+  name?: string;
+  type?: string;
+  size?: number;
+  url?: string;
+  owner?: {
+    id: string;
+    displayName: string;
+  };
+  createdAt?: Date;
+
+  constructor(attachment: Attachment) {
+    this.id = attachment.id;
+    this.name = attachment.name;
+    this.type = attachment.type;
+    this.size = attachment.size;
+    this.url = attachment.url;
+    this.owner = attachment.owner
+      ? { id: attachment.owner.id, displayName: attachment.owner.displayName }
+      : undefined;
+    this.createdAt = attachment.createdAt;
+  }
 }

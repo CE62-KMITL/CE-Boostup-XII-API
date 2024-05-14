@@ -27,7 +27,7 @@ export class Group {
   description: string;
 
   @OneToMany({ entity: () => User, mappedBy: (user) => user.group })
-  members: Collection<User, object> = new Collection<User>(this);
+  members: Collection<User> = new Collection<User>(this);
 
   @Formula(
     (alias) =>
@@ -38,7 +38,7 @@ export class Group {
 
   @Formula(
     (alias) =>
-      `(SELECT SUM(\`score\` * (SELECT COUNT(DISTINCT \`user_id\`) FROM \`submission\` WHERE \`submission\`.\`problem_id\` = \`problem\`.\`id\` AND \`submission\`.\`user_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1)) FROM \`problem\`)`,
+      `(SELECT SUM(\`score\` * (SELECT COUNT(DISTINCT \`user_id\`) FROM \`submission\` WHERE \`submission\`.\`problem_id\` = \`problem\`.\`id\` AND \`submission\`.\`user_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1)) - (SELECT SUM(\`total_score_offset\`) FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) FROM \`problem\`)`,
     { type: types.integer, serializer: (value) => +value, lazy: true },
   )
   totalScore: number;
@@ -79,4 +79,39 @@ export class Group {
 
   @Property({ type: types.datetime, lazy: true, onUpdate: () => new Date() })
   updatedAt: Date = new Date();
+}
+
+export class GroupResponse {
+  id: string;
+  name?: string;
+  description?: string;
+  members?: { id: string; displayName: string }[];
+  memberCount?: number;
+  totalScore?: number;
+  uniqueTotalScore?: number;
+  problemSolvedCount?: number;
+  uniqueProblemSolvedCount?: number;
+  lastProblemSolvedAt?: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
+
+  constructor(group: Group) {
+    this.id = group.id;
+    this.name = group.name;
+    this.description = group.description;
+    this.members = group.members
+      ? group.members.map((user) => ({
+          id: user.id,
+          displayName: user.displayName,
+        }))
+      : undefined;
+    this.memberCount = group.memberCount;
+    this.totalScore = group.totalScore;
+    this.uniqueTotalScore = group.uniqueTotalScore;
+    this.problemSolvedCount = group.problemSolvedCount;
+    this.uniqueProblemSolvedCount = group.uniqueProblemSolvedCount;
+    this.lastProblemSolvedAt = group.lastProblemSolvedAt;
+    this.createdAt = group.createdAt;
+    this.updatedAt = group.updatedAt;
+  }
 }
