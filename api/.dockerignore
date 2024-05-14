@@ -1,0 +1,13 @@
+/attachments
+/avatars
+/dist
+/mariadb-data
+/node_modules
+.dockerignore
+.env.example
+.eslintrc.js
+.gitignore
+.prettierrc
+Dockerfile
+*.md
+routes.yaml

@@ -6,11 +6,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
-import { MulterModule } from '@nestjs/platform-express';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
-import { diskStorage } from 'multer';
-import { v4 as uuidv4 } from 'uuid';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -85,19 +82,6 @@ import { UsersModule } from './users/users.module';
             strict: true,
           },
         },
-      }),
-      inject: [ConfigService],
-    }),
-    MulterModule.registerAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        storage: diskStorage({
-          destination: configService.getOrThrow<string>(
-            'storages.attachments.path',
-          ),
-          filename: (_, file, cb) =>
-            cb(null, `${uuidv4()}.${file.originalname.split('.').pop()}`),
-        }),
       }),
       inject: [ConfigService],
     }),

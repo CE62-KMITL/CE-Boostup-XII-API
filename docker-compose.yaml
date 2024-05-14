@@ -1,0 +1,41 @@
+name: "ce-boostup-xii"
+services:
+  api:
+    build: api
+    container_name: ce-boostup-xii-api
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./api/attachments:/app/attachments
+      - ./api/avatars:/app/avatars
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    environment:
+      - MARIADB_HOST=mariadb
+    healthcheck:
+      test: "wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1"
+    restart: unless-stopped
+  mariadb:
+    image: mariadb:11.3
+    container_name: ce-boostup-xii-mariadb
+    volumes:
+      - ./api/mariadb-data:/var/lib/mysql
+      - ./api/mariadb.cnf:/etc/mysql/conf.d/mariadb.cnf
+    expose:
+      - "3306"
+    environment:
+      - MARIADB_RANDOM_ROOT_PASSWORD=yes
+      - MARIADB_DATABASE=${MARIADB_DATABASE:-ceboostupxii}
+      - MARIADB_USER=${MARIADB_USER:-ceboostupxii}
+      - MARIADB_PASSWORD=${MARIADB_PASSWORD:-ceboostupxii}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "healthcheck.sh",
+          "--su=mysql",
+          "--connect",
+          "--innodb_initialized",
+        ]
+    restart: unless-stopped
