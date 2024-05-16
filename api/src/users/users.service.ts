@@ -134,6 +134,12 @@ export class UsersService implements OnModuleInit {
     if (findAllDto.group !== undefined) {
       where.group = findAllDto.group;
     }
+    if (findAllDto.roles) {
+      where.$and = [];
+      for (const role of findAllDto.roles.split(',')) {
+        where.$and.push({ roles: { $like: `%${role}%` } });
+      }
+    }
     const offset: number = (findAllDto.page - 1) * findAllDto.perPage;
     const limit: number = findAllDto.perPage;
     let orderBy: Record<string, 'asc' | 'desc'> | null = null;
@@ -204,7 +210,6 @@ export class UsersService implements OnModuleInit {
     if (findAllDto.search) {
       where.$or = [{ displayName: { $like: `%${findAllDto.search}%` } }];
     }
-    where.roles = { $every: Role.User };
     if (findAllDto.sort) {
       orderBy = parseSort(findAllDto.sort, [
         'displayName',
