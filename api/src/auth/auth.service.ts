@@ -42,7 +42,7 @@ export class AuthService {
     }
     if (
       user.lastEmailRequestedAt &&
-      Date.now() - user.lastEmailRequestedAt.getTime() >
+      Date.now() - user.lastEmailRequestedAt.getTime() <
         ms(this.configService.getOrThrow<string>('auth.mailRequestCooldown'))
     ) {
       throw new TooManyRequestsException({
@@ -120,7 +120,7 @@ export class AuthService {
     }
     if (
       user.lastEmailRequestedAt &&
-      Date.now() - user.lastEmailRequestedAt.getTime() >
+      Date.now() - user.lastEmailRequestedAt.getTime() <
         ms(this.configService.getOrThrow<string>('auth.mailRequestCooldown'))
     ) {
       throw new TooManyRequestsException({

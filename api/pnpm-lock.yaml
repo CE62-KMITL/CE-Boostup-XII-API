@@ -56,6 +56,9 @@ importers:
       class-validator:
         specifier: ^0.14.1
         version: 0.14.1
+      discord-webhook-node:
+        specifier: ^1.1.8
+        version: 1.1.8
       express:
         specifier: ^4.19.2
         version: 4.19.2
@@ -1583,6 +1586,9 @@ packages:
     resolution: {integrity: sha512-WkrWp9GR4KXfKGYzOLmTuGVi1UWFfws377n9cc55/tb6DuqyF6pcQ5AbiHEshaDpY9v6oaSr2XCDidGmMwdzIA==}
     engines: {node: '>=8'}
 
+  discord-webhook-node@1.1.8:
+    resolution: {integrity: sha512-3u0rrwywwYGc6HrgYirN/9gkBYqmdpvReyQjapoXARAHi0P0fIyf3W5tS5i3U3cc7e44E+e7dIHYUeec7yWaug==}
+
   display-notification@2.0.0:
     resolution: {integrity: sha512-TdmtlAcdqy1NU+j7zlkDdMnCL878zriLaBmoD9quOoq1ySSSGv03l0hXK5CvIFZlIfFI/hizqdQuW+Num7xuhw==}
     engines: {node: '>=4'}
@@ -1980,6 +1986,10 @@ packages:
     peerDependencies:
       typescript: '>3.6.0'
       webpack: ^5.11.0
+
+  form-data@3.0.1:
+    resolution: {integrity: sha512-RHkBKtLWUVwd7SqRIvCZMEvAMoGUp0XU+seQiZejj0COz3RI3hWP4sCv3gZWWLjJTd7rGwcsF5eKZGii0r/hbg==}
+    engines: {node: '>= 6'}
 
   form-data@4.0.0:
     resolution: {integrity: sha512-ETEklSGi5t0QMZuiXoA/Q6vcnxcLQP5vdugSpuAyi6SVGi2clPPp+xgEhuMaHC+zGgn31Kd235W35f7Hykkaww==}
@@ -5840,6 +5850,13 @@ snapshots:
     dependencies:
       path-type: 4.0.0
 
+  discord-webhook-node@1.1.8:
+    dependencies:
+      form-data: 3.0.1
+      node-fetch: 2.7.0
+    transitivePeerDependencies:
+      - encoding
+
   display-notification@2.0.0:
     dependencies:
       escape-string-applescript: 1.0.0
@@ -6393,6 +6410,12 @@ snapshots:
       tapable: 2.2.1
       typescript: 5.3.3
       webpack: 5.90.1
+
+  form-data@3.0.1:
+    dependencies:
+      asynckit: 0.4.0
+      combined-stream: 1.0.8
+      mime-types: 2.1.35
 
   form-data@4.0.0:
     dependencies:
