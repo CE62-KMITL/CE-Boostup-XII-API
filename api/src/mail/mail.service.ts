@@ -1,11 +1,25 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { MailerService } from '@nestjs-modules/mailer';
+import { Webhook } from 'discord-webhook-node';
 
 @Injectable()
 export class MailService {
-  constructor(private readonly mailerService: MailerService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly mailerService: MailerService,
+  ) {}
 
   async sendAccountCreationEmail(email: string, url: string): Promise<void> {
+    if (this.configService.getOrThrow<boolean>('mail.mock.enabled')) {
+      const webhook = new Webhook(
+        this.configService.getOrThrow<string>('mail.mock.discordWebhookUrl'),
+      );
+      await webhook.send(
+        `Account creation email sent to ${email}, URL: ${url}`,
+      );
+      return;
+    }
     try {
       await this.mailerService.sendMail({
         to: email,
@@ -26,6 +40,15 @@ export class MailService {
   }
 
   async sendPasswordResetEmail(email: string, url: string): Promise<void> {
+    if (this.configService.getOrThrow<boolean>('mail.mock.enabled')) {
+      const webhook = new Webhook(
+        this.configService.getOrThrow<string>('mail.mock.discordWebhookUrl'),
+      );
+      await webhook.send(
+        `Account creation email sent to ${email}, URL: ${url}`,
+      );
+      return;
+    }
     try {
       await this.mailerService.sendMail({
         to: email,

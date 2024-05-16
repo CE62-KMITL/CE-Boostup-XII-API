@@ -28,6 +28,10 @@ export default () => ({
     mailRequestCooldown: process.env.MAIL_REQUEST_COOLDOWN || '15m',
   },
   mail: {
+    mock: {
+      enabled: process.env.MAIL_MOCK_ENABLED?.toLowerCase() === 'true' || false,
+      discordWebhookUrl: process.env.MAIL_MOCK_DISCORD_WEBHOOK_URL,
+    },
     smtpHost: process.env.MAIL_SMTP_HOST,
     smtpPort: process.env.MAIL_SMTP_PORT ? +process.env.MAIL_SMTP_PORT : 587,
     smtpUser: process.env.MAIL_SMTP_USER,
