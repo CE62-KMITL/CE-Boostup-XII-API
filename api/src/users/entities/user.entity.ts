@@ -9,10 +9,10 @@ import {
   Property,
   types,
 } from '@mikro-orm/mariadb';
-import { ConfigConstants } from 'src/config/config-constants';
-import { Group } from 'src/groups/entities/group.entity';
-import { Problem } from 'src/problems/entities/problem.entity';
-import { Role } from 'src/shared/enums/role.enum';
+import { ConfigConstants } from '../../config/config-constants';
+import { Group } from '../../groups/entities/group.entity';
+import { Problem } from '../../problems/entities/problem.entity';
+import { Role } from '../../shared/enums/role.enum';
 import { v4 as uuidv4 } from 'uuid';
 
 @Entity()

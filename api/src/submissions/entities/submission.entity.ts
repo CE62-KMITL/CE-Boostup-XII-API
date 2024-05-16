@@ -6,9 +6,9 @@ import {
   Property,
   types,
 } from '@mikro-orm/mariadb';
-import { Problem } from 'src/problems/entities/problem.entity';
-import { ProgrammingLanguage } from 'src/shared/enums/programming-language.enum';
-import { User } from 'src/users/entities/user.entity';
+import { Problem } from '../../problems/entities/problem.entity';
+import { ProgrammingLanguage } from '../../shared/enums/programming-language.enum';
+import { User } from '../../users/entities/user.entity';
 import { v4 as uuidv4 } from 'uuid';
 
 @Entity()
@@ -44,4 +44,4 @@ export class Submission {
   createdAt: Date = new Date();
 }
 
-export { ProgrammingLanguage } from 'src/shared/enums/programming-language.enum';
+export { ProgrammingLanguage } from '../../shared/enums/programming-language.enum';

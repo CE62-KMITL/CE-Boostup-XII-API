@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, MaxLength, MinLength } from 'class-validator';
-import { ConfigConstants } from 'src/config/config-constants';
+import { ConfigConstants } from '../../config/config-constants';
 
 export class CreateGroupDto {
   @ApiProperty({

@@ -9,14 +9,14 @@ import {
   Property,
   types,
 } from '@mikro-orm/mariadb';
-import { Attachment } from 'src/attachments/entities/attachment.entity';
-import { ConfigConstants } from 'src/config/config-constants';
-import { ProblemTag } from 'src/problem-tags/entities/problem-tag.entity';
-import { CompletionStatus } from 'src/shared/enums/completion-status.enum';
-import { OptimizationLevel } from 'src/shared/enums/optimization-level.enum';
-import { PublicationStatus } from 'src/shared/enums/publication-status.enum';
-import { ProgrammingLanguage } from 'src/submissions/entities/submission.entity';
-import { User } from 'src/users/entities/user.entity';
+import { Attachment } from '../../attachments/entities/attachment.entity';
+import { ConfigConstants } from '../../config/config-constants';
+import { ProblemTag } from '../../problem-tags/entities/problem-tag.entity';
+import { CompletionStatus } from '../../shared/enums/completion-status.enum';
+import { OptimizationLevel } from '../../shared/enums/optimization-level.enum';
+import { PublicationStatus } from '../../shared/enums/publication-status.enum';
+import { ProgrammingLanguage } from '../../submissions/entities/submission.entity';
+import { User } from '../../users/entities/user.entity';
 import { v4 as uuidv4 } from 'uuid';
 
 @Entity()
@@ -226,5 +226,5 @@ export class ProblemResponse {
   }
 }
 
-export { OptimizationLevel } from 'src/shared/enums/optimization-level.enum';
-export { PublicationStatus } from 'src/shared/enums/publication-status.enum';
+export { OptimizationLevel } from '../../shared/enums/optimization-level.enum';
+export { PublicationStatus } from '../../shared/enums/publication-status.enum';

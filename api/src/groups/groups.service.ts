@@ -13,11 +13,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { isSomeRolesIn } from 'src/auth/roles';
-import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
-import { Role } from 'src/shared/enums/role.enum';
-import { AuthenticatedUser } from 'src/shared/interfaces/authenticated-request.interface';
-import { parseSort } from 'src/shared/parse-sort';
+import { isSomeRolesIn } from '../auth/roles';
+import { PaginatedResponse } from '../shared/dto/pagination.dto';
+import { Role } from '../shared/enums/role.enum';
+import { AuthenticatedUser } from '../shared/interfaces/authenticated-request.interface';
+import { parseSort } from '../shared/parse-sort';
 
 import { CreateGroupDto } from './dto/create-group.dto';
 import { FindAllDto } from './dto/find-all.dto';

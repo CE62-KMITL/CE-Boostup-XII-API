@@ -7,8 +7,8 @@ import {
   Property,
   types,
 } from '@mikro-orm/mariadb';
-import { ConfigConstants } from 'src/config/config-constants';
-import { User } from 'src/users/entities/user.entity';
+import { ConfigConstants } from '../../config/config-constants';
+import { User } from '../../users/entities/user.entity';
 import { v4 as uuidv4 } from 'uuid';
 
 @Entity()
