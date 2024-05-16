@@ -44,9 +44,7 @@ export class MailService {
       const webhook = new Webhook(
         this.configService.getOrThrow<string>('mail.mock.discordWebhookUrl'),
       );
-      await webhook.send(
-        `Account creation email sent to ${email}, URL: ${url}`,
-      );
+      await webhook.send(`Password reset email sent to ${email}, URL: ${url}`);
       return;
     }
     try {
