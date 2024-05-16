@@ -5,9 +5,11 @@ import { GroupsService } from './groups.service';
 import { ModuleMocker, MockFunctionMetadata } from 'jest-mock';
 import { Group, GroupResponse } from './entities/group.entity';
 import { CreateGroupDto } from './dto/create-group.dto';
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, ExecutionContext } from '@nestjs/common';
 import { Role } from '../shared/enums/role.enum';
 import { AuthenticatedRequest } from '../shared/interfaces/authenticated-request.interface';
+import { RolesGuard } from '../auth/roles.guard';
+
 
 const moduleMocker = new ModuleMocker(global);
 
@@ -16,29 +18,41 @@ describe('GroupsController', () => {
   let service: GroupsService;
 
   beforeEach(async () => {
+    const mockRolesGuard = {
+      canActivate: jest.fn((context: ExecutionContext) => {
+        const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
+        request.user = {
+          id: '0',
+          roles: [Role.Admin] 
+        }; 
+        return true;
+      }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [GroupsController],
     })
-    .useMocker((token) => {
-      const results = ['test1', 'test2'];
-      if (token === GroupsService) {
-        return {
-          create: jest.fn(),
-          groupsRepository: {
-            count: jest.fn(),
-          },
-          entityManager: {
-            persistAndFlush: jest.fn()
-          },
-        };
-      }
-      if (typeof token === 'function') {
-        const mockMetadata = moduleMocker.getMetadata(token) as MockFunctionMetadata<any, any>;
-        const Mock = moduleMocker.generateFromMetadata(mockMetadata);
-        return new Mock();
-      }
-    })
-    .compile();
+      .useMocker((token) => {
+        if (token === GroupsService) {
+          return {
+            create: jest.fn(),
+            groupsRepository: {
+              count: jest.fn(),
+            },
+            entityManager: {
+              persistAndFlush: jest.fn(),
+            },
+          };
+        }
+        if (typeof token === 'function') {
+          const mockMetadata = moduleMocker.getMetadata(token) as MockFunctionMetadata<any, any>;
+          const Mock = moduleMocker.generateFromMetadata(mockMetadata);
+          return new Mock();
+        }
+      })
+      .overrideGuard(RolesGuard)
+      .useValue(mockRolesGuard)
+      .compile();
 
     controller = module.get<GroupsController>(GroupsController);
     service = module.get<GroupsService>(GroupsService);
