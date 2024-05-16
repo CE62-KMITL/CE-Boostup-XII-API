@@ -9,6 +9,11 @@ export class FindAllDto extends PaginationRequestDto {
   @IsOptional()
   search?: string;
 
+  @ApiPropertyOptional({ example: 'User' })
+  @IsString()
+  @IsOptional()
+  roles?: string;
+
   @ApiPropertyOptional({ example: 'f6cd1537-ec46-4f9e-986c-ace31fa9a451' })
   @IsUUID('4')
   @Transform(({ value }) => value || null)
