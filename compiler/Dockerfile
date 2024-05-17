@@ -23,6 +23,7 @@ RUN apt install -y make pkg-config libcap-dev libsystemd-dev
 WORKDIR /isolate-src
 COPY --from=dependencies /isolate-src .
 RUN make isolate
+RUN make install
 
 WORKDIR /app
 COPY . .
