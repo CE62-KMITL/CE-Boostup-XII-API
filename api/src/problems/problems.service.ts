@@ -19,6 +19,7 @@ import { CompletionStatus } from 'src/shared/enums/completion-status.enum';
 import { PublicationStatus } from 'src/shared/enums/publication-status.enum';
 import { Role } from 'src/shared/enums/role.enum';
 import { AuthenticatedUser } from 'src/shared/interfaces/authenticated-request.interface';
+import { parseIntOptional } from 'src/shared/parse-int-optional';
 import { parseSort } from 'src/shared/parse-sort';
 import { Submission } from 'src/submissions/entities/submission.entity';
 import { User } from 'src/users/entities/user.entity';
@@ -28,7 +29,6 @@ import { CreateProblemDto } from './dto/create-problem.dto';
 import { FindAllDto } from './dto/find-all.dto';
 import { UpdateProblemDto } from './dto/update-problem.dto';
 import { Problem, ProblemResponse } from './entities/problem.entity';
-import { parseIntOptional } from 'src/shared/parse-int-optional';
 
 @Injectable()
 export class ProblemsService {
