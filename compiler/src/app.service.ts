@@ -29,6 +29,7 @@ export class AppService {
         : `-W${compileAndRunDto.warningLevel}`;
     const boxCount = Math.min(1 + inputCount, 64);
     const boxes = Array.from({ length: boxCount }, (_, i) => i);
+    // Fix exec not async
     await Promise.all(
       boxes.map(async (box) => exec(`isolate --init -b ${box}`)),
     );
@@ -42,8 +43,11 @@ export class AppService {
       compileAndRunDto.code,
       { encoding: 'utf-8' },
     );
+    // Fix exec not async
+    // Fix unlimited process count allowed
+    // Fix full env passed
     await exec(
-      `isolate --run -b 0 -- /usr/bin/${compiler} ${warningString} --std${compileAndRunDto.language} -${compileAndRunDto.optimizationLevel} code.cpp -o out.o`,
+      `isolate --run -p -e -b 0 -- /usr/bin/${compiler} ${warningString} --std${compileAndRunDto.language} -${compileAndRunDto.optimizationLevel} code.cpp -o out.o`,
     );
   }
 }
