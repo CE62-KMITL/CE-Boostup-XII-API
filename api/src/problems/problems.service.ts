@@ -28,6 +28,7 @@ import { CreateProblemDto } from './dto/create-problem.dto';
 import { FindAllDto } from './dto/find-all.dto';
 import { UpdateProblemDto } from './dto/update-problem.dto';
 import { Problem, ProblemResponse } from './entities/problem.entity';
+import { parseIntOptional } from 'src/shared/parse-int-optional';
 
 @Injectable()
 export class ProblemsService {
@@ -395,7 +396,7 @@ export class ProblemsService {
           errors: { unlockHint: 'Hint already unlocked' },
         });
       }
-      if (user.totalScore < problem.hintCost) {
+      if (parseIntOptional(user.totalScore) < problem.hintCost) {
         throw new BadRequestException({
           message: 'Insufficient score',
           errors: { unlockHint: 'Insufficient score' },

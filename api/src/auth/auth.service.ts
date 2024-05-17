@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import ms from 'ms';
 import { MailService } from 'src/mail/mail.service';
 import { TooManyRequestsException } from 'src/shared/exceptions/too-many-requests.exception';
+import { UserResponse } from 'src/users/entities/user.entity';
 import { UsersService } from 'src/users/users.service';
 
 @Injectable()
@@ -15,11 +16,18 @@ export class AuthService {
     private readonly mailService: MailService,
   ) {}
 
-  async login(email: string, password: string): Promise<{ token: string }> {
+  async login(
+    email: string,
+    password: string,
+  ): Promise<{ token: string; user: UserResponse }> {
     const user = await this.usersService.validatePassword(email, password);
     const payload = { sub: user.id, roles: user.roles };
     return {
       token: await this.jwtService.signAsync(payload),
+      user: await this.usersService.findOne(
+        { id: user.id, roles: user.roles },
+        user.id,
+      ),
     };
   }
 

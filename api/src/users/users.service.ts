@@ -250,7 +250,10 @@ export class UsersService implements OnModuleInit {
     originUser: AuthenticatedUser,
     id: string,
   ): Promise<UserResponse> {
-    if (isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])) {
+    if (
+      originUser.id === id ||
+      isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])
+    ) {
       const populate = [
         'email',
         'roles',

@@ -13,6 +13,7 @@ import { ConfigConstants } from 'src/config/config-constants';
 import { Group } from 'src/groups/entities/group.entity';
 import { Problem } from 'src/problems/entities/problem.entity';
 import { Role } from 'src/shared/enums/role.enum';
+import { parseIntOptional } from 'src/shared/parse-int-optional';
 import { v4 as uuidv4 } from 'uuid';
 
 @Entity()
@@ -63,10 +64,10 @@ export class User {
 
   @Formula(
     (alias) =>
-      `(SELECT SUM(\`score\`) - ${alias}.\`total_score_offset\` FROM \`problem\` WHERE \`problem\`.\`id\` IN (SELECT DISTINCT \`problem_id\` FROM \`submission\` WHERE \`submission\`.\`user_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1))`,
-    { type: types.integer, serializer: (value) => +value, lazy: true },
+      `(SELECT SUM(\`score\`) + ${alias}.\`total_score_offset\` FROM \`problem\` WHERE \`problem\`.\`id\` IN (SELECT DISTINCT \`problem_id\` FROM \`submission\` WHERE \`submission\`.\`user_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1))`,
+    { type: types.integer, lazy: true },
   )
-  totalScore: number;
+  totalScore: number | null;
 
   @Property({ type: types.integer, lazy: true })
   totalScoreOffset: number = 0;
@@ -74,9 +75,9 @@ export class User {
   @Formula(
     (alias) =>
       `(SELECT COUNT(DISTINCT \`problem_id\`) FROM \`submission\` WHERE \`submission\`.\`user_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1)`,
-    { type: types.integer, serializer: (value) => +value, lazy: true },
+    { type: types.integer, lazy: true },
   )
-  problemSolvedCount: number;
+  problemSolvedCount: number | null;
 
   @Formula(
     (alias) =>
@@ -135,8 +136,8 @@ export class UserResponse {
     this.group = user.group
       ? { id: user.group.id, name: user.group.name }
       : null;
-    this.totalScore = user.totalScore;
-    this.problemSolvedCount = user.problemSolvedCount;
+    this.totalScore = parseIntOptional(user.totalScore);
+    this.problemSolvedCount = parseIntOptional(user.problemSolvedCount);
     this.lastProblemSolvedAt = user.lastProblemSolvedAt;
     this.lastEmailRequestedAt = user.lastEmailRequestedAt;
     this.createdAt = user.createdAt;
