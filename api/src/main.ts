@@ -11,6 +11,7 @@ async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
   app.use(json({ limit: '64MB' }));
   app.use(urlencoded({ limit: '64MB', extended: true }));
+  app.enableCors();
   await app.get(MikroORM).getSchemaGenerator().ensureDatabase();
   await app.get(MikroORM).getSchemaGenerator().updateSchema(); // TODO: Move to migrations in production
   app.useGlobalPipes(
