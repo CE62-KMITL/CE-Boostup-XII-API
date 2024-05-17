@@ -197,18 +197,20 @@ export class ProblemResponse {
     this.difficulty = problem.difficulty;
     this.score = problem.score;
     this.optimizationLevel = problem.optimizationLevel;
-    this.attachments = problem.attachments
-      ? problem.attachments.map((attachment) => ({
-          id: attachment.id,
-          name: attachment.name,
-          type: attachment.type,
-          size: attachment.size,
-          url: attachment.url,
-        }))
-      : undefined;
-    this.tags = problem.tags
-      ? problem.tags.map((tag) => ({ id: tag.id, name: tag.name }))
-      : undefined;
+    this.attachments =
+      problem.attachments && problem.attachments.isInitialized()
+        ? problem.attachments.map((attachment) => ({
+            id: attachment.id,
+            name: attachment.name,
+            type: attachment.type,
+            size: attachment.size,
+            url: attachment.url,
+          }))
+        : undefined;
+    this.tags =
+      problem.tags && problem.tags.isInitialized()
+        ? problem.tags.map((tag) => ({ id: tag.id, name: tag.name }))
+        : undefined;
     this.owner = problem.owner
       ? {
           id: problem.owner.id,
