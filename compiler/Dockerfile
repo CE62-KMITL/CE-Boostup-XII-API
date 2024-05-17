@@ -1,12 +1,11 @@
 FROM node:20-bookworm-slim AS base
 
-RUN apt update
 RUN npm i -g pnpm
 
 
 FROM base as dependencies
 
-RUN apt install -y git
+RUN apt-get update && apt-get install --no-install-recommends -y git && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /
 RUN git clone https://github.com/ioi/isolate.git --branch v2.0 --single-branch --depth 1 isolate-src
@@ -18,7 +17,7 @@ RUN pnpm install --frozen-lockfile
 
 FROM base AS build
 
-RUN apt install -y make pkg-config libcap-dev libsystemd-dev
+RUN apt-get update && apt-get install --no-install-recommends -y make pkg-config libcap-dev libsystemd-dev && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /isolate-src
 COPY --from=dependencies /isolate-src .
@@ -34,7 +33,7 @@ RUN pnpm prune --prod
 
 FROM base AS deploy
 
-RUN apt install -y gcc g++
+RUN apt-get update && apt-get install --no-install-recommends -y gcc g++ && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /
 RUN mkdir -p /usr/local/etc
