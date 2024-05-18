@@ -43,6 +43,11 @@ export class UsersController {
     private readonly usersService: UsersService,
   ) {}
 
+  @Get('me')
+  async me(@Req() request: AuthenticatedRequest): Promise<UserResponse> {
+    return await this.usersService.findOne(request.user, request.user.id);
+  }
+
   @Roles(Role.Admin)
   @Post()
   async create(
