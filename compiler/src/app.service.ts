@@ -9,10 +9,9 @@ import {
   CompileAndRunDto,
   CompileAndRunResponse,
 } from './dto/compile-and-run.dto';
+import { ResultCode } from './enums/result-code.enum';
 import { WarningLevel } from './enums/warning-level.enum';
 import { execAsync } from './execAsync';
-import { stderr } from 'process';
-import { ResultCode } from './enums/result-code.enum';
 
 @Injectable()
 export class AppService {
