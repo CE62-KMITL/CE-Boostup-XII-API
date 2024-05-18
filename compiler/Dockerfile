@@ -17,7 +17,7 @@ RUN pnpm install --frozen-lockfile
 
 FROM base AS build
 
-RUN apt-get update && apt-get install --no-install-recommends -y make pkg-config libcap-dev libsystemd-dev && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install --no-install-recommends -y make gcc pkg-config libcap-dev libsystemd-dev && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /isolate-src
 COPY --from=dependencies /isolate-src .
