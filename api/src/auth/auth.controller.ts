@@ -42,6 +42,7 @@ export class AuthController {
     return await this.authService.createAccount(
       createAccountDto.token,
       createAccountDto.password,
+      createAccountDto.displayName,
     );
   }
 
