@@ -14,6 +14,7 @@ import {
 import { ConfigConstants } from 'src/config/config-constants';
 import { OptimizationLevel } from 'src/enums/optimization-level.enum';
 import { ProgrammingLanguage } from 'src/enums/programming-language.enum';
+import { ResultCode } from 'src/enums/result-code.enum';
 import { WarningLevel } from 'src/enums/warning-level.enum';
 
 export class CompileAndRunDto {
@@ -119,12 +120,38 @@ export class CompileAndRunDto {
   compilationMemoryLimit: number = ConfigConstants.compiler.defaultMemoryLimit;
 }
 
-export class CompileAndRunResponse {
-  totalRuntime: number;
-  outputs: {
-    compilerOutput: string;
+interface ICompileAndRunResponse {
+  totalRuntime?: number;
+  compilerOutput?: string;
+  code?: ResultCode;
+  outputs?: {
     runtimeOutput: string;
     compilationTime: number;
     executionTime: number;
   }[];
+}
+
+export class CompileAndRunResponse {
+  totalRuntime: number | null;
+  compilerOutput: string | null;
+  code: ResultCode | null;
+  outputs:
+    | {
+        runtimeOutput: string;
+        compilationTime: number;
+        executionTime: number;
+      }[]
+    | null;
+
+  constructor({
+    totalRuntime,
+    compilerOutput,
+    code: ResultCode,
+    outputs,
+  }: ICompileAndRunResponse = {}) {
+    this.totalRuntime = totalRuntime || null;
+    this.compilerOutput = compilerOutput || null;
+    this.code = ResultCode || null;
+    this.outputs = outputs || null;
+  }
 }

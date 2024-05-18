@@ -1,0 +1,16 @@
+export enum ResultCode {
+  AC = 'Accepted',
+  WA = 'WrongAnswer',
+  IR = 'InvalidReturn',
+  RTE = 'RuntimeError',
+  HNA = 'HeaderNotAllowed',
+  FNA = 'FunctionNotAllowed',
+  COLE = 'CompliationOutputLimitExceeded',
+  CTLE = 'CompilationTimeLimitExceeded',
+  CMLE = 'CompilationMemoryLimitExceeded',
+  OLE = 'OutputLimitExceeded',
+  MLE = 'MemoryLimitExceeded',
+  TLE = 'TimeLimitExceeded',
+  IE = 'InternalError',
+  UE = 'UnknownError',
+}
