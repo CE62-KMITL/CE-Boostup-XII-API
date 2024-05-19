@@ -58,7 +58,7 @@ export class AppService implements OnModuleInit {
       compileAndRunDto.warningLevel === WarningLevel.Default
         ? ''
         : `-W${compileAndRunDto.warningLevel}`;
-    const wallTimeLimit = Math.min(
+    const wallTimeLimit = Math.max(
       compileAndRunDto.timeLimit * 1.5,
       compileAndRunDto.timeLimit + 5,
     );
@@ -66,7 +66,7 @@ export class AppService implements OnModuleInit {
     let code = hoistResult.code;
     const includeCount = hoistResult.includeCount;
     const boxCount = Math.min(
-      1 + inputCount,
+      inputCount,
       ConfigConstants.isolate.max_box_count,
     );
     try {
@@ -375,7 +375,7 @@ export class AppService implements OnModuleInit {
           let isolateOutput: string = '';
           try {
             const { stderr } = await execAsync(
-              `isolate --run -b ${box} --stderr-to-stdout -o output.txt -M ${join(this.configService.getOrThrow<string>('storages.temporary.path'), 'metadata', 'executor', `box-${box}.txt`)} -i stdin.txt -m ${Math.round(compileAndRunDto.memoryLimit / 1024).toFixed(0)} -t ${compileAndRunDto.timeLimit.toFixed(3)} -w ${wallTimeLimit.toFixed(0)} -f 1 -- out.o`,
+              `isolate --run -b ${box} --stderr-to-stdout -o output.txt -M ${join(this.configService.getOrThrow<string>('storages.temporary.path'), 'metadata', 'executor', `box-${box}.txt`)} -i stdin.txt -m ${Math.round(compileAndRunDto.memoryLimit / 1024).toFixed(0)} -t ${compileAndRunDto.timeLimit.toFixed(3)} -w ${wallTimeLimit.toFixed(3)} -f 1 -- out.o`,
               {
                 encoding: 'utf-8',
                 timeout: wallTimeLimit * 1000 + 1000,

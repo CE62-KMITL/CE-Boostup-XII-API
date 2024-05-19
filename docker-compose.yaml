@@ -21,8 +21,11 @@ services:
   compiler:
     build: compiler
     container_name: ce-boostup-xii-compiler
+    privileged: true
     expose:
       - "3000"
+    ports:
+      - "3001:3000"
     healthcheck:
       test: "wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1"
       start_period: 10s

@@ -33,7 +33,7 @@ RUN pnpm prune --prod
 
 FROM base AS deploy
 
-RUN apt-get update && apt-get install --no-install-recommends -y gcc g++ && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install --no-install-recommends -y gcc g++ wget && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /
 RUN mkdir -p /usr/local/etc
