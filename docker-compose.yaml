@@ -15,6 +15,18 @@ services:
       - MARIADB_HOST=mariadb
     healthcheck:
       test: "wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1"
+      start_period: 10s
+      start_interval: 1s
+    restart: unless-stopped
+  compiler:
+    build: compiler
+    container_name: ce-boostup-xii-compiler
+    expose:
+      - "3000"
+    healthcheck:
+      test: "wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1"
+      start_period: 10s
+      start_interval: 1s
     restart: unless-stopped
   mariadb:
     image: mariadb:11
@@ -38,4 +50,6 @@ services:
           "--connect",
           "--innodb_initialized",
         ]
+      start_period: 10s
+      start_interval: 1s
     restart: unless-stopped

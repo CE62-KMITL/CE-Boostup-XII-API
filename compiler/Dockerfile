@@ -5,7 +5,7 @@ RUN npm i -g pnpm
 
 FROM base as dependencies
 
-RUN apt-get update && apt-get install --no-install-recommends -y git && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install --no-install-recommends -y git ca-certificates && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /
 RUN git clone https://github.com/ioi/isolate.git --branch v2.0 --single-branch --depth 1 isolate-src
@@ -17,7 +17,7 @@ RUN pnpm install --frozen-lockfile
 
 FROM base AS build
 
-RUN apt-get update && apt-get install --no-install-recommends -y make gcc pkg-config libcap-dev libsystemd-dev && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install --no-install-recommends -y make gcc pkg-config libcap-dev libsystemd-dev libc6-dev && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /isolate-src
 COPY --from=dependencies /isolate-src .

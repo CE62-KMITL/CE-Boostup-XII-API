@@ -29,7 +29,7 @@ export class AppService implements OnModuleInit {
   private async createTemporaryDirectories(): Promise<void> {
     for (const path of [
       'executables',
-      join('metadata', 'comliler'),
+      join('metadata', 'compiler'),
       join('metadata', 'executor'),
     ]) {
       await fs.promises.mkdir(
@@ -53,6 +53,7 @@ export class AppService implements OnModuleInit {
     const inputCount = compileAndRunDto.inputs.length;
     const isCpp = compileAndRunDto.language.includes('++');
     const compiler = isCpp ? 'g++' : 'gcc';
+    const codeFilename = isCpp ? 'code.cpp' : 'code.c';
     const warningString =
       compileAndRunDto.warningLevel === WarningLevel.Default
         ? ''
@@ -60,20 +61,6 @@ export class AppService implements OnModuleInit {
     const wallTimeLimit = Math.min(
       compileAndRunDto.timeLimit * 1.5,
       compileAndRunDto.timeLimit + 5,
-    );
-    const blockSize = (await fs.promises.stat('/')).blksize;
-    const compilerDiskQuota = Math.round(
-      (ConfigConstants.compiler.maxExecutableSize +
-        ConfigConstants.compiler.maxCodeLength +
-        8 * 1024 * 1024) /
-        blockSize,
-    );
-    const executorDiskQuota = Math.round(
-      (ConfigConstants.compiler.maxExecutableSize +
-        ConfigConstants.executor.maxInputSize +
-        ConfigConstants.executor.maxOutputSize +
-        8 * 1024 * 1024) /
-        blockSize,
     );
     const hoistResult = this.hoistIncludes(compileAndRunDto.code);
     let code = hoistResult.code;
@@ -83,7 +70,7 @@ export class AppService implements OnModuleInit {
       ConfigConstants.isolate.max_box_count,
     );
     try {
-      await execAsync(`isolate --init -b 0 -q ${compilerDiskQuota},4`, {
+      await execAsync('isolate --init -b 0', {
         encoding: 'utf-8',
         timeout: 1000,
       });
@@ -96,18 +83,13 @@ export class AppService implements OnModuleInit {
       });
     }
     await fs.promises.writeFile(
-      join(
-        ConfigConstants.isolate.box_root,
-        '0',
-        'box',
-        isCpp ? 'code.cpp' : 'code.c',
-      ),
+      join(ConfigConstants.isolate.box_root, '0', 'box', codeFilename),
       code,
       { encoding: 'utf-8' },
     );
     try {
       const { stderr } = await execAsync(
-        `isolate --run -b 0 -p -e --stderr-to-stdout -o ${join(ConfigConstants.isolate.box_root, '0', 'box', 'gcc-precompilation-output.txt')} -m ${Math.round(compileAndRunDto.compilationMemoryLimit / 1024).toFixed(0)} -w ${compileAndRunDto.compilationTimeLimit.toFixed(3)} -n 4 -f ${Math.ceil(ConfigConstants.compiler.maxExecutableSize / 1024).toFixed(0)} -- /usr/bin/${compiler} -fdiagnostics-color=never --std=${compileAndRunDto.language} code.cpp -H`,
+        `isolate --run -b 0 -p -e --stderr-to-stdout -o gcc-precompilation-output.txt -M ${join(this.configService.getOrThrow<string>('storages.temporary.path'), 'metadata', 'compiler', `compilation.txt`)} -m ${Math.round(compileAndRunDto.compilationMemoryLimit / 1024).toFixed(0)} -w ${compileAndRunDto.compilationTimeLimit.toFixed(3)} -f ${Math.ceil(ConfigConstants.compiler.maxExecutableSize / 1024).toFixed(0)} -- /usr/bin/${compiler} -fdiagnostics-color=${compileAndRunDto.formattedDiagnostic ? 'always' : 'never'} -fdiagnostics-urls=${compileAndRunDto.formattedDiagnostic ? 'always' : 'never'} --std=${compileAndRunDto.language} ${codeFilename} -H`,
         {
           encoding: 'utf-8',
           env: {
@@ -118,7 +100,7 @@ export class AppService implements OnModuleInit {
       );
       isolateOutput = stderr;
     } catch (e) {
-      const preCompilationOutput = await fs.promises.readFile(
+      const output = await fs.promises.readFile(
         join(
           ConfigConstants.isolate.box_root,
           '0',
@@ -127,9 +109,57 @@ export class AppService implements OnModuleInit {
         ),
         { encoding: 'utf-8' },
       );
+      const metadataText = await fs.promises.readFile(
+        join(
+          this.configService.getOrThrow<string>('storages.temporary.path'),
+          'metadata',
+          'compiler',
+          `compilation.txt`,
+        ),
+        { encoding: 'utf-8' },
+      );
+      const metadata = loadKeyValue(metadataText);
+      let code = ResultCode.CE;
+      if (isolateOutput.includes('Time limit exceeded')) {
+        code = ResultCode.CTLE;
+      }
+      if (output.includes('File size limit exceeded')) {
+        code = ResultCode.COLE;
+      }
+      if (output.includes('memory exhausted')) {
+        code = ResultCode.CMLE;
+      }
+      const outputLines = output.split('\n');
+      let lastHeaderLine = 0;
+      for (let i = 0; i < outputLines.length; i++) {
+        if (outputLines[i].startsWith('. ')) {
+          lastHeaderLine = i;
+        } else {
+          break;
+        }
+      }
+      let firstIncludeGuardWarningLine = 0;
+      for (let i = outputLines.length - 1; i > lastHeaderLine; i--) {
+        if (
+          outputLines[i].includes('Multiple include guards may be useful for:')
+        ) {
+          firstIncludeGuardWarningLine = i;
+          break;
+        }
+      }
+      let warning = '';
+      if (firstIncludeGuardWarningLine > 0) {
+        warning = outputLines
+          .slice(lastHeaderLine + 1, firstIncludeGuardWarningLine)
+          .join('\n');
+      }
       return new CompileAndRunResponse({
-        compilerOutput: preCompilationOutput + isolateOutput,
-        code: ResultCode.CE,
+        compilerOutput: (warning || output) + isolateOutput,
+        compilationTime: metadata.time ? +metadata.time : undefined,
+        compilationMemory: metadata['max-rss']
+          ? +metadata['max-rss'] * 1024
+          : undefined,
+        code: code,
       });
     }
     const preCompilationOutput = await fs.promises.readFile(
@@ -163,7 +193,7 @@ export class AppService implements OnModuleInit {
       console.error(e);
     }
     try {
-      await execAsync(`isolate --init -b 0 -q ${compilerDiskQuota},4`, {
+      await execAsync('isolate --init -b 0', {
         encoding: 'utf-8',
         timeout: 1000,
       });
@@ -181,18 +211,13 @@ export class AppService implements OnModuleInit {
       includeCount,
     );
     await fs.promises.writeFile(
-      join(
-        ConfigConstants.isolate.box_root,
-        '0',
-        'box',
-        isCpp ? 'code.cpp' : 'code.c',
-      ),
+      join(ConfigConstants.isolate.box_root, '0', 'box', codeFilename),
       code,
       { encoding: 'utf-8' },
     );
     try {
       const { stderr } = await execAsync(
-        `isolate --run -b 0 -p -e --stderr-to-stdout -o ${join(ConfigConstants.isolate.box_root, '0', 'box', 'gcc-ompilation-output.txt')} -M ${join(this.configService.getOrThrow<string>('storages.temporary.path'), 'metadata', 'compiler', `compilation.txt`)} -m ${Math.round(compileAndRunDto.compilationMemoryLimit / 1024).toFixed(0)} -w ${compileAndRunDto.compilationTimeLimit.toFixed(3)} -n 4 -f ${Math.ceil(ConfigConstants.compiler.maxExecutableSize / 1024).toFixed(0)} -- /usr/bin/${compiler} -fdiagnostics-color=never --std=${compileAndRunDto.language} ${warningString} -${compileAndRunDto.optimizationLevel} code.cpp -o out.o`,
+        `isolate --run -b 0 -p -e --stderr-to-stdout -o gcc-compilation-output.txt -M ${join(this.configService.getOrThrow<string>('storages.temporary.path'), 'metadata', 'compiler', `compilation.txt`)} -m ${Math.round(compileAndRunDto.compilationMemoryLimit / 1024).toFixed(0)} -w ${compileAndRunDto.compilationTimeLimit.toFixed(3)} -f ${Math.ceil(ConfigConstants.compiler.maxExecutableSize / 1024).toFixed(0)} -- /usr/bin/${compiler} -fdiagnostics-color=${compileAndRunDto.formattedDiagnostic ? 'always' : 'never'} -fdiagnostics-urls=${compileAndRunDto.formattedDiagnostic ? 'always' : 'never'} --std=${compileAndRunDto.language} ${warningString} -${compileAndRunDto.optimizationLevel} ${codeFilename} -o out.o`,
         {
           encoding: 'utf-8',
           env: {
@@ -225,9 +250,33 @@ export class AppService implements OnModuleInit {
           code: ResultCode.FNA,
         });
       }
+      const metadataText = await fs.promises.readFile(
+        join(
+          this.configService.getOrThrow<string>('storages.temporary.path'),
+          'metadata',
+          'compiler',
+          `compilation.txt`,
+        ),
+        { encoding: 'utf-8' },
+      );
+      const metadata = loadKeyValue(metadataText);
+      let code = ResultCode.CE;
+      if (isolateOutput.includes('Time limit exceeded')) {
+        code = ResultCode.CTLE;
+      }
+      if (compilationOutput.includes('File size limit exceeded')) {
+        code = ResultCode.COLE;
+      }
+      if (compilationOutput.includes('memory exhausted')) {
+        code = ResultCode.CMLE;
+      }
       return new CompileAndRunResponse({
         compilerOutput: compilationOutput + isolateOutput,
-        code: ResultCode.CE,
+        compilationTime: metadata.time ? +metadata.time : undefined,
+        compilationMemory: metadata['max-rss']
+          ? +metadata['max-rss'] * 1024
+          : undefined,
+        code: code,
       });
     }
     const compilationOutput = await fs.promises.readFile(
@@ -259,6 +308,7 @@ export class AppService implements OnModuleInit {
       join(ConfigConstants.isolate.box_root, '0', 'box', 'out.o'),
       compiledFilePath,
     );
+    const executableSize = (await fs.promises.stat(compiledFilePath)).size;
     try {
       await execAsync('isolate --cleanup -b 0', {
         encoding: 'utf-8',
@@ -276,13 +326,10 @@ export class AppService implements OnModuleInit {
         await Promise.all(
           boxes.map(
             async (box) =>
-              await execAsync(
-                `isolate --init -b ${box} -q ${executorDiskQuota},4`,
-                {
-                  encoding: 'utf-8',
-                  timeout: 1000,
-                },
-              ),
+              await execAsync(`isolate --init -b ${box}`, {
+                encoding: 'utf-8',
+                timeout: 1000,
+              }),
           ),
         );
       } catch (e) {
@@ -328,7 +375,7 @@ export class AppService implements OnModuleInit {
           let isolateOutput: string = '';
           try {
             const { stderr } = await execAsync(
-              `isolate --run -b ${box} --stderr-to-stdout -o ${join(ConfigConstants.isolate.box_root, box.toString(), 'box', 'output.txt')} -M ${join(this.configService.getOrThrow<string>('storages.temporary.path'), 'metadata', 'executor', `box-${box}.txt`)} -i ${join(ConfigConstants.isolate.box_root, box.toString(), 'box', 'stdin.txt')} -m ${Math.round(compileAndRunDto.memoryLimit / 1024).toFixed(0)} -t ${compileAndRunDto.timeLimit.toFixed(3)} -w ${wallTimeLimit.toFixed(0)} -n 4 -f 1 -- out.o`,
+              `isolate --run -b ${box} --stderr-to-stdout -o output.txt -M ${join(this.configService.getOrThrow<string>('storages.temporary.path'), 'metadata', 'executor', `box-${box}.txt`)} -i stdin.txt -m ${Math.round(compileAndRunDto.memoryLimit / 1024).toFixed(0)} -t ${compileAndRunDto.timeLimit.toFixed(3)} -w ${wallTimeLimit.toFixed(0)} -f 1 -- out.o`,
               {
                 encoding: 'utf-8',
                 timeout: wallTimeLimit * 1000 + 1000,
@@ -434,6 +481,10 @@ export class AppService implements OnModuleInit {
       compilationTime: compilationMetadata.time
         ? +compilationMetadata.time
         : undefined,
+      compilationMemory: compilationMetadata['max-rss']
+        ? +compilationMetadata['max-rss'] * 1024
+        : undefined,
+      executableSize: executableSize,
       outputs,
     });
   }

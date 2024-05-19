@@ -3,6 +3,7 @@ import { Transform } from 'class-transformer';
 import {
   ArrayMaxSize,
   IsArray,
+  IsBoolean,
   IsEnum,
   IsNumber,
   IsOptional,
@@ -118,12 +119,22 @@ export class CompileAndRunDto {
   @Max(ConfigConstants.compiler.maxMemoryLimit)
   @IsOptional()
   compilationMemoryLimit: number = ConfigConstants.compiler.defaultMemoryLimit;
+
+  @ApiPropertyOptional({
+    type: 'boolean',
+    example: false,
+  })
+  @IsBoolean()
+  @IsOptional()
+  formattedDiagnostic: boolean = false;
 }
 
 interface ICompileAndRunResponse {
   totalRuntime?: number;
   compilerOutput?: string;
   compilationTime?: number;
+  compilationMemory?: number;
+  executableSize?: number;
   code?: ResultCode;
   outputs?: {
     runtimeOutput: string;
@@ -137,6 +148,8 @@ export class CompileAndRunResponse {
   totalRuntime: number | null;
   compilerOutput: string | null;
   compilationTime: number | null;
+  compilationMemory: number | null;
+  executableSize: number | null;
   code: ResultCode | null;
   outputs:
     | {
@@ -151,12 +164,16 @@ export class CompileAndRunResponse {
     totalRuntime,
     compilerOutput,
     compilationTime,
+    compilationMemory,
+    executableSize,
     code,
     outputs,
   }: ICompileAndRunResponse = {}) {
     this.totalRuntime = totalRuntime || null;
     this.compilerOutput = compilerOutput || null;
     this.compilationTime = compilationTime || null;
+    this.compilationMemory = compilationMemory || null;
+    this.executableSize = executableSize || null;
     this.code = code || null;
     this.outputs = outputs || null;
   }
