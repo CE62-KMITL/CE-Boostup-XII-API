@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import ms from 'ms';
 import { MailService } from 'src/mail/mail.service';
 import { TooManyRequestsException } from 'src/shared/exceptions/too-many-requests.exception';
+import { UpdateUserInternalDto } from 'src/users/dto/update-user.dto';
 import { UserResponse } from 'src/users/entities/user.entity';
 import { UsersService } from 'src/users/users.service';
 
@@ -76,6 +77,7 @@ export class AuthService {
   async createAccount(
     token: string,
     password: string,
+    displayName?: string,
   ): Promise<{ message: string }> {
     let payload: { id: string; type: string } | undefined;
     try {
@@ -102,9 +104,15 @@ export class AuthService {
         errors: { id: 'User already exists' },
       });
     }
+    const updateUserInternalDto: UpdateUserInternalDto = {
+      hashedPassword: await this.usersService.hashPassword(password),
+    };
+    if (displayName) {
+      updateUserInternalDto.displayName = displayName;
+    }
     await this.usersService.updateInternal(
       { id: user.id },
-      { hashedPassword: await this.usersService.hashPassword(password) },
+      updateUserInternalDto,
     );
     return { message: 'Account created' };
   }
