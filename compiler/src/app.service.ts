@@ -375,7 +375,7 @@ export class AppService implements OnModuleInit {
           let isolateOutput: string = '';
           try {
             const { stderr } = await execAsync(
-              `isolate --run -b ${box} --stderr-to-stdout -o output.txt -M ${join(this.configService.getOrThrow<string>('storages.temporary.path'), 'metadata', 'executor', `box-${box}.txt`)} -i stdin.txt -m ${Math.round(compileAndRunDto.memoryLimit / 1024).toFixed(0)} -t ${compileAndRunDto.timeLimit.toFixed(3)} -w ${wallTimeLimit.toFixed(3)} -f 1 -- out.o`,
+              `isolate --run -b ${box} --stderr-to-stdout -o output.txt -M ${join(this.configService.getOrThrow<string>('storages.temporary.path'), 'metadata', 'executor', `box-${box}.txt`)} -i stdin.txt -m ${Math.round(compileAndRunDto.memoryLimit / 1024).toFixed(0)} -t ${compileAndRunDto.timeLimit.toFixed(3)} -w ${wallTimeLimit.toFixed(3)} -f ${Math.round(ConfigConstants.executor.maxOutputSize / 1024).toFixed(0)} -- out.o`,
               {
                 encoding: 'utf-8',
                 timeout: wallTimeLimit * 1000 + 1000,
