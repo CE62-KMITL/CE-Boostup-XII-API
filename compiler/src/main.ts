@@ -4,7 +4,7 @@ import { json, urlencoded } from 'express';
 
 import { AppModule } from './app.module';
 
-async function bootstrap() {
+async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
   app.use(json({ limit: '64MB' }));
   app.use(urlencoded({ limit: '64MB', extended: true }));

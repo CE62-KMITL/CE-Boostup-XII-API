@@ -53,7 +53,7 @@ export class CompileAndRunDto {
   })
   @IsArray()
   @ArrayMaxSize(ConfigConstants.executor.maxInputCount)
-  @MaxLength(ConfigConstants.executor.maxInputLength, { each: true })
+  @MaxLength(ConfigConstants.executor.maxInputSize, { each: true })
   @IsString({ each: true })
   inputs: string[];
 
@@ -123,35 +123,41 @@ export class CompileAndRunDto {
 interface ICompileAndRunResponse {
   totalRuntime?: number;
   compilerOutput?: string;
+  compilationTime?: number;
   code?: ResultCode;
   outputs?: {
     runtimeOutput: string;
-    compilationTime: number;
-    executionTime: number;
+    executionTime?: number;
+    executionMemory?: number;
+    code?: ResultCode;
   }[];
 }
 
 export class CompileAndRunResponse {
   totalRuntime: number | null;
   compilerOutput: string | null;
+  compilationTime: number | null;
   code: ResultCode | null;
   outputs:
     | {
         runtimeOutput: string;
-        compilationTime: number;
-        executionTime: number;
+        executionTime?: number;
+        executionMemory?: number;
+        code?: ResultCode;
       }[]
     | null;
 
   constructor({
     totalRuntime,
     compilerOutput,
-    code: ResultCode,
+    compilationTime,
+    code,
     outputs,
   }: ICompileAndRunResponse = {}) {
     this.totalRuntime = totalRuntime || null;
     this.compilerOutput = compilerOutput || null;
-    this.code = ResultCode || null;
+    this.compilationTime = compilationTime || null;
+    this.code = code || null;
     this.outputs = outputs || null;
   }
 }

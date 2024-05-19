@@ -6,16 +6,18 @@ export const ConfigConstants = {
   compiler: {
     maxCodeLength: 65535,
     defaultTimeLimit: 15,
-    defaultMemoryLimit: 65535,
+    defaultMemoryLimit: 64 * 1024 * 1024,
     maxTimeLimit: 60,
-    maxMemoryLimit: 262144,
+    maxMemoryLimit: 256 * 1024 * 1024,
+    maxExecutableSize: 64 * 1024 * 1024,
   },
   executor: {
     maxInputCount: 4096,
-    maxInputLength: 65535,
+    maxInputSize: 65536,
+    maxOutputSize: 65536,
     defaultTimeLimit: 1,
-    defaultMemoryLimit: 16384,
+    defaultMemoryLimit: 16 * 1024 * 1024,
     maxTimeLimit: 30,
-    maxMemoryLimit: 262144,
+    maxMemoryLimit: 64 * 1024 * 1024,
   },
 };
