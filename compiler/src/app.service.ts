@@ -105,9 +105,6 @@ export class AppService implements OnModuleInit {
       code,
       { encoding: 'utf-8' },
     );
-    // TODO: Add error parsing
-    // TODO: Add timeout
-    // TODO: Add memory limit
     try {
       const { stderr } = await execAsync(
         `isolate --run -b 0 -p -e --stderr-to-stdout -o ${join(ConfigConstants.isolate.box_root, '0', 'gcc-precompilation-output.txt')} -m ${Math.round(compileAndRunDto.compilationMemoryLimit / 1024).toFixed(0)} -w ${compileAndRunDto.compilationTimeLimit.toFixed(3)} -n 4 -f ${Math.ceil(ConfigConstants.compiler.maxExecutableSize / 1024).toFixed(0)} -- /usr/bin/${compiler} -fdiagnostics-color=never --std=${compileAndRunDto.language} code.cpp -H`,
@@ -185,7 +182,6 @@ export class AppService implements OnModuleInit {
       code,
       { encoding: 'utf-8' },
     );
-    // TODO: Add error parsing
     try {
       const { stderr } = await execAsync(
         `isolate --run -b 0 -p -e --stderr-to-stdout -o ${join(ConfigConstants.isolate.box_root, '0', 'gcc-ompilation-output.txt')} -M ${join(this.configService.getOrThrow<string>('storages.temporary.path'), 'metadata', 'compiler', `compilation.txt`)} -m ${Math.round(compileAndRunDto.compilationMemoryLimit / 1024).toFixed(0)} -w ${compileAndRunDto.compilationTimeLimit.toFixed(3)} -n 4 -f ${Math.ceil(ConfigConstants.compiler.maxExecutableSize / 1024).toFixed(0)} -- /usr/bin/${compiler} -fdiagnostics-color=never --std=${compileAndRunDto.language} ${warningString} -${compileAndRunDto.optimizationLevel} code.cpp -o out.o`,
