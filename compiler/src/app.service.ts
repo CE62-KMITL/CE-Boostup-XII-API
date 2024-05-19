@@ -107,26 +107,28 @@ export class AppService implements OnModuleInit {
     );
     try {
       const { stderr } = await execAsync(
-        `isolate --run -b 0 -p -e --stderr-to-stdout -o ${join(ConfigConstants.isolate.box_root, '0', 'gcc-precompilation-output.txt')} -m ${Math.round(compileAndRunDto.compilationMemoryLimit / 1024).toFixed(0)} -w ${compileAndRunDto.compilationTimeLimit.toFixed(3)} -n 4 -f ${Math.ceil(ConfigConstants.compiler.maxExecutableSize / 1024).toFixed(0)} -- /usr/bin/${compiler} -fdiagnostics-color=never --std=${compileAndRunDto.language} code.cpp -H`,
+        `isolate --run -b 0 -p -e --stderr-to-stdout -o ${join(ConfigConstants.isolate.box_root, '0', 'box', 'gcc-precompilation-output.txt')} -m ${Math.round(compileAndRunDto.compilationMemoryLimit / 1024).toFixed(0)} -w ${compileAndRunDto.compilationTimeLimit.toFixed(3)} -n 4 -f ${Math.ceil(ConfigConstants.compiler.maxExecutableSize / 1024).toFixed(0)} -- /usr/bin/${compiler} -fdiagnostics-color=never --std=${compileAndRunDto.language} code.cpp -H`,
         {
           encoding: 'utf-8',
           env: {
             PATH: '/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin',
           },
+          timeout: compileAndRunDto.compilationTimeLimit * 1000 + 1000,
         },
       );
       isolateOutput = stderr;
     } catch (e) {
-      const output = await fs.promises.readFile(
+      const preCompilationOutput = await fs.promises.readFile(
         join(
           ConfigConstants.isolate.box_root,
           '0',
+          'box',
           'gcc-precompilation-output.txt',
         ),
         { encoding: 'utf-8' },
       );
       return new CompileAndRunResponse({
-        compilerOutput: output + isolateOutput,
+        compilerOutput: preCompilationOutput + isolateOutput,
         code: ResultCode.CE,
       });
     }
@@ -134,6 +136,7 @@ export class AppService implements OnModuleInit {
       join(
         ConfigConstants.isolate.box_root,
         '0',
+        'box',
         'gcc-precompilation-output.txt',
       ),
       { encoding: 'utf-8' },
@@ -155,6 +158,11 @@ export class AppService implements OnModuleInit {
         encoding: 'utf-8',
         timeout: 1000,
       });
+    } catch (e) {
+      console.error('Error when trying to cleanup isolate');
+      console.error(e);
+    }
+    try {
       await execAsync(`isolate --init -b 0 -q ${compilerDiskQuota},4`, {
         encoding: 'utf-8',
         timeout: 1000,
@@ -184,34 +192,53 @@ export class AppService implements OnModuleInit {
     );
     try {
       const { stderr } = await execAsync(
-        `isolate --run -b 0 -p -e --stderr-to-stdout -o ${join(ConfigConstants.isolate.box_root, '0', 'gcc-ompilation-output.txt')} -M ${join(this.configService.getOrThrow<string>('storages.temporary.path'), 'metadata', 'compiler', `compilation.txt`)} -m ${Math.round(compileAndRunDto.compilationMemoryLimit / 1024).toFixed(0)} -w ${compileAndRunDto.compilationTimeLimit.toFixed(3)} -n 4 -f ${Math.ceil(ConfigConstants.compiler.maxExecutableSize / 1024).toFixed(0)} -- /usr/bin/${compiler} -fdiagnostics-color=never --std=${compileAndRunDto.language} ${warningString} -${compileAndRunDto.optimizationLevel} code.cpp -o out.o`,
+        `isolate --run -b 0 -p -e --stderr-to-stdout -o ${join(ConfigConstants.isolate.box_root, '0', 'box', 'gcc-ompilation-output.txt')} -M ${join(this.configService.getOrThrow<string>('storages.temporary.path'), 'metadata', 'compiler', `compilation.txt`)} -m ${Math.round(compileAndRunDto.compilationMemoryLimit / 1024).toFixed(0)} -w ${compileAndRunDto.compilationTimeLimit.toFixed(3)} -n 4 -f ${Math.ceil(ConfigConstants.compiler.maxExecutableSize / 1024).toFixed(0)} -- /usr/bin/${compiler} -fdiagnostics-color=never --std=${compileAndRunDto.language} ${warningString} -${compileAndRunDto.optimizationLevel} code.cpp -o out.o`,
         {
           encoding: 'utf-8',
           env: {
             PATH: '/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin',
           },
+          timeout: compileAndRunDto.compilationTimeLimit * 1000 + 1000,
         },
       );
       isolateOutput = stderr;
     } catch (e) {
-      const output = await fs.promises.readFile(
+      const compilationOutput = await fs.promises.readFile(
         join(
           ConfigConstants.isolate.box_root,
           '0',
+          'box',
           'gcc-compilation-output.txt',
         ),
         { encoding: 'utf-8' },
       );
+      const bannedFunctionMatches = compilationOutput.matchAll(
+        /error: static assertion failed: "Function (.*?) is not allowed\."/gm,
+      );
+      if (bannedFunctionMatches) {
+        const bannedFunctions = Array.from(
+          bannedFunctionMatches,
+          (match) => match[1],
+        );
+        return new CompileAndRunResponse({
+          compilerOutput: `Prepreprocessor: Fatal error: Function ${bannedFunctions[0]} is not allowed\nCompilation terminated.\nExited with error status 1`,
+          code: ResultCode.FNA,
+        });
+      }
       return new CompileAndRunResponse({
-        compilerOutput: output + isolateOutput,
+        compilerOutput: compilationOutput + isolateOutput,
         code: ResultCode.CE,
       });
     }
-    const gccCompilationOutput = await fs.promises.readFile(
-      join(ConfigConstants.isolate.box_root, '0', 'gcc-compilation-output.txt'),
+    const compilationOutput = await fs.promises.readFile(
+      join(
+        ConfigConstants.isolate.box_root,
+        '0',
+        'box',
+        'gcc-compilation-output.txt',
+      ),
       { encoding: 'utf-8' },
     );
-    const compilationOutput = gccCompilationOutput + isolateOutput;
     const compilationMetadata = loadKeyValue(
       await fs.promises.readFile(
         join(
@@ -223,36 +250,28 @@ export class AppService implements OnModuleInit {
         { encoding: 'utf-8' },
       ),
     );
-    const bannedFunctionMatches = gccCompilationOutput.matchAll(
-      /error: static assertion failed: "Function (.*?) is not allowed\."/gm,
-    );
-    if (bannedFunctionMatches) {
-      const bannedFunctions = Array.from(
-        bannedFunctionMatches,
-        (match) => match[1],
-      );
-      return new CompileAndRunResponse({
-        compilerOutput: `Prepreprocessor: Fatal error: Function ${bannedFunctions[0]} is not allowed\nCompilation terminated.\nExited with error status 1`,
-        code: ResultCode.FNA,
-      });
-    }
     const compiledFilePath = join(
       this.configService.getOrThrow<string>('storages.temporary.path'),
       'executables',
       'out.o',
     );
     await fs.promises.copyFile(
-      join(ConfigConstants.isolate.box_root, '0', 'out.o'),
+      join(ConfigConstants.isolate.box_root, '0', 'box', 'out.o'),
       compiledFilePath,
     );
-    await execAsync('isolate --cleanup -b 0', {
-      encoding: 'utf-8',
-      timeout: 1000,
-    });
+    try {
+      await execAsync('isolate --cleanup -b 0', {
+        encoding: 'utf-8',
+        timeout: 1000,
+      });
+    } catch (e) {
+      console.error('Error when trying to cleanup isolate');
+      console.error(e);
+    }
     const outputs: CompileAndRunResponse['outputs'] = [];
     while (compileAndRunDto.inputs.length > 0) {
-      const batchCount = Math.min(boxCount, compileAndRunDto.inputs.length);
-      const boxes = Array.from({ length: batchCount }, (_, i) => i);
+      const batchSize = Math.min(boxCount, compileAndRunDto.inputs.length);
+      const boxes = Array.from({ length: batchSize }, (_, i) => i);
       try {
         await Promise.all(
           boxes.map(
@@ -261,6 +280,7 @@ export class AppService implements OnModuleInit {
                 `isolate --init -b ${box} -q ${executorDiskQuota},4`,
                 {
                   encoding: 'utf-8',
+                  timeout: 1000,
                 },
               ),
           ),
@@ -278,7 +298,12 @@ export class AppService implements OnModuleInit {
           async (box) =>
             await fs.promises.copyFile(
               compiledFilePath,
-              join(ConfigConstants.isolate.box_root, box.toString(), 'out.o'),
+              join(
+                ConfigConstants.isolate.box_root,
+                box.toString(),
+                'box',
+                'out.o',
+              ),
             ),
         ),
       );
@@ -289,6 +314,7 @@ export class AppService implements OnModuleInit {
               join(
                 ConfigConstants.isolate.box_root,
                 box.toString(),
+                'box',
                 'stdin.txt',
               ),
               compileAndRunDto.inputs[box],
@@ -296,15 +322,16 @@ export class AppService implements OnModuleInit {
             ),
         ),
       );
-      compileAndRunDto.inputs.splice(0, batchCount);
+      compileAndRunDto.inputs.splice(0, batchSize);
       await Promise.all(
         boxes.map(async (box) => {
           let isolateOutput: string = '';
           try {
             const { stderr } = await execAsync(
-              `isolate --run -b ${box} --stderr-to-stdout -o ${join(ConfigConstants.isolate.box_root, box.toString(), 'output.txt')} -M ${join(this.configService.getOrThrow<string>('storages.temporary.path'), 'metadata', 'executor', `box-${box}.txt`)} -m ${Math.round(compileAndRunDto.memoryLimit / 1024).toFixed(0)} -t ${compileAndRunDto.timeLimit.toFixed(3)} -w ${wallTimeLimit.toFixed(0)} -n 4 -f 1 -- out.o`,
+              `isolate --run -b ${box} --stderr-to-stdout -o ${join(ConfigConstants.isolate.box_root, box.toString(), 'box', 'output.txt')} -M ${join(this.configService.getOrThrow<string>('storages.temporary.path'), 'metadata', 'executor', `box-${box}.txt`)} -i ${join(ConfigConstants.isolate.box_root, box.toString(), 'box', 'stdin.txt')} -m ${Math.round(compileAndRunDto.memoryLimit / 1024).toFixed(0)} -t ${compileAndRunDto.timeLimit.toFixed(3)} -w ${wallTimeLimit.toFixed(0)} -n 4 -f 1 -- out.o`,
               {
                 encoding: 'utf-8',
+                timeout: wallTimeLimit * 1000 + 1000,
               },
             );
             isolateOutput = stderr;
@@ -313,6 +340,7 @@ export class AppService implements OnModuleInit {
               join(
                 ConfigConstants.isolate.box_root,
                 box.toString(),
+                'box',
                 'output.txt',
               ),
               { encoding: 'utf-8' },
@@ -346,6 +374,7 @@ export class AppService implements OnModuleInit {
             join(
               ConfigConstants.isolate.box_root,
               box.toString(),
+              'box',
               'output.txt',
             ),
             { encoding: 'utf-8' },
