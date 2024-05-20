@@ -21,7 +21,9 @@ services:
   compiler:
     build: compiler
     container_name: ce-boostup-xii-compiler
-    privileged: true
+    cap_add:
+      - SYS_ADMIN
+      - NET_ADMIN
     expose:
       - "3000"
     healthcheck:

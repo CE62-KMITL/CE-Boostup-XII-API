@@ -319,8 +319,10 @@ export class AppService implements OnModuleInit {
       console.error(e);
     }
     const outputs: CompileAndRunResponse['outputs'] = [];
+    let batchNumber = -1;
     while (compileAndRunDto.inputs.length > 0) {
       const batchSize = Math.min(boxCount, compileAndRunDto.inputs.length);
+      batchNumber++;
       const boxes = Array.from({ length: batchSize }, (_, i) => i);
       try {
         await Promise.all(
@@ -408,7 +410,7 @@ export class AppService implements OnModuleInit {
             if (isolateOutput.includes('Time limit exceeded')) {
               code = ResultCode.TLE;
             }
-            outputs[box] = {
+            outputs[batchNumber * boxCount + box] = {
               runtimeOutput: output + isolateOutput,
               executionTime: metadata.time ? +metadata.time : undefined,
               executionMemory: metadata['max-rss']
@@ -437,7 +439,7 @@ export class AppService implements OnModuleInit {
           );
           const metadata = loadKeyValue(metadataText);
           if (metadata.time && +metadata.time > compileAndRunDto.timeLimit) {
-            outputs[box] = {
+            outputs[batchNumber * boxCount + box] = {
               runtimeOutput: output + isolateOutput,
               executionTime: metadata.time ? +metadata.time : undefined,
               executionMemory: metadata['max-rss']
@@ -446,7 +448,7 @@ export class AppService implements OnModuleInit {
               code: ResultCode.TLE,
             };
           }
-          outputs[box] = {
+          outputs[batchNumber * boxCount + box] = {
             runtimeOutput: output,
             executionTime: metadata.time ? +metadata.time : undefined,
             executionMemory: metadata['max-rss']
@@ -471,12 +473,15 @@ export class AppService implements OnModuleInit {
       console.error('Error when trying to cleanup isolate');
       console.error(e);
     }
-    const totalRuntime = outputs.reduce(
+    const totalExecutionTime = outputs.reduce(
       (acc, output) => (acc += output.executionTime || 0),
       0,
     );
+    const maxExecutionMemory = outputs.reduce(
+      (acc, output) => (acc = Math.max(acc, output.executionMemory || 0)),
+      0,
+    );
     return new CompileAndRunResponse({
-      totalRuntime: totalRuntime,
       compilerOutput: compilationOutput,
       compilationTime: compilationMetadata.time
         ? +compilationMetadata.time
@@ -485,6 +490,8 @@ export class AppService implements OnModuleInit {
         ? +compilationMetadata['max-rss'] * 1024
         : undefined,
       executableSize: executableSize,
+      totalExecutionTime: totalExecutionTime,
+      maxExecutionMemory: maxExecutionMemory,
       outputs,
     });
   }

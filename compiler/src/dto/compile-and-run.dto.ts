@@ -130,11 +130,12 @@ export class CompileAndRunDto {
 }
 
 interface ICompileAndRunResponse {
-  totalRuntime?: number;
   compilerOutput?: string;
   compilationTime?: number;
   compilationMemory?: number;
   executableSize?: number;
+  totalExecutionTime?: number;
+  maxExecutionMemory?: number;
   code?: ResultCode;
   outputs?: {
     runtimeOutput: string;
@@ -145,36 +146,37 @@ interface ICompileAndRunResponse {
 }
 
 export class CompileAndRunResponse {
-  totalRuntime: number | null;
-  compilerOutput: string | null;
-  compilationTime: number | null;
-  compilationMemory: number | null;
-  executableSize: number | null;
-  code: ResultCode | null;
-  outputs:
-    | {
-        runtimeOutput: string;
-        executionTime?: number;
-        executionMemory?: number;
-        code?: ResultCode;
-      }[]
-    | null;
+  compilerOutput?: string;
+  compilationTime?: number;
+  compilationMemory?: number;
+  executableSize?: number;
+  totalExecutionTime?: number;
+  maxExecutionMemory?: number;
+  code?: ResultCode;
+  outputs?: {
+    runtimeOutput: string;
+    executionTime?: number;
+    executionMemory?: number;
+    code?: ResultCode;
+  }[];
 
   constructor({
-    totalRuntime,
     compilerOutput,
     compilationTime,
     compilationMemory,
     executableSize,
+    totalExecutionTime,
+    maxExecutionMemory,
     code,
     outputs,
   }: ICompileAndRunResponse = {}) {
-    this.totalRuntime = totalRuntime || null;
-    this.compilerOutput = compilerOutput || null;
-    this.compilationTime = compilationTime || null;
-    this.compilationMemory = compilationMemory || null;
-    this.executableSize = executableSize || null;
-    this.code = code || null;
-    this.outputs = outputs || null;
+    this.compilerOutput = compilerOutput;
+    this.compilationTime = compilationTime;
+    this.compilationMemory = compilationMemory;
+    this.executableSize = executableSize;
+    this.totalExecutionTime = totalExecutionTime;
+    this.maxExecutionMemory = maxExecutionMemory;
+    this.code = code;
+    this.outputs = outputs;
   }
 }
