@@ -13,7 +13,7 @@ export const ConfigConstants = {
     maxExecutableSize: 64 * 1024 * 1024,
   },
   executor: {
-    boxPollInterval: 100,
+    boxPollInterval: 10,
     maxInputCount: 4 * 1024,
     maxInputSize: 256 * 1024,
     maxOutputSize: 16 * 1024 * 1024,

@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import { join } from 'path';
 
 import { InternalServerErrorException } from '@nestjs/common';
+import { Mutex } from 'async-mutex';
 
 import { ConfigConstants } from './config/config-constants';
 import { execAsync } from './exec-async';
@@ -17,29 +18,41 @@ export class Executor {
     this.boxesRoot = boxesRoot;
     this.metadataStoragePath = metadataStoragePath;
     this.boxStatuses = Array(boxCount).fill(BoxStatus.Idle);
+    this.boxAvailable = boxCount;
     this.logger = logger;
   }
 
-  private boxesRoot: string;
-  private metadataStoragePath: string;
+  private readonly boxesRoot: string;
+  private readonly metadataStoragePath: string;
   private boxStatuses: BoxStatus[];
-  private logger: any;
+  private boxAvailable: number;
+  private readonly logger: any;
+
+  private readonly mutex = new Mutex();
 
   async execute(
     command: string,
     options: ExecutionOptions,
   ): Promise<ExecutionResult> {
     let box = -1;
-    while (box === -1) {
-      box = this.boxStatuses.findIndex((status) => status === BoxStatus.Idle);
-      if (box !== -1) {
-        break;
+    const release = await this.mutex.acquire();
+    try {
+      while (box === -1) {
+        if (this.boxAvailable > 0) {
+          box = this.boxStatuses.findIndex(
+            (status) => status === BoxStatus.Idle,
+          );
+          break;
+        }
+        await new Promise((resolve) =>
+          setTimeout(resolve, ConfigConstants.executor.boxPollInterval),
+        );
       }
-      await new Promise((resolve) =>
-        setTimeout(resolve, ConfigConstants.executor.boxPollInterval),
-      );
+      this.boxAvailable--;
+      this.boxStatuses[box] = BoxStatus.Running;
+    } finally {
+      release();
     }
-    this.boxStatuses[box] = BoxStatus.Running;
     const metadataFilePath = join(this.metadataStoragePath, `${box}.txt`);
     try {
       try {
@@ -143,7 +156,7 @@ export class Executor {
       if (options.timeLimit) {
         commandTimeout =
           ConfigConstants.isolate.baseCommandTimeout +
-          Math.max(options.timeLimit * 1.5, options.timeLimit + 5);
+          Math.max(options.timeLimit * 4, options.timeLimit + 30);
       }
       if (options.wallTimeLimit) {
         commandTimeout =
@@ -202,6 +215,7 @@ export class Executor {
         ]);
       } catch (e) {}
       this.boxStatuses[box] = BoxStatus.Idle;
+      this.boxAvailable++;
     }
   }
 }
