@@ -2,7 +2,7 @@ export enum ResultCode {
   AC = 'AC', // Accepted
   WA = 'WA', // Wrong Answer
   IR = 'IR', // Invalid Return
-  RTE = 'RTE', // Runtime Error
+  RE = 'RE', // Runtime Error
   HNA = 'HNA', // Header Not Allowed
   FNA = 'FNA', // Function Not Allowed
   COLE = 'COLE', // Compilation Output Limit Exceeded

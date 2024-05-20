@@ -129,7 +129,14 @@ export class CompileAndRunDto {
   formattedDiagnostic: boolean = false;
 }
 
-interface ICompileAndRunResponse {
+export interface CompileAndRunOutput {
+  runtimeOutput: string;
+  executionTime?: number;
+  executionMemory?: number;
+  code?: ResultCode;
+}
+
+interface CompileAndRunResponseData {
   compilerOutput?: string;
   compilationTime?: number;
   compilationMemory?: number;
@@ -137,12 +144,7 @@ interface ICompileAndRunResponse {
   totalExecutionTime?: number;
   maxExecutionMemory?: number;
   code?: ResultCode;
-  outputs?: {
-    runtimeOutput: string;
-    executionTime?: number;
-    executionMemory?: number;
-    code?: ResultCode;
-  }[];
+  outputs?: CompileAndRunOutput[];
 }
 
 export class CompileAndRunResponse {
@@ -153,12 +155,7 @@ export class CompileAndRunResponse {
   totalExecutionTime?: number;
   maxExecutionMemory?: number;
   code?: ResultCode;
-  outputs?: {
-    runtimeOutput: string;
-    executionTime?: number;
-    executionMemory?: number;
-    code?: ResultCode;
-  }[];
+  outputs?: CompileAndRunOutput[];
 
   constructor({
     compilerOutput,
@@ -169,7 +166,7 @@ export class CompileAndRunResponse {
     maxExecutionMemory,
     code,
     outputs,
-  }: ICompileAndRunResponse = {}) {
+  }: CompileAndRunResponseData = {}) {
     this.compilerOutput = compilerOutput;
     this.compilationTime = compilationTime;
     this.compilationMemory = compilationMemory;

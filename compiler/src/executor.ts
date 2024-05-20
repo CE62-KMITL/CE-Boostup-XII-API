@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import { join } from 'path';
 
 import { InternalServerErrorException } from '@nestjs/common';
-import { Mutex } from 'async-mutex';
+import { Semaphore } from 'async-mutex';
 
 import { ConfigConstants } from './config/config-constants';
 import { execAsync } from './exec-async';
@@ -17,41 +17,31 @@ export class Executor {
   ) {
     this.boxesRoot = boxesRoot;
     this.metadataStoragePath = metadataStoragePath;
-    this.boxStatuses = Array(boxCount).fill(BoxStatus.Idle);
-    this.boxAvailable = boxCount;
+    this.availableBoxes = Array.from({ length: boxCount }, (_, i) => i);
     this.logger = logger;
+    this.semaphore = new Semaphore(boxCount);
   }
 
   private readonly boxesRoot: string;
   private readonly metadataStoragePath: string;
-  private boxStatuses: BoxStatus[];
-  private boxAvailable: number;
+  private readonly availableBoxes: number[];
   private readonly logger: any;
 
-  private readonly mutex = new Mutex();
+  private readonly semaphore: Semaphore;
 
   async execute(
-    command: string,
-    options: ExecutionOptions,
+    command: string | string[],
+    priority: number = 0,
+    options: ExecutionOptions = {},
   ): Promise<ExecutionResult> {
-    let box = -1;
-    const release = await this.mutex.acquire();
-    try {
-      while (box === -1) {
-        if (this.boxAvailable > 0) {
-          box = this.boxStatuses.findIndex(
-            (status) => status === BoxStatus.Idle,
-          );
-          break;
-        }
-        await new Promise((resolve) =>
-          setTimeout(resolve, ConfigConstants.executor.boxPollInterval),
-        );
-      }
-      this.boxAvailable--;
-      this.boxStatuses[box] = BoxStatus.Running;
-    } finally {
+    const [, release] = await this.semaphore.acquire(1, priority);
+    const box = this.availableBoxes.pop();
+    if (box === undefined) {
       release();
+      throw new InternalServerErrorException({
+        message: 'Failed to acquire isolate box',
+        errors: { internal: 'Failed to acquire isolate box' },
+      });
     }
     const metadataFilePath = join(this.metadataStoragePath, `${box}.txt`);
     try {
@@ -111,6 +101,9 @@ export class Executor {
           });
         }
       }
+      if (command instanceof Array) {
+        command = command.join(' ');
+      }
       const fullCommandList = [];
       fullCommandList.push('isolate');
       fullCommandList.push('--run');
@@ -131,6 +124,25 @@ export class Executor {
       fullCommandList.push('output.txt');
       fullCommandList.push('-M');
       fullCommandList.push(metadataFilePath);
+      if (options.stdin) {
+        try {
+          await fs.promises.writeFile(
+            join(this.boxesRoot, box.toString(), 'box', 'stdin.txt'),
+            options.stdin,
+            { encoding: 'utf-8' },
+          );
+        } catch (e) {
+          this.logger.error(
+            `Failed to write stdin file in isolate box ${box}: ${e}`,
+          );
+          throw new InternalServerErrorException({
+            message: 'Failed to initialize environment',
+            errors: { internal: 'Failed to initialize environment' },
+          });
+        }
+        fullCommandList.push('-i');
+        fullCommandList.push('stdin.txt');
+      }
       if (options.memoryLimit) {
         fullCommandList.push('-m');
         fullCommandList.push(Math.round(options.memoryLimit / 1024).toFixed(0));
@@ -156,24 +168,36 @@ export class Executor {
       if (options.timeLimit) {
         commandTimeout =
           ConfigConstants.isolate.baseCommandTimeout +
-          Math.max(options.timeLimit * 4, options.timeLimit + 30);
+          Math.max(options.timeLimit * 4, options.timeLimit + 30) * 1000;
       }
       if (options.wallTimeLimit) {
         commandTimeout =
-          ConfigConstants.isolate.baseCommandTimeout + options.wallTimeLimit;
+          ConfigConstants.isolate.baseCommandTimeout +
+          options.wallTimeLimit * 1000;
       }
-      let isolateOutput = '';
+      let exitCode: number | string = '0';
       try {
-        const { stderr } = await execAsync(fullCommand, {
+        await execAsync(fullCommand, {
           encoding: 'utf-8',
           timeout: commandTimeout,
           env: options.environment,
         });
-        isolateOutput = stderr;
       } catch (e) {
+        exitCode = '1';
         this.logger.log(
           `Failed to execute user provided command: ${fullCommand}: ${e}`,
         );
+        if (e.killed) {
+          this.logger.error(
+            `Execution secondary timeout activated for isolate box ${box} with command: ${fullCommand}`,
+          );
+          throw new InternalServerErrorException({
+            message: 'Execution timeout',
+            errors: {
+              internal: 'Execution timeout, this may be due to heavy load',
+            },
+          });
+        }
       }
       const outputFilePath = join(
         this.boxesRoot,
@@ -191,7 +215,7 @@ export class Executor {
           `Failed to read output file from isolate box ${box} at ${outputFilePath}: ${e}`,
         );
       }
-      let metadata = {};
+      let metadata: Record<string, string> = {};
       try {
         metadata = loadKeyValue(
           await fs.promises.readFile(metadataFilePath, {
@@ -203,26 +227,53 @@ export class Executor {
           `Failed to read metadata file from isolate box ${box} at ${metadataFilePath}: ${e}`,
         );
       }
-      return { isolateOutput, output, metadata };
-    } finally {
-      try {
-        await Promise.all([
-          execAsync(`isolate --cleanup -b ${box}`, {
-            encoding: 'utf-8',
-            timeout: ConfigConstants.isolate.baseCommandTimeout,
+      if (options.outputFiles) {
+        await Promise.allSettled(
+          options.outputFiles.map(async (outputFile) => {
+            try {
+              await fs.promises.copyFile(
+                join(this.boxesRoot, box.toString(), 'box', outputFile.name),
+                outputFile.path,
+              );
+            } catch (e) {
+              this.logger.error(
+                `Failed to copy output file from isolate box ${box} at from ${outputFile.name} to ${outputFile.path}: ${e}`,
+              );
+            }
           }),
-          fs.promises.unlink(metadataFilePath),
-        ]);
-      } catch (e) {}
-      this.boxStatuses[box] = BoxStatus.Idle;
-      this.boxAvailable++;
+        );
+      }
+      if (metadata.killed === '1') {
+        exitCode = '1';
+      }
+      if (metadata.exitsig) {
+        exitCode = metadata.exitsig;
+      }
+      if (metadata.exitcode) {
+        exitCode = metadata.exitcode;
+      }
+      exitCode = +exitCode;
+      const isolateOutput = metadata.message ? metadata.message + '\n' : '';
+      return { exitCode, isolateOutput, output, metadata };
+    } finally {
+      await Promise.allSettled([
+        execAsync(`isolate --cleanup -b ${box}`, {
+          encoding: 'utf-8',
+          timeout: ConfigConstants.isolate.baseCommandTimeout,
+        }),
+        fs.promises.unlink(metadataFilePath),
+      ]);
+      this.availableBoxes.push(box);
+      release();
     }
   }
 }
 
 export interface ExecutionOptions {
+  stdin?: string;
   inputFiles?: { name: string; path: string }[];
   inputTexts?: { name: string; text: string }[];
+  outputFiles?: { name: string; path: string }[];
   processLimit?: number | null;
   environment?: { [key: string]: string };
   memoryLimit?: number;
@@ -232,12 +283,8 @@ export interface ExecutionOptions {
 }
 
 export interface ExecutionResult {
+  exitCode: number;
   isolateOutput: string;
   output: string;
   metadata: { [key: string]: string };
-}
-
-enum BoxStatus {
-  Idle = 'Idle',
-  Running = 'Running',
 }
