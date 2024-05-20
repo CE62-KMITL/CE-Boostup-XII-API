@@ -4,6 +4,7 @@ import { join } from 'path';
 import {
   Injectable,
   InternalServerErrorException,
+  Logger,
   OnModuleInit,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -15,12 +16,24 @@ import {
 } from './dto/compile-and-run.dto';
 import { ResultCode } from './enums/result-code.enum';
 import { WarningLevel } from './enums/warning-level.enum';
-import { execAsync } from './execAsync';
+import { execAsync } from './exec-async';
+import { Executor } from './executor';
 import { loadKeyValue } from './load-key-value';
 
 @Injectable()
 export class AppService implements OnModuleInit {
   constructor(private readonly configService: ConfigService) {}
+
+  private readonly logger = new Logger(AppService.name);
+  private readonly executor = new Executor(
+    ConfigConstants.isolate.box_root,
+    ConfigConstants.isolate.max_box_count,
+    join(
+      this.configService.getOrThrow<string>('storages.temporary.path'),
+      'metadata',
+    ),
+    this.logger,
+  );
 
   onModuleInit(): void {
     this.createTemporaryDirectories();
