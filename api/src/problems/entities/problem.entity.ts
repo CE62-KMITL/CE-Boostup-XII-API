@@ -219,9 +219,7 @@ export class ProblemResponse {
       : undefined;
     this.credits = problem.credits;
     this.publicationStatus = problem.publicationStatus;
-    this.completionStatus = extra.completionStatus
-      ? extra.completionStatus
-      : undefined;
+    this.completionStatus = extra.completionStatus || undefined;
     this.userSolvedCount = problem.userSolvedCount;
     this.createdAt = problem.createdAt;
     this.updatedAt = problem.updatedAt;
