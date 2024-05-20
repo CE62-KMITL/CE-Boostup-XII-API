@@ -1,4 +1,5 @@
 name: "ce-boostup-xii"
+
 services:
   api:
     build: api
@@ -18,6 +19,7 @@ services:
       start_period: 10s
       start_interval: 1s
     restart: unless-stopped
+
   compiler:
     build: compiler
     container_name: ce-boostup-xii-compiler
@@ -31,6 +33,7 @@ services:
       start_period: 10s
       start_interval: 1s
     restart: unless-stopped
+
   mariadb:
     image: mariadb:11
     container_name: ce-boostup-xii-mariadb
