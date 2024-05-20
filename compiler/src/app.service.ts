@@ -40,11 +40,7 @@ export class AppService implements OnModuleInit {
   }
 
   private async createTemporaryDirectories(): Promise<void> {
-    for (const path of [
-      'executables',
-      join('metadata', 'compiler'),
-      join('metadata', 'executor'),
-    ]) {
+    for (const path of ['executables', 'metadata']) {
       await fs.promises.mkdir(
         join(
           this.configService.getOrThrow<string>('storages.temporary.path'),
