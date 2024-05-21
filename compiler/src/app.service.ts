@@ -118,6 +118,7 @@ export class AppService implements OnModuleInit {
         let returnCode = ResultCode.CE;
         if (
           precompilationOutput.includes('memory exhausted') ||
+          precompilationOutput.includes('out of memory') ||
           precompilationOutput.includes(
             'Segmentation fault signal terminated program',
           ) ||
@@ -250,6 +251,7 @@ export class AppService implements OnModuleInit {
         let returnCode = ResultCode.CE;
         if (
           compilationOutput.includes('memory exhausted') ||
+          compilationOutput.includes('out of memory') ||
           compilationOutput.includes(
             'Segmentation fault signal terminated program',
           ) ||

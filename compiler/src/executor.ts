@@ -200,6 +200,15 @@ export class Executor {
             },
           });
         }
+        if (e.stderr.includes('This box is currently in use')) {
+          this.logger.error(
+            `Isolate box ${box} is currently in use, this should not happen`,
+          );
+          throw new InternalServerErrorException({
+            message: 'Isolate box in use',
+            errors: { internal: 'Isolate box in use, this is abnormal' },
+          });
+        }
       }
       const outputFilePath = join(
         this.boxesRoot,
