@@ -1,6 +1,5 @@
 export const ConfigConstants = {
   isolate: {
-    max_box_count: 64,
     box_root: '/var/local/lib/isolate/',
     baseCommandTimeout: 3000,
   },
