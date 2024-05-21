@@ -12,4 +12,4 @@ character-set-server = utf8mb4
 
 [mariadb]
 optimizer_search_depth = 0
-innodb_buffer_pool_size = 512M
+innodb_buffer_pool_size = 2G
