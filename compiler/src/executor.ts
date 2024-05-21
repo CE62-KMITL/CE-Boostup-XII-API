@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import { join } from 'path';
 
-import { InternalServerErrorException } from '@nestjs/common';
+import { InternalServerErrorException, Logger } from '@nestjs/common';
 import { Semaphore } from 'async-mutex';
 
 import { ConfigConstants } from './config/config-constants';
@@ -13,21 +13,25 @@ export class Executor {
     boxesRoot: string,
     boxCount: number,
     metadataStoragePath: string,
-    logger: any = console,
   ) {
     this.boxesRoot = boxesRoot;
     this.metadataStoragePath = metadataStoragePath;
+    this.boxCount = boxCount;
     this.availableBoxes = Array.from({ length: boxCount }, (_, i) => i);
-    this.logger = logger;
     this.semaphore = new Semaphore(boxCount);
   }
 
   private readonly boxesRoot: string;
+  private readonly boxCount: number;
   private readonly metadataStoragePath: string;
   private readonly availableBoxes: number[];
-  private readonly logger: any;
 
+  private readonly logger = new Logger(Executor.name);
   private readonly semaphore: Semaphore;
+
+  async getBoxStatuses(): Promise<{ total: number; available: number[] }> {
+    return { total: this.boxCount, available: this.availableBoxes };
+  }
 
   async execute(
     command: string | string[],

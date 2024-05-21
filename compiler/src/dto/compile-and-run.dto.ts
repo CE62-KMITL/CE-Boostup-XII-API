@@ -11,6 +11,7 @@ import {
   Max,
   MaxLength,
   Min,
+  ValidateIf,
 } from 'class-validator';
 import { ConfigConstants } from 'src/config/config-constants';
 import { OptimizationLevel } from 'src/enums/optimization-level.enum';
@@ -58,23 +59,26 @@ export class CompileAndRunDto {
   @IsString({ each: true })
   inputs: string[];
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     type: 'array',
     items: { type: 'string' },
     example: ['stdio.h'],
   })
   @IsArray()
   @IsString({ each: true })
-  allowedHeaders: string[];
+  @ValidateIf((_, value) => value !== null)
+  @IsOptional()
+  allowedHeaders: string[] | null = null;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     type: 'array',
     items: { type: 'string' },
     example: ['system'],
   })
   @IsArray()
   @IsString({ each: true })
-  bannedFunctions: string[];
+  @IsOptional()
+  bannedFunctions: string[] = [];
 
   @ApiPropertyOptional({
     minimum: 0,
