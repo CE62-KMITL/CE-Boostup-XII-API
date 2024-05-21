@@ -1,4 +1,11 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+} from '@nestjs/common';
 
 import { AppService } from './app.service';
 import {
@@ -20,6 +27,7 @@ export class AppController {
     return await this.appService.getBoxStatuses();
   }
 
+  @HttpCode(HttpStatus.OK)
   @Post('compile-and-run')
   async compileAndRun(
     @Body() compileAndRunDto: CompileAndRunDto,
