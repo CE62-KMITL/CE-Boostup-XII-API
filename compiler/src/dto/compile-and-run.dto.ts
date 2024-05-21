@@ -42,7 +42,7 @@ export class CompileAndRunDto {
   @ApiProperty({
     maxLength: ConfigConstants.compiler.maxCodeLength,
     example:
-      '"#include <stdio.h>\\n\\nint main() {\\n    int a, b;\\n    scanf(\\"%d %d\\", &a, &b);\\n    printf(\\"%d\\n\\", a + b);\\n    return 0;\\n}"',
+      '#include <stdio.h>\n\nint main() {\n    int a, b;\n    scanf("%d %d", &a, &b);\n    printf("%d\\n", a + b);\n    return 0;\n}',
   })
   @IsString()
   @MaxLength(ConfigConstants.compiler.maxCodeLength)

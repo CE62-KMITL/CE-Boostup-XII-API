@@ -48,8 +48,8 @@ export class AppService implements OnModuleInit {
     }
   }
 
-  getHello(): string {
-    return 'Hello World!';
+  getRoot(): string {
+    return 'Swagger UI is available at <a href="/api">/api</a>';
   }
 
   async getBoxStatuses(): Promise<{ total: number; available: number[] }> {
