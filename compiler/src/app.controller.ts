@@ -15,6 +15,11 @@ export class AppController {
     return this.appService.getHello();
   }
 
+  @Get('box-statuses')
+  async getBoxStatuses(): Promise<{ total: number; available: number[] }> {
+    return await this.appService.getBoxStatuses();
+  }
+
   @Post('compile-and-run')
   async compileAndRun(
     @Body() compileAndRunDto: CompileAndRunDto,
