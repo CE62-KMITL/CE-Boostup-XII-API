@@ -51,7 +51,6 @@ export class Executor {
     try {
       try {
         await execAsync(`isolate --init -b ${box}`, {
-          encoding: 'utf-8',
           timeout: ConfigConstants.isolate.baseCommandTimeout,
         });
       } catch (e) {
@@ -182,7 +181,6 @@ export class Executor {
       let exitCode: number | string = '0';
       try {
         await execAsync(fullCommand, {
-          encoding: 'utf-8',
           timeout: commandTimeout,
           env: options.environment,
         });
@@ -262,7 +260,6 @@ export class Executor {
     } finally {
       await Promise.allSettled([
         execAsync(`isolate --cleanup -b ${box}`, {
-          encoding: 'utf-8',
           timeout: ConfigConstants.isolate.baseCommandTimeout,
         }),
         fs.promises.unlink(metadataFilePath),
