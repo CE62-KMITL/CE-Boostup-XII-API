@@ -204,6 +204,8 @@ export class AppService implements OnModuleInit {
           `--std=${compileAndRunDto.language}`,
           `${warningString}`,
           `-${compileAndRunDto.optimizationLevel}`,
+          '-march=znver3',
+          '-mtune=znver3',
           `${codeFilename}`,
           '-o',
           'out.o',
