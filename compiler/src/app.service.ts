@@ -82,86 +82,86 @@ export class AppService implements OnModuleInit {
     const hoistResult = this.hoistIncludes(compileAndRunDto.code);
     let code = hoistResult.code;
     const includeCount = hoistResult.includeCount;
-    const {
-      exitCode: preCompilationExitCode,
-      isolateOutput: preCompilationIsolateOutput,
-      output: precompilationOutput,
-      metadata: precompilationMetadata,
-    } = await this.executor.execute(
-      [
-        `/usr/bin/${compiler}`,
-        '-pass-exit-codes',
-        `-fdiagnostics-color=${compileAndRunDto.formattedDiagnostic ? 'always' : 'never'}`,
-        `-fdiagnostics-urls=${compileAndRunDto.formattedDiagnostic ? 'always' : 'never'}`,
-        `--std=${compileAndRunDto.language}`,
-        `${codeFilename}`,
-        '-H',
-      ],
-      -requestId,
-      {
-        inputTexts: [{ name: codeFilename, text: code }],
-        processLimit: null,
-        environment: {
-          PATH: '/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin',
-        },
-        memoryLimit: compileAndRunDto.compilationMemoryLimit,
-        timeLimit: compileAndRunDto.compilationTimeLimit,
-        wallTimeLimit: compilationWallTimeLimit,
-        fileSizeLimit: ConfigConstants.compiler.maxExecutableSize,
-      },
-    );
-    if (preCompilationExitCode !== 0) {
-      const exitSignal = precompilationMetadata.exitsig
-        ? +precompilationMetadata.exitsig
-        : 0;
-      let returnCode = ResultCode.CE;
-      if (
-        precompilationOutput.includes('memory exhausted') ||
-        precompilationOutput.includes(
-          'Segmentation fault signal terminated program',
-        ) ||
-        exitSignal === 11 ||
-        exitSignal === 127
-      ) {
-        returnCode = ResultCode.CMLE;
-      }
-      if (precompilationOutput.includes('File size limit exceeded')) {
-        returnCode = ResultCode.COLE;
-      }
-      if (precompilationMetadata.status === 'TO') {
-        returnCode = ResultCode.CTLE;
-      }
-      const outputLines = precompilationOutput.split('\n');
-      let lastHeaderLine: number | undefined = outputLines.findIndex(
-        (line) => !line.startsWith('.'),
-      );
-      if (lastHeaderLine === -1) {
-        lastHeaderLine = undefined;
-      }
-      let firstIncludeGuardWarningLine: number | undefined =
-        outputLines.findLastIndex(
-          (line) =>
-            line.trim() === 'Multiple include guards may be useful for:',
-        );
-      if (firstIncludeGuardWarningLine === -1) {
-        firstIncludeGuardWarningLine = undefined;
-      }
-      const compilerMessage =
-        outputLines
-          .slice(lastHeaderLine, firstIncludeGuardWarningLine)
-          .join('\n') + '\n';
-      return new CompileAndRunResponse({
-        compilerOutput: compilerMessage + preCompilationIsolateOutput,
-        compilationTime: precompilationMetadata.time
-          ? +precompilationMetadata.time
-          : undefined,
-        compilationMemory: precompilationMetadata['max-rss']
-          ? +precompilationMetadata['max-rss'] * 1024
-          : undefined,
-        code: returnCode,
-      });
-    }
     if (compileAndRunDto.allowedHeaders !== null) {
+      const {
+        exitCode: preCompilationExitCode,
+        isolateOutput: preCompilationIsolateOutput,
+        output: precompilationOutput,
+        metadata: precompilationMetadata,
+      } = await this.executor.execute(
+        [
+          `/usr/bin/${compiler}`,
+          '-pass-exit-codes',
+          `-fdiagnostics-color=${compileAndRunDto.formattedDiagnostic ? 'always' : 'never'}`,
+          `-fdiagnostics-urls=${compileAndRunDto.formattedDiagnostic ? 'always' : 'never'}`,
+          `--std=${compileAndRunDto.language}`,
+          `${codeFilename}`,
+          '-H',
+        ],
+        -requestId,
+        {
+          inputTexts: [{ name: codeFilename, text: code }],
+          processLimit: null,
+          environment: {
+            PATH: '/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin',
+          },
+          memoryLimit: compileAndRunDto.compilationMemoryLimit,
+          timeLimit: compileAndRunDto.compilationTimeLimit,
+          wallTimeLimit: compilationWallTimeLimit,
+          fileSizeLimit: ConfigConstants.compiler.maxExecutableSize,
+        },
+      );
+      if (preCompilationExitCode !== 0) {
+        const exitSignal = precompilationMetadata.exitsig
+          ? +precompilationMetadata.exitsig
+          : 0;
+        let returnCode = ResultCode.CE;
+        if (
+          precompilationOutput.includes('memory exhausted') ||
+          precompilationOutput.includes(
+            'Segmentation fault signal terminated program',
+          ) ||
+          exitSignal === 11 ||
+          exitSignal === 127
+        ) {
+          returnCode = ResultCode.CMLE;
+        }
+        if (precompilationOutput.includes('File size limit exceeded')) {
+          returnCode = ResultCode.COLE;
+        }
+        if (precompilationMetadata.status === 'TO') {
+          returnCode = ResultCode.CTLE;
+        }
+        const outputLines = precompilationOutput.split('\n');
+        let lastHeaderLine: number | undefined = outputLines.findIndex(
+          (line) => !line.startsWith('.'),
+        );
+        if (lastHeaderLine === -1) {
+          lastHeaderLine = undefined;
+        }
+        let firstIncludeGuardWarningLine: number | undefined =
+          outputLines.findLastIndex(
+            (line) =>
+              line.trim() === 'Multiple include guards may be useful for:',
+          );
+        if (firstIncludeGuardWarningLine === -1) {
+          firstIncludeGuardWarningLine = undefined;
+        }
+        const compilerMessage =
+          outputLines
+            .slice(lastHeaderLine, firstIncludeGuardWarningLine)
+            .join('\n') + '\n';
+        return new CompileAndRunResponse({
+          compilerOutput: compilerMessage + preCompilationIsolateOutput,
+          compilationTime: precompilationMetadata.time
+            ? +precompilationMetadata.time
+            : undefined,
+          compilationMemory: precompilationMetadata['max-rss']
+            ? +precompilationMetadata['max-rss'] * 1024
+            : undefined,
+          code: returnCode,
+        });
+      }
       const headerMatches = precompilationOutput.matchAll(/^\. .*\/(.*)$/gm);
       for (const headerMatch of headerMatches) {
         const header = headerMatch[1];
@@ -244,13 +244,13 @@ export class AppService implements OnModuleInit {
             code: ResultCode.FNA,
           });
         }
-        const exitSignal = precompilationMetadata.exitsig
-          ? +precompilationMetadata.exitsig
+        const exitSignal = compilationMetadata.exitsig
+          ? +compilationMetadata.exitsig
           : 0;
         let returnCode = ResultCode.CE;
         if (
-          precompilationOutput.includes('memory exhausted') ||
-          precompilationOutput.includes(
+          compilationOutput.includes('memory exhausted') ||
+          compilationOutput.includes(
             'Segmentation fault signal terminated program',
           ) ||
           exitSignal === 11 ||
@@ -258,10 +258,10 @@ export class AppService implements OnModuleInit {
         ) {
           returnCode = ResultCode.CMLE;
         }
-        if (precompilationOutput.includes('File size limit exceeded')) {
+        if (compilationOutput.includes('File size limit exceeded')) {
           returnCode = ResultCode.COLE;
         }
-        if (precompilationMetadata.status === 'TO') {
+        if (compilationMetadata.status === 'TO') {
           returnCode = ResultCode.CTLE;
         }
         return new CompileAndRunResponse({
