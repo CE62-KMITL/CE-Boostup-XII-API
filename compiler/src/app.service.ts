@@ -146,11 +146,12 @@ export class AppService implements OnModuleInit {
       if (firstIncludeGuardWarningLine === -1) {
         firstIncludeGuardWarningLine = undefined;
       }
-      const warning = outputLines
-        .slice(lastHeaderLine, firstIncludeGuardWarningLine)
-        .join('\n');
+      const compilerMessage =
+        outputLines
+          .slice(lastHeaderLine, firstIncludeGuardWarningLine)
+          .join('\n') + '\n';
       return new CompileAndRunResponse({
-        compilerOutput: warning + preCompilationIsolateOutput,
+        compilerOutput: compilerMessage + preCompilationIsolateOutput,
         compilationTime: precompilationMetadata.time
           ? +precompilationMetadata.time
           : undefined,
@@ -166,7 +167,7 @@ export class AppService implements OnModuleInit {
         const header = headerMatch[1];
         if (!compileAndRunDto.allowedHeaders.includes(header)) {
           return new CompileAndRunResponse({
-            compilerOutput: `Prepreprocessor: Fatal error: Header ${header} is not allowed\nCompilation terminated.\nExited with error status 1`,
+            compilerOutput: `Prepreprocessor: Fatal error: Header ${header} is not allowed\nCompilation terminated.\nExited with error status 1\n`,
             compilationTime: precompilationMetadata.time
               ? +precompilationMetadata.time
               : undefined,
@@ -231,7 +232,7 @@ export class AppService implements OnModuleInit {
         );
         if (bannedFunctions.length > 0) {
           return new CompileAndRunResponse({
-            compilerOutput: `Prepreprocessor: Fatal error: Function ${bannedFunctions[0]} is not allowed\nCompilation terminated.\nExited with error status 1`,
+            compilerOutput: `Prepreprocessor: Fatal error: Function ${bannedFunctions[0]} is not allowed\nCompilation terminated.\nExited with error status 1\n`,
             compilationTime: compilationMetadata.time
               ? +compilationMetadata.time
               : undefined,
@@ -262,7 +263,10 @@ export class AppService implements OnModuleInit {
           returnCode = ResultCode.CTLE;
         }
         return new CompileAndRunResponse({
-          compilerOutput: compilationOutput + compilationIsolateOutput,
+          compilerOutput:
+            compilationOutput +
+            (compilationOutput.endsWith('\n') ? '' : '\n') +
+            compilationIsolateOutput,
           compilationTime: compilationMetadata.time
             ? +compilationMetadata.time
             : undefined,
@@ -302,7 +306,8 @@ export class AppService implements OnModuleInit {
         0,
       );
       return new CompileAndRunResponse({
-        compilerOutput: compilationOutput,
+        compilerOutput:
+          compilationOutput + (compilationOutput.endsWith('\n') ? '' : '\n'),
         compilationTime: compilationMetadata.time
           ? +compilationMetadata.time
           : undefined,
@@ -339,7 +344,7 @@ export class AppService implements OnModuleInit {
       codeLines.push(line);
     }
     return {
-      code: includeLines.join('\n') + '\n\n' + codeLines.join('\n'),
+      code: includeLines.join('\n') + '\n\n' + codeLines.join('\n') + '\n',
       includeCount: includeLines.length,
     };
   }
@@ -361,7 +366,8 @@ export class AppService implements OnModuleInit {
       '\n\n' +
       bannedFunctionLines.join('\n') +
       '\n' +
-      codeLines.slice(insertAt).join('\n')
+      codeLines.slice(insertAt).join('\n') +
+      '\n'
     );
   }
 
@@ -407,7 +413,7 @@ export class AppService implements OnModuleInit {
     return {
       runtimeOutput: returnCode
         ? output.output +
-          (output.output && !output.output.endsWith('\n') ? '\n' : '') +
+          (output.output && output.output.endsWith('\n') ? '' : '\n') +
           output.isolateOutput
         : output.output,
       executionTime: output.metadata.time ? +output.metadata.time : undefined,
