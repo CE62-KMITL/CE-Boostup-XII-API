@@ -265,7 +265,9 @@ export class AppService implements OnModuleInit {
         return new CompileAndRunResponse({
           compilerOutput:
             compilationOutput +
-            (compilationOutput.endsWith('\n') ? '' : '\n') +
+            (compilationOutput && !compilationOutput.endsWith('\n')
+              ? '\n'
+              : '') +
             compilationIsolateOutput,
           compilationTime: compilationMetadata.time
             ? +compilationMetadata.time
@@ -308,7 +310,8 @@ export class AppService implements OnModuleInit {
       );
       return new CompileAndRunResponse({
         compilerOutput:
-          compilationOutput + (compilationOutput.endsWith('\n') ? '' : '\n'),
+          compilationOutput +
+          (compilationOutput && !compilationOutput.endsWith('\n') ? '\n' : ''),
         compilationTime: compilationMetadata.time
           ? +compilationMetadata.time
           : undefined,
