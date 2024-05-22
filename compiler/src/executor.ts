@@ -74,12 +74,11 @@ export class Executor {
       if (options.inputFiles) {
         try {
           await Promise.all(
-            options.inputFiles.map(
-              async (inputFile) =>
-                await fs.promises.copyFile(
-                  inputFile.path,
-                  join(this.boxesRoot, box.toString(), 'box', inputFile.name),
-                ),
+            options.inputFiles.map((inputFile) =>
+              fs.promises.copyFile(
+                inputFile.path,
+                join(this.boxesRoot, box.toString(), 'box', inputFile.name),
+              ),
             ),
           );
         } catch (e) {
@@ -95,13 +94,12 @@ export class Executor {
       if (options.inputTexts) {
         try {
           await Promise.all(
-            options.inputTexts.map(
-              async (inputText) =>
-                await fs.promises.writeFile(
-                  join(this.boxesRoot, box.toString(), 'box', inputText.name),
-                  inputText.text,
-                  { encoding: 'utf-8' },
-                ),
+            options.inputTexts.map((inputText) =>
+              fs.promises.writeFile(
+                join(this.boxesRoot, box.toString(), 'box', inputText.name),
+                inputText.text,
+                { encoding: 'utf-8' },
+              ),
             ),
           );
         } catch (e) {
