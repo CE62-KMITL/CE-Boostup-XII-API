@@ -102,9 +102,7 @@ export class AppService implements OnModuleInit {
         {
           inputTexts: [{ name: codeFilename, text: code }],
           processLimit: null,
-          environment: {
-            PATH: '/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin',
-          },
+          inheritEnvironment: true,
           memoryLimit: compileAndRunDto.compilationMemoryLimit,
           timeLimit: compileAndRunDto.compilationTimeLimit,
           wallTimeLimit: compilationWallTimeLimit,
@@ -216,9 +214,7 @@ export class AppService implements OnModuleInit {
           inputTexts: [{ name: codeFilename, text: code }],
           outputFiles: [{ name: 'out.o', path: executableFilePath }],
           processLimit: null,
-          environment: {
-            PATH: '/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin',
-          },
+          inheritEnvironment: true,
           memoryLimit: compileAndRunDto.compilationMemoryLimit,
           timeLimit: compileAndRunDto.compilationTimeLimit,
           wallTimeLimit: compilationWallTimeLimit,
@@ -381,7 +377,9 @@ export class AppService implements OnModuleInit {
     timeLimit: number,
     memoryLimit: number,
   ): CompileAndRunOutput {
-    const exitSignal = output.metadata.exitsig ? +output.metadata.exitsig : 0;
+    const exitSignal = output.metadata.exitsig
+      ? +output.metadata.exitsig
+      : undefined;
     let resultCode: ResultCode | undefined;
     if (output.exitCode !== 0) {
       resultCode = ResultCode.RE;
