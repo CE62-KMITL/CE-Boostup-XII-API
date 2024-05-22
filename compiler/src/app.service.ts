@@ -115,7 +115,7 @@ export class AppService implements OnModuleInit {
         const exitSignal = precompilationMetadata.exitsig
           ? +precompilationMetadata.exitsig
           : 0;
-        let returnCode = ResultCode.CE;
+        let resultCode = ResultCode.CE;
         if (
           precompilationOutput.includes('memory exhausted') ||
           precompilationOutput.includes('out of memory') ||
@@ -125,13 +125,13 @@ export class AppService implements OnModuleInit {
           exitSignal === 11 ||
           exitSignal === 127
         ) {
-          returnCode = ResultCode.CMLE;
+          resultCode = ResultCode.CMLE;
         }
         if (precompilationOutput.includes('File size limit exceeded')) {
-          returnCode = ResultCode.COLE;
+          resultCode = ResultCode.COLE;
         }
         if (precompilationMetadata.status === 'TO') {
-          returnCode = ResultCode.CTLE;
+          resultCode = ResultCode.CTLE;
         }
         const outputLines = precompilationOutput.split('\n');
         let lastHeaderLine: number | undefined = outputLines.findIndex(
@@ -160,7 +160,7 @@ export class AppService implements OnModuleInit {
           compilationMemory: precompilationMetadata['max-rss']
             ? +precompilationMetadata['max-rss'] * 1024
             : undefined,
-          code: returnCode,
+          code: resultCode,
         });
       }
       const headerMatches = precompilationOutput.matchAll(/^\. .*\/(.*)$/gm);
@@ -248,7 +248,7 @@ export class AppService implements OnModuleInit {
         const exitSignal = compilationMetadata.exitsig
           ? +compilationMetadata.exitsig
           : 0;
-        let returnCode = ResultCode.CE;
+        let resultCode = ResultCode.CE;
         if (
           compilationOutput.includes('memory exhausted') ||
           compilationOutput.includes('out of memory') ||
@@ -258,13 +258,13 @@ export class AppService implements OnModuleInit {
           exitSignal === 11 ||
           exitSignal === 127
         ) {
-          returnCode = ResultCode.CMLE;
+          resultCode = ResultCode.CMLE;
         }
         if (compilationOutput.includes('File size limit exceeded')) {
-          returnCode = ResultCode.COLE;
+          resultCode = ResultCode.COLE;
         }
         if (compilationMetadata.status === 'TO') {
-          returnCode = ResultCode.CTLE;
+          resultCode = ResultCode.CTLE;
         }
         return new CompileAndRunResponse({
           compilerOutput:
@@ -277,7 +277,7 @@ export class AppService implements OnModuleInit {
           compilationMemory: compilationMetadata['max-rss']
             ? +compilationMetadata['max-rss'] * 1024
             : undefined,
-          code: returnCode,
+          code: resultCode,
         });
       }
       const executableSize = (await fs.promises.stat(executableFilePath)).size;
@@ -382,38 +382,38 @@ export class AppService implements OnModuleInit {
     memoryLimit: number,
   ): CompileAndRunOutput {
     const exitSignal = output.metadata.exitsig ? +output.metadata.exitsig : 0;
-    let returnCode: ResultCode | undefined;
+    let resultCode: ResultCode | undefined;
     if (output.exitCode !== 0) {
-      returnCode = ResultCode.RE;
+      resultCode = ResultCode.RE;
       if (
         (exitSignal === 11 || exitSignal === 127) &&
         output.metadata['max-rss'] &&
         +output.metadata['max-rss'] * 1024 >
           Math.min(memoryLimit * 0.9, memoryLimit - 2 * 1024 * 1024)
       ) {
-        returnCode = ResultCode.MLE;
+        resultCode = ResultCode.MLE;
       }
       if (exitSignal === 25) {
-        returnCode = ResultCode.OLE;
+        resultCode = ResultCode.OLE;
       }
       if (output.metadata.status === 'TO') {
-        returnCode = ResultCode.TLE;
+        resultCode = ResultCode.TLE;
       }
       if (output.metadata.status === 'XX') {
-        returnCode = ResultCode.IE;
+        resultCode = ResultCode.IE;
       }
     }
     if (
       output.metadata['max-rss'] &&
       +output.metadata['max-rss'] > memoryLimit
     ) {
-      returnCode = ResultCode.MLE;
+      resultCode = ResultCode.MLE;
     }
     if (output.metadata.time && +output.metadata.time > timeLimit) {
-      returnCode = ResultCode.TLE;
+      resultCode = ResultCode.TLE;
     }
     return {
-      runtimeOutput: returnCode
+      runtimeOutput: resultCode
         ? output.output +
           (output.output && !output.output.endsWith('\n') ? '\n' : '') +
           output.isolateOutput
@@ -422,7 +422,7 @@ export class AppService implements OnModuleInit {
       executionMemory: output.metadata['max-rss']
         ? +output.metadata['max-rss'] * 1024
         : undefined,
-      code: returnCode,
+      code: resultCode,
       exitSignal: exitSignal,
     };
   }
