@@ -138,6 +138,7 @@ export interface CompileAndRunOutput {
   executionTime?: number;
   executionMemory?: number;
   code?: ResultCode;
+  exitSignal?: number;
 }
 
 interface CompileAndRunResponseData {

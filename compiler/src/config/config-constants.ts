@@ -15,6 +15,7 @@ export const ConfigConstants = {
     maxInputCount: 4 * 1024,
     maxInputSize: 256 * 1024,
     maxOutputSize: 16 * 1024 * 1024,
+    maxOpenFiles: 4, // stdin, stdout, stderr, libc.so.6
     defaultTimeLimit: 1,
     defaultMemoryLimit: 64 * 1024 * 1024,
     maxTimeLimit: 30,

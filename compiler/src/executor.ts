@@ -158,6 +158,10 @@ export class Executor {
         fullCommandList.push('-w');
         fullCommandList.push(options.wallTimeLimit.toFixed(3));
       }
+      if (options.openFilesLimit) {
+        fullCommandList.push('-n');
+        fullCommandList.push(options.openFilesLimit.toFixed(0));
+      }
       if (options.fileSizeLimit) {
         fullCommandList.push('-f');
         fullCommandList.push(
@@ -289,6 +293,7 @@ export interface ExecutionOptions {
   memoryLimit?: number;
   timeLimit?: number;
   wallTimeLimit?: number;
+  openFilesLimit?: number;
   fileSizeLimit?: number;
 }
 
