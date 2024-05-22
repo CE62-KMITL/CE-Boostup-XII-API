@@ -66,6 +66,9 @@ export class Shell {
       stdio: 'pipe',
       env: this.env,
     });
+    this.shell.stdin.setDefaultEncoding('utf-8');
+    this.shell.stdout.setEncoding('utf-8');
+    this.shell.stderr.setEncoding('utf-8');
     this.logger.log(`Shell ${this.shellPath} created`);
     this.addEventListeners();
     this.logger.log(`Event listeners added`);
@@ -77,7 +80,7 @@ export class Shell {
       if (!this.running) {
         return;
       }
-      this.stdout += data.toString();
+      this.stdout += data.toString('utf-8');
       if (this.stdout.endsWith('_Bh7H\n')) {
         const match = this.stdout.match(/Bh7H_EXITCODE=(\d+?)_Bh7H\n$/);
         if (!match) {
@@ -110,7 +113,7 @@ export class Shell {
       if (!this.running) {
         return;
       }
-      this.stderr += data.toString();
+      this.stderr += data.toString('utf-8');
     });
   }
 
@@ -166,7 +169,7 @@ export class Shell {
     return new Promise((resolve, reject) => {
       this.resolve = resolve;
       this.reject = reject;
-      this.shell.stdin.write(`${cmd}; echo Bh7H_EXITCODE=$?_Bh7H\n`);
+      this.shell.stdin.write(`${cmd}; echo Bh7H_EXITCODE=$?_Bh7H\n`, 'utf-8');
     });
   }
 }
