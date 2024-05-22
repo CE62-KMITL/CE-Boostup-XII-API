@@ -107,10 +107,12 @@ export class ProblemsService {
       }
     }
     if (findAllDto.tags) {
-      where.tags = { $none: { id: { $nin: findAllDto.tags } } };
+      const tags = findAllDto.tags.split(',');
+      where.tags = { $none: { id: { $nin: tags } } };
     }
     if (findAllDto.difficulties) {
-      where.difficulty = { $in: findAllDto.difficulties };
+      const difficulties = findAllDto.difficulties.split(',').map(Number);
+      where.difficulty = { $in: difficulties };
     }
     const offset: number = (findAllDto.page - 1) * findAllDto.perPage;
     const limit: number = findAllDto.perPage;
