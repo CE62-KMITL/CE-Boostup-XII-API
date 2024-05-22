@@ -10,4 +10,8 @@ export default () => ({
       ? +process.env.ISOLATE_BOX_COUNT
       : 16,
   },
+  compiler: {
+    march: process.env.COMPILER_MARCH || 'native',
+    mtune: process.env.COMPILER_MTUNE || 'native',
+  },
 });
