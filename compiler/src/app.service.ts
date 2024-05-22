@@ -290,6 +290,7 @@ export class AppService implements OnModuleInit {
               memoryLimit: compileAndRunDto.memoryLimit,
               timeLimit: compileAndRunDto.timeLimit,
               wallTimeLimit: wallTimeLimit,
+              openFilesLimit: ConfigConstants.executor.maxOpenFiles,
               fileSizeLimit: ConfigConstants.executor.maxOutputSize,
             }),
         ),
@@ -398,9 +399,6 @@ export class AppService implements OnModuleInit {
       if (output.metadata.status === 'TO') {
         returnCode = ResultCode.TLE;
       }
-      if (output.metadata.status === 'RE') {
-        returnCode = ResultCode.IR;
-      }
       if (output.metadata.status === 'XX') {
         returnCode = ResultCode.IE;
       }
@@ -417,7 +415,7 @@ export class AppService implements OnModuleInit {
     return {
       runtimeOutput: returnCode
         ? output.output +
-          (output.output && output.output.endsWith('\n') ? '' : '\n') +
+          (output.output && !output.output.endsWith('\n') ? '\n' : '') +
           output.isolateOutput
         : output.output,
       executionTime: output.metadata.time ? +output.metadata.time : undefined,
@@ -425,6 +423,7 @@ export class AppService implements OnModuleInit {
         ? +output.metadata['max-rss'] * 1024
         : undefined,
       code: returnCode,
+      exitSignal: exitSignal,
     };
   }
 }
