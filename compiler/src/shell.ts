@@ -1,7 +1,7 @@
 import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
 
 import { Logger } from '@nestjs/common';
-import terminate from 'terminate';
+import terminate from 'terminate/promise';
 
 class ExecException extends Error {
   cmd?: string;
@@ -61,6 +61,7 @@ export class Shell {
   }
 
   createShell(): void {
+    this.logger.log(`Initializing shell ${this.shellPath}`);
     this.shell = spawn(this.shellPath, {
       stdio: 'pipe',
       env: this.env,
@@ -89,20 +90,9 @@ export class Shell {
         const stderr = this.stderr;
         this.stdout = '';
         this.stderr = '';
-        this.running = false;
         if (exitCode === 0) {
           this.resolve({ stdout: stdout, stderr: stderr });
         } else {
-          console.log(
-            new ExecException(
-              this.cmd,
-              false,
-              exitCode,
-              undefined,
-              stdout,
-              stderr,
-            ),
-          );
           this.reject(
             new ExecException(
               this.cmd,
@@ -124,22 +114,29 @@ export class Shell {
     });
   }
 
-  reCreateShell(): void {
-    if (this.shell.pid) {
-      terminate(this.shell.pid);
-    }
-    this.logger.log(`Shell ${this.shellPath} killed`);
-    this.createShell();
-  }
-
-  timeout(): void {
+  async timeout(): Promise<void> {
     if (!this.running) {
       return;
     }
     this.initialized = false;
     this.running = false;
-    this.logger.error(`Shell ${this.shellPath} timed out`);
-    this.reCreateShell();
+    this.logger.error(`Shell ${this.shellPath} timed out, restarting`);
+    this.logger.log(`Killing shell ${this.shellPath}`);
+    if (this.shell.pid) {
+      try {
+        await terminate(this.shell.pid);
+      } catch (e) {
+        this.logger.error(
+          `Failed to kill shell ${this.shellPath} error: ${e}, trying .kill()`,
+        );
+        this.shell.kill();
+      }
+    } else {
+      this.logger.error(`Shell ${this.shellPath} has no PID, trying .kill()`);
+      this.shell.kill();
+    }
+    this.logger.log(`Shell ${this.shellPath} killed`);
+    this.createShell();
     this.reject(
       new ExecException(
         this.cmd,
@@ -162,6 +159,7 @@ export class Shell {
     if (!this.initialized) {
       throw new Error('Shell is not initialized');
     }
+    this.logger.debug(`Executing command: ${cmd}`);
     this.running = true;
     this.cmd = cmd;
     this.timer = setTimeout(() => this.timeout(), timeout);

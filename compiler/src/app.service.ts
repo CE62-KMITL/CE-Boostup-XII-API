@@ -377,7 +377,9 @@ export class AppService implements OnModuleInit {
     timeLimit: number,
     memoryLimit: number,
   ): CompileAndRunOutput {
-    const exitSignal = output.metadata.exitsig ? +output.metadata.exitsig : 0;
+    const exitSignal = output.metadata.exitsig
+      ? +output.metadata.exitsig
+      : undefined;
     let resultCode: ResultCode | undefined;
     if (output.exitCode !== 0) {
       resultCode = ResultCode.RE;

@@ -59,7 +59,10 @@ export class Executor {
     const shell = this.shells[box];
     try {
       try {
-        await shell.exec(`isolate --init -b ${box}`);
+        await shell.exec(
+          `isolate --init -b ${box}`,
+          ConfigConstants.isolate.baseCommandTimeout,
+        );
       } catch (e) {
         this.logger.error(`Failed to initialize isolate box ${box}: ${e}`);
         this.logger.error(`Command executed: \`isolate --init -b ${box}\``);
@@ -191,10 +194,10 @@ export class Executor {
       }
       let exitCode: number | string = '0';
       try {
-        await shell.exec(fullCommand);
+        await shell.exec(fullCommand, commandTimeout);
       } catch (e) {
         exitCode = '1';
-        this.logger.log(
+        this.logger.verbose(
           `Failed to execute user provided command: ${fullCommand}: ${e}`,
         );
         if (e.killed) {
@@ -275,10 +278,18 @@ export class Executor {
       const isolateOutput = metadata.message ? metadata.message + '\n' : '';
       return { exitCode, isolateOutput, output, metadata };
     } finally {
-      await Promise.allSettled([
-        shell.exec(`isolate --cleanup -b ${box}`),
+      const cleanupStatuses = await Promise.allSettled([
+        shell.exec(
+          `isolate --cleanup -b ${box}`,
+          ConfigConstants.isolate.baseCommandTimeout,
+        ),
         fs.promises.unlink(metadataFilePath),
       ]);
+      if (cleanupStatuses[0].status === 'rejected') {
+        this.logger.error(
+          `Failed to cleanup isolate box ${box}: ${cleanupStatuses[0].reason}`,
+        );
+      }
       this.availableBoxes.push(box);
       release();
     }
