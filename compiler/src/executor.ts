@@ -55,8 +55,8 @@ export class Executor {
         errors: { internal: 'Failed to acquire isolate box' },
       });
     }
-    const metadataFilePath = join(this.metadataStoragePath, `${box}.txt`);
     const shell = this.shells[box];
+    const metadataFilePath = join(this.metadataStoragePath, `${box}.txt`);
     try {
       try {
         await shell.exec(
