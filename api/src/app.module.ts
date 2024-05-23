@@ -15,6 +15,7 @@ import { AttachmentsModule } from './attachments/attachments.module';
 import { AuthGuard } from './auth/auth.guard';
 import { AuthModule } from './auth/auth.module';
 import { RolesGuard } from './auth/roles.guard';
+import { CompilerModule } from './compiler/compiler.module';
 import configuration from './config/configuration';
 import { GroupsModule } from './groups/groups.module';
 import { MailModule } from './mail/mail.module';
@@ -94,6 +95,7 @@ import { UsersModule } from './users/users.module';
     SubmissionsModule,
     AttachmentsModule,
     MailModule,
+    CompilerModule,
   ],
   controllers: [AppController],
   providers: [

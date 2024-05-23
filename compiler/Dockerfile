@@ -52,5 +52,5 @@ COPY ./.env .env
 USER node
 
 ENV NODE_ENV=production
-EXPOSE 3000
+EXPOSE 3001
 CMD ["node", "dist/main.js"]

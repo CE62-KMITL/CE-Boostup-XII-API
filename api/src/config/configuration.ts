@@ -12,6 +12,14 @@ export default () => ({
     timezone: process.env.TZ || '+07:00',
     debug: process.env.MIKRO_ORM_DEBUG?.toLowerCase() === 'true',
   },
+  api: {
+    compiler: {
+      url: process.env.COMPILER_API_URL || 'http://compiler:3001',
+      timeout: process.env.COMPILER_API_TIMEOUT
+        ? +process.env.COMPILER_API_TIMEOUT
+        : 120000,
+    },
+  },
   storages: {
     attachments: {
       path: process.env.ATTACHMENTS_STORAGE_LOCATION || './attachments',
