@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { isSomeRolesIn } from 'src/auth/roles';
 import { Problem } from 'src/problems/entities/problem.entity';
+import { assignDefined } from 'src/shared/assign-defined';
 import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
 import { Role } from 'src/shared/enums/role.enum';
 import { AuthenticatedUser } from 'src/shared/interfaces/authenticated-request.interface';
@@ -22,7 +23,6 @@ import { CreateSaveDto } from './dto/create-save.dto';
 import { FindAllDto } from './dto/find-all.dto';
 import { UpdateSaveDto } from './dto/update-save.dto';
 import { Save, SaveResponse } from './entities/save.entity';
-import { assignDefined } from 'src/shared/assign-defined';
 
 @Injectable()
 export class SavesService {

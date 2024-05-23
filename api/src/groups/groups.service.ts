@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { isSomeRolesIn } from 'src/auth/roles';
+import { assignDefined } from 'src/shared/assign-defined';
 import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
 import { Role } from 'src/shared/enums/role.enum';
 import { AuthenticatedUser } from 'src/shared/interfaces/authenticated-request.interface';
@@ -23,7 +24,6 @@ import { CreateGroupDto } from './dto/create-group.dto';
 import { FindAllDto } from './dto/find-all.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { Group, GroupResponse } from './entities/group.entity';
-import { assignDefined } from 'src/shared/assign-defined';
 
 @Injectable()
 export class GroupsService {

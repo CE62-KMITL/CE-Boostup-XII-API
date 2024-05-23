@@ -12,6 +12,7 @@ import {
 import { isSomeRolesIn } from 'src/auth/roles';
 import { CompilerService } from 'src/compiler/compiler.service';
 import { Problem } from 'src/problems/entities/problem.entity';
+import { assignDefined } from 'src/shared/assign-defined';
 import { compareOutput } from 'src/shared/compare-output';
 import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
 import { ResultCode } from 'src/shared/enums/result-code.enum';
@@ -27,7 +28,6 @@ import {
   Submission,
   SubmissionResponse,
 } from './entities/submission.entity';
-import { assignDefined } from 'src/shared/assign-defined';
 
 @Injectable()
 export class SubmissionsService {

@@ -15,6 +15,7 @@ import { Attachment } from 'src/attachments/entities/attachment.entity';
 import { isSomeRolesIn } from 'src/auth/roles';
 import { CompilerService } from 'src/compiler/compiler.service';
 import { ProblemTag } from 'src/problem-tags/entities/problem-tag.entity';
+import { assignDefined } from 'src/shared/assign-defined';
 import { compareOutput } from 'src/shared/compare-output';
 import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
 import { CompletionStatus } from 'src/shared/enums/completion-status.enum';
@@ -31,7 +32,6 @@ import { CreateProblemDto } from './dto/create-problem.dto';
 import { FindAllDto } from './dto/find-all.dto';
 import { UpdateProblemDto } from './dto/update-problem.dto';
 import { Problem, ProblemResponse } from './entities/problem.entity';
-import { assignDefined } from 'src/shared/assign-defined';
 
 @Injectable()
 export class ProblemsService {

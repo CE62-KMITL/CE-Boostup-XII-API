@@ -17,6 +17,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
 import { isRolesHigher, isSomeRolesIn } from 'src/auth/roles';
+import { assignDefined } from 'src/shared/assign-defined';
 import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
 import { Role } from 'src/shared/enums/role.enum';
 import { AuthenticatedUser } from 'src/shared/interfaces/authenticated-request.interface';
@@ -28,7 +29,6 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { FindAllDto } from './dto/find-all.dto';
 import { UpdateUserDto, UpdateUserInternalDto } from './dto/update-user.dto';
 import { User, UserResponse } from './entities/user.entity';
-import { assignDefined } from 'src/shared/assign-defined';
 
 @Injectable()
 export class UsersService implements OnModuleInit {
