@@ -5,9 +5,12 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { json, urlencoded } from 'express';
 
 import { AppModule } from './app.module';
+import { ConfigConstants } from './config/config-constants';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: ConfigConstants.logLevels,
+  });
   app.use(json({ limit: '64MB' }));
   app.use(urlencoded({ limit: '64MB', extended: true }));
   await app.get(MikroORM).getSchemaGenerator().ensureDatabase();

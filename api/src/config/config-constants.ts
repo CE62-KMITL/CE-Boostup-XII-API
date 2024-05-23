@@ -1,4 +1,7 @@
+import { LogLevel } from '@nestjs/common';
+
 export const ConfigConstants = {
+  logLevels: ['fatal', 'error', 'warn', 'log', 'verbose'] as LogLevel[], //, 'debug'],
   user: {
     maxEmailLength: 255, // Must be less than or equal to 65535
     minDisplayNameLength: 1, // Must be less than or equal to 65535
@@ -38,6 +41,9 @@ export const ConfigConstants = {
     maxCreditsLength: 255, // Must be less than or equal to 65535
   },
   save: {
+    maxCodeLength: 65535, // Must be less than or equal to 65535
+  },
+  submission: {
     maxCodeLength: 65535, // Must be less than or equal to 65535
   },
   compiler: {

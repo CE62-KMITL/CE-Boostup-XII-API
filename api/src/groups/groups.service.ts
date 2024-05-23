@@ -23,6 +23,7 @@ import { CreateGroupDto } from './dto/create-group.dto';
 import { FindAllDto } from './dto/find-all.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { Group, GroupResponse } from './entities/group.entity';
+import { assignDefined } from 'src/shared/assign-defined';
 
 @Injectable()
 export class GroupsService {
@@ -267,7 +268,7 @@ export class GroupsService {
       );
       delete updateGroupDto.avatar;
     }
-    Object.assign(group, updateGroupDto);
+    assignDefined(group, updateGroupDto);
     await this.entityManager.flush();
     return await this.findOne(originUser, id);
   }

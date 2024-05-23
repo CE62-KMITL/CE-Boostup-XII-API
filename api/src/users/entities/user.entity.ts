@@ -64,7 +64,7 @@ export class User {
 
   @Formula(
     (alias) =>
-      `(SELECT SUM(\`score\`) + ${alias}.\`total_score_offset\` FROM \`problem\` WHERE \`problem\`.\`id\` IN (SELECT DISTINCT \`problem_id\` FROM \`submission\` WHERE \`submission\`.\`user_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1))`,
+      `(SELECT SUM(\`score\`) + ${alias}.\`total_score_offset\` FROM \`problem\` WHERE \`problem\`.\`id\` IN (SELECT DISTINCT \`problem_id\` FROM \`submission\` WHERE \`submission\`.\`owner_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1))`,
     { type: types.integer, lazy: true },
   )
   totalScore: number | null;
@@ -74,14 +74,14 @@ export class User {
 
   @Formula(
     (alias) =>
-      `(SELECT COUNT(DISTINCT \`problem_id\`) FROM \`submission\` WHERE \`submission\`.\`user_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1)`,
+      `(SELECT COUNT(DISTINCT \`problem_id\`) FROM \`submission\` WHERE \`submission\`.\`owner_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1)`,
     { type: types.integer, lazy: true },
   )
   problemSolvedCount: number | null;
 
   @Formula(
     (alias) =>
-      `(SELECT MAX(\`created_at\`) FROM \`submission\` WHERE \`submission\`.\`user_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1)`,
+      `(SELECT MAX(\`created_at\`) FROM \`submission\` WHERE \`submission\`.\`owner_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1)`,
     { type: types.datetime, lazy: true },
   )
   lastProblemSolvedAt: Date;

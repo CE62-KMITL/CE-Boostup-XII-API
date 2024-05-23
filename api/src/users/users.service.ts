@@ -28,6 +28,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { FindAllDto } from './dto/find-all.dto';
 import { UpdateUserDto, UpdateUserInternalDto } from './dto/update-user.dto';
 import { User, UserResponse } from './entities/user.entity';
+import { assignDefined } from 'src/shared/assign-defined';
 
 @Injectable()
 export class UsersService implements OnModuleInit {
@@ -411,7 +412,7 @@ export class UsersService implements OnModuleInit {
       delete updateUserDto.oldPassword;
       delete updateUserDto.password;
     }
-    Object.assign(user, updateUserDto);
+    assignDefined(user, updateUserDto);
     await this.entityManager.flush();
     return await this.findOne(originUser, id);
   }
@@ -427,7 +428,7 @@ export class UsersService implements OnModuleInit {
         errors: { where: 'User not found' },
       });
     }
-    Object.assign(user, data);
+    assignDefined(user, data);
     await this.entityManager.flush();
     return user;
   }

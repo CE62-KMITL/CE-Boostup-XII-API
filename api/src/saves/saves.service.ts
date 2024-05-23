@@ -22,6 +22,7 @@ import { CreateSaveDto } from './dto/create-save.dto';
 import { FindAllDto } from './dto/find-all.dto';
 import { UpdateSaveDto } from './dto/update-save.dto';
 import { Save, SaveResponse } from './entities/save.entity';
+import { assignDefined } from 'src/shared/assign-defined';
 
 @Injectable()
 export class SavesService {
@@ -107,9 +108,7 @@ export class SavesService {
       };
     }
     const populate = ['problem', 'createdAt', 'updatedAt'] as const;
-    if (!findAllDto.owner) {
-      where.owner = originUser.id;
-    }
+    where.owner = originUser.id;
     if (findAllDto.sort) {
       orderBy = parseSort(findAllDto.sort, ['createdAt', 'updatedAt']);
     }
@@ -206,7 +205,7 @@ export class SavesService {
         errors: { id: 'Insufficient permissions' },
       });
     }
-    Object.assign(save, updateSaveDto);
+    assignDefined(save, updateSaveDto);
     await this.entityManager.flush();
     return await this.findOne(originUser, id);
   }

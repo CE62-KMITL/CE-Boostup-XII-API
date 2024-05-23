@@ -22,6 +22,7 @@ import { CreateProblemTagDto } from './dto/create-problem-tag.dto';
 import { FindAllDto } from './dto/find-all.dto';
 import { UpdateProblemTagDto } from './dto/update-problem-tag.dto';
 import { ProblemTag, ProblemTagResponse } from './entities/problem-tag.entity';
+import { assignDefined } from 'src/shared/assign-defined';
 
 @Injectable()
 export class ProblemTagsService {
@@ -226,7 +227,7 @@ export class ProblemTagsService {
         errors: { id: 'Insufficient permissions' },
       });
     }
-    Object.assign(problemTag, updateProblemTagDto);
+    assignDefined(problemTag, updateProblemTagDto);
     await this.entityManager.flush();
     return await this.findOne(originUser, id);
   }

@@ -15,6 +15,7 @@ import { Attachment } from 'src/attachments/entities/attachment.entity';
 import { isSomeRolesIn } from 'src/auth/roles';
 import { CompilerService } from 'src/compiler/compiler.service';
 import { ProblemTag } from 'src/problem-tags/entities/problem-tag.entity';
+import { compareOutput } from 'src/shared/compare-output';
 import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
 import { CompletionStatus } from 'src/shared/enums/completion-status.enum';
 import { PublicationStatus } from 'src/shared/enums/publication-status.enum';
@@ -30,6 +31,7 @@ import { CreateProblemDto } from './dto/create-problem.dto';
 import { FindAllDto } from './dto/find-all.dto';
 import { UpdateProblemDto } from './dto/update-problem.dto';
 import { Problem, ProblemResponse } from './entities/problem.entity';
+import { assignDefined } from 'src/shared/assign-defined';
 
 @Injectable()
 export class ProblemsService {
@@ -79,7 +81,7 @@ export class ProblemsService {
       }
       tags.push(tag);
     }
-    Object.assign(problem, {
+    assignDefined(problem, {
       ...createProblemDto,
       attachments: attachments,
       tags: tags,
@@ -600,7 +602,7 @@ export class ProblemsService {
       problem.tags.set(tags);
       delete updateProblemDto.tags;
     }
-    Object.assign(problem, updateProblemDto);
+    assignDefined(problem, updateProblemDto);
     await this.entityManager.flush();
     return await this.findOne(originUser, id);
   }
@@ -633,13 +635,13 @@ export class ProblemsService {
     // Switch this to submission service
     const acceptedSubmissions = await this.entityManager
       .getRepository(Submission)
-      .count({ problem, user, accepted: true });
+      .count({ problem, owner: user, accepted: true });
     if (acceptedSubmissions) {
       return CompletionStatus.Solved;
     }
     const submissions = await this.entityManager
       .getRepository(Submission)
-      .count({ problem, user });
+      .count({ problem, owner: user });
     if (submissions) {
       return CompletionStatus.Attempted;
     }
@@ -682,7 +684,7 @@ export class ProblemsService {
           },
         });
       }
-      if (testcase.output !== result.outputs[i].runtimeOutput) {
+      if (!compareOutput(testcase.output, result.outputs[i].runtimeOutput)) {
         throw new BadRequestException({
           message: 'Solution incorrect output',
           errors: {
