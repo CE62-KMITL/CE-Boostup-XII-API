@@ -46,7 +46,7 @@ export class Shell {
       | PromiseLike<{ stdout: string; stderr: string }>,
   ) => void;
   private reject: (reason?: ExecException | PromiseLike<ExecException>) => void;
-  private timer: NodeJS.Timeout;
+  private timer: NodeJS.Timeout | undefined;
 
   constructor(
     id: number,
@@ -154,7 +154,7 @@ export class Shell {
 
   async exec(
     cmd: string,
-    timeout: number = 1000,
+    timeout?: number,
   ): Promise<{ stdout: string; stderr: string }> {
     if (this.running) {
       throw new Error('Shell is already running');
@@ -165,7 +165,9 @@ export class Shell {
     this.logger.debug(`Executing command: ${cmd}`);
     this.running = true;
     this.cmd = cmd;
-    this.timer = setTimeout(() => this.timeout(), timeout);
+    if (timeout !== undefined) {
+      this.timer = setTimeout(() => this.timeout(), timeout);
+    }
     return new Promise((resolve, reject) => {
       this.resolve = resolve;
       this.reject = reject;
