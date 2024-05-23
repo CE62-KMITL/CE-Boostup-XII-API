@@ -10,8 +10,8 @@ async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, {
     logger: ConfigConstants.logLevels,
   });
-  app.use(json({ limit: '64MB' }));
-  app.use(urlencoded({ limit: '64MB', extended: true }));
+  app.use(json({ limit: '512MB' }));
+  app.use(urlencoded({ limit: '512MB', extended: true }));
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,

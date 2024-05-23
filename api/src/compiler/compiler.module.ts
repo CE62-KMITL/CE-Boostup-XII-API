@@ -11,6 +11,10 @@ import { CompilerService } from './compiler.service';
       useFactory: (configService: ConfigService) => ({
         baseURL: configService.getOrThrow<string>('api.compiler.url'),
         timeout: configService.getOrThrow<number>('api.compiler.timeout'),
+        responseType: 'json',
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity,
+        maxRedirects: 0,
       }),
       inject: [ConfigService],
     }),
