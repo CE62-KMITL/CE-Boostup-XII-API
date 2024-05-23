@@ -13,7 +13,10 @@ import {
 } from '@nestjs/common';
 import { Attachment } from 'src/attachments/entities/attachment.entity';
 import { isSomeRolesIn } from 'src/auth/roles';
+import { CompilerService } from 'src/compiler/compiler.service';
 import { ProblemTag } from 'src/problem-tags/entities/problem-tag.entity';
+import { assignDefined } from 'src/shared/assign-defined';
+import { compareOutput } from 'src/shared/compare-output';
 import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
 import { CompletionStatus } from 'src/shared/enums/completion-status.enum';
 import { PublicationStatus } from 'src/shared/enums/publication-status.enum';
@@ -37,6 +40,7 @@ export class ProblemsService {
     private readonly problemsRepository: EntityRepository<Problem>,
     private readonly entityManager: EntityManager,
     private readonly usersService: UsersService,
+    private readonly compilerService: CompilerService,
   ) {}
 
   async create(
@@ -77,7 +81,7 @@ export class ProblemsService {
       }
       tags.push(tag);
     }
-    Object.assign(problem, {
+    assignDefined(problem, {
       ...createProblemDto,
       attachments: attachments,
       tags: tags,
@@ -436,6 +440,7 @@ export class ProblemsService {
               errors: { id: 'Insufficient permissions' },
             });
           }
+          await this.verifyTestcases(problem);
           break;
         case PublicationStatus.AwaitingApproval:
           switch (updateProblemDto.publicationStatus) {
@@ -597,7 +602,7 @@ export class ProblemsService {
       problem.tags.set(tags);
       delete updateProblemDto.tags;
     }
-    Object.assign(problem, updateProblemDto);
+    assignDefined(problem, updateProblemDto);
     await this.entityManager.flush();
     return await this.findOne(originUser, id);
   }
@@ -630,16 +635,70 @@ export class ProblemsService {
     // Switch this to submission service
     const acceptedSubmissions = await this.entityManager
       .getRepository(Submission)
-      .count({ problem, user, accepted: true });
+      .count({ problem, owner: user, accepted: true });
     if (acceptedSubmissions) {
       return CompletionStatus.Solved;
     }
     const submissions = await this.entityManager
       .getRepository(Submission)
-      .count({ problem, user });
+      .count({ problem, owner: user });
     if (submissions) {
       return CompletionStatus.Attempted;
     }
     return CompletionStatus.Unattempted;
+  }
+
+  private async verifyTestcases(problem: Problem): Promise<void> {
+    const exampleTestcases: { input: string; output: string }[] =
+      problem.exampleTestcases;
+    const testcases: { input: string; output: string }[] = problem.testcases;
+    const allTestcases = exampleTestcases.concat(testcases);
+    const exampleTestcasesCount = exampleTestcases.length;
+    const result = await this.compilerService.compileAndRun({
+      code: problem.solution,
+      language: problem.solutionLanguage,
+      inputs: allTestcases.map((testcase) => testcase.input),
+    });
+    if (result.code || !result.outputs) {
+      throw new BadRequestException({
+        message: 'Solution compilation error',
+        errors: { solution: result.compilerOutput },
+      });
+    }
+    for (const [i, testcase] of allTestcases.entries()) {
+      const type: 'example' | 'testcase' =
+        i < exampleTestcasesCount ? 'example' : 'testcase';
+      const index = i < exampleTestcasesCount ? i : i - exampleTestcasesCount;
+      if (result.outputs[i].code) {
+        throw new BadRequestException({
+          message: 'Solution runtime error',
+          errors: {
+            solution: 'Runtime error',
+            testcase: {
+              type,
+              index,
+              testcase,
+              output: result.outputs[i].runtimeOutput,
+              exitSignal: result.outputs[i].exitSignal,
+            },
+          },
+        });
+      }
+      if (!compareOutput(testcase.output, result.outputs[i].runtimeOutput)) {
+        throw new BadRequestException({
+          message: 'Solution incorrect output',
+          errors: {
+            solution: 'Incorrect output',
+            testcase: {
+              type,
+              index,
+              testcase,
+              output: result.outputs[i].runtimeOutput,
+            },
+          },
+        });
+      }
+    }
+    return;
   }
 }

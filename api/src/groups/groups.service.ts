@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { isSomeRolesIn } from 'src/auth/roles';
+import { assignDefined } from 'src/shared/assign-defined';
 import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
 import { Role } from 'src/shared/enums/role.enum';
 import { AuthenticatedUser } from 'src/shared/interfaces/authenticated-request.interface';
@@ -267,7 +268,7 @@ export class GroupsService {
       );
       delete updateGroupDto.avatar;
     }
-    Object.assign(group, updateGroupDto);
+    assignDefined(group, updateGroupDto);
     await this.entityManager.flush();
     return await this.findOne(originUser, id);
   }

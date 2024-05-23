@@ -1,7 +1,14 @@
-import { Controller, Get } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
+import { ApiBearerAuth } from '@nestjs/swagger';
+import { AxiosResponse } from 'axios';
+import { Observable } from 'rxjs';
 
 import { AppService } from './app.service';
 import { Public } from './auth/public.decorator';
+import {
+  CompileAndRunDto,
+  CompileAndRunResponse,
+} from './compiler/dto/compile-and-run.dto';
 
 @Controller()
 export class AppController {
@@ -11,5 +18,13 @@ export class AppController {
   @Get()
   getRoot(): string {
     return this.appService.getRoot();
+  }
+
+  @ApiBearerAuth()
+  @Post('/compile-and-run')
+  compileAndRun(
+    @Body() compileAndRunDto: CompileAndRunDto,
+  ): Observable<AxiosResponse<CompileAndRunResponse>> {
+    return this.appService.compileAndRun(compileAndRunDto);
   }
 }

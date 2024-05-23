@@ -17,6 +17,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
 import { isRolesHigher, isSomeRolesIn } from 'src/auth/roles';
+import { assignDefined } from 'src/shared/assign-defined';
 import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
 import { Role } from 'src/shared/enums/role.enum';
 import { AuthenticatedUser } from 'src/shared/interfaces/authenticated-request.interface';
@@ -411,7 +412,7 @@ export class UsersService implements OnModuleInit {
       delete updateUserDto.oldPassword;
       delete updateUserDto.password;
     }
-    Object.assign(user, updateUserDto);
+    assignDefined(user, updateUserDto);
     await this.entityManager.flush();
     return await this.findOne(originUser, id);
   }
@@ -427,7 +428,7 @@ export class UsersService implements OnModuleInit {
         errors: { where: 'User not found' },
       });
     }
-    Object.assign(user, data);
+    assignDefined(user, data);
     await this.entityManager.flush();
     return user;
   }

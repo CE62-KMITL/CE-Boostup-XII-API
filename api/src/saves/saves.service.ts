@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { isSomeRolesIn } from 'src/auth/roles';
 import { Problem } from 'src/problems/entities/problem.entity';
+import { assignDefined } from 'src/shared/assign-defined';
 import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
 import { Role } from 'src/shared/enums/role.enum';
 import { AuthenticatedUser } from 'src/shared/interfaces/authenticated-request.interface';
@@ -107,9 +108,7 @@ export class SavesService {
       };
     }
     const populate = ['problem', 'createdAt', 'updatedAt'] as const;
-    if (!findAllDto.owner) {
-      where.owner = originUser.id;
-    }
+    where.owner = originUser.id;
     if (findAllDto.sort) {
       orderBy = parseSort(findAllDto.sort, ['createdAt', 'updatedAt']);
     }
@@ -206,7 +205,7 @@ export class SavesService {
         errors: { id: 'Insufficient permissions' },
       });
     }
-    Object.assign(save, updateSaveDto);
+    assignDefined(save, updateSaveDto);
     await this.entityManager.flush();
     return await this.findOne(originUser, id);
   }

@@ -27,7 +27,7 @@ services:
       - SYS_ADMIN
       - NET_ADMIN
     expose:
-      - "3000"
+      - "3001"
     deploy:
       resources:
         limits:

@@ -100,7 +100,7 @@ export class CreateProblemDto {
   @ApiProperty({
     maxLength: ConfigConstants.problem.maxStarterCodeLength,
     example:
-      '"#include <stdio.h>\\n\\nint main() {\\n    int a, b;\\n    scanf(\\"%d %d\\", &a, &b);\\n    printf(\\"%d\\n\\", a + b);\\n    return 0;\\n}"',
+      '#include <stdio.h>\n\nint main() {\n    int a, b;\n    scanf("%d %d", &a, &b);\n    printf("%d\\n", a + b);\n    return 0;\n}',
   })
   @IsString()
   @MaxLength(ConfigConstants.problem.maxStarterCodeLength)
@@ -109,7 +109,7 @@ export class CreateProblemDto {
   @ApiProperty({
     maxLength: ConfigConstants.problem.maxSolutionLength,
     example:
-      '"#include <stdio.h>\\n\\nint main() {\\n    int a, b;\\n    scanf(\\"%d %d\\", &a, &b);\\n    printf(\\"%d\\n\\", a + b);\\n    return 0;\\n}"',
+      '#include <stdio.h>\n\nint main() {\n    int a, b;\n    scanf("%d %d", &a, &b);\n    printf("%d\\n", a + b);\n    return 0;\n}',
   })
   @IsString()
   @MaxLength(ConfigConstants.problem.maxSolutionLength)
