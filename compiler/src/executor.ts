@@ -1,4 +1,4 @@
-import * as fs from 'fs';
+import * as fs from 'fs/promises';
 import { join } from 'path';
 
 import { InternalServerErrorException, Logger } from '@nestjs/common';
@@ -75,7 +75,7 @@ export class Executor {
         try {
           await Promise.all(
             options.inputFiles.map((inputFile) =>
-              fs.promises.copyFile(
+              fs.copyFile(
                 inputFile.path,
                 join(this.boxesRoot, box.toString(), 'box', inputFile.name),
               ),
@@ -95,7 +95,7 @@ export class Executor {
         try {
           await Promise.all(
             options.inputTexts.map((inputText) =>
-              fs.promises.writeFile(
+              fs.writeFile(
                 join(this.boxesRoot, box.toString(), 'box', inputText.name),
                 inputText.text,
                 { encoding: 'utf-8' },
@@ -137,7 +137,7 @@ export class Executor {
       fullCommandList.push(metadataFilePath);
       if (options.stdin) {
         try {
-          await fs.promises.writeFile(
+          await fs.writeFile(
             join(this.boxesRoot, box.toString(), 'box', 'stdin.txt'),
             options.stdin,
             { encoding: 'utf-8' },
@@ -227,7 +227,7 @@ export class Executor {
       );
       let output = '';
       try {
-        output = await fs.promises.readFile(outputFilePath, {
+        output = await fs.readFile(outputFilePath, {
           encoding: 'utf-8',
         });
       } catch (e) {
@@ -238,7 +238,7 @@ export class Executor {
       let metadata: Record<string, string> = {};
       try {
         metadata = loadKeyValue(
-          await fs.promises.readFile(metadataFilePath, {
+          await fs.readFile(metadataFilePath, {
             encoding: 'utf-8',
           }),
         );
@@ -251,12 +251,12 @@ export class Executor {
         await Promise.allSettled(
           options.outputFiles.map(async (outputFile) => {
             try {
-              await fs.promises.copyFile(
+              await fs.copyFile(
                 join(this.boxesRoot, box.toString(), 'box', outputFile.name),
                 outputFile.path,
               );
             } catch (e) {
-              this.logger.error(
+              this.logger.verbose(
                 `Failed to copy output file from isolate box ${box} at from ${outputFile.name} to ${outputFile.path}: ${e}`,
               );
             }
@@ -281,7 +281,7 @@ export class Executor {
           `isolate --cleanup -b ${box}`,
           ConfigConstants.isolate.baseCommandTimeout,
         ),
-        fs.promises.unlink(metadataFilePath),
+        fs.unlink(metadataFilePath),
       ]);
       if (cleanupStatuses[0].status === 'rejected') {
         this.logger.error(

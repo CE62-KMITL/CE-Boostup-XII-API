@@ -1,4 +1,4 @@
-import * as fs from 'fs';
+import * as fs from 'fs/promises';
 import { join } from 'path';
 
 import {
@@ -249,7 +249,7 @@ export class GroupsService {
       const [, fileExt, fileData] = matches;
       const filename = `${id}.${fileExt}`;
       if (group.avatarFilename) {
-        await fs.promises.unlink(
+        await fs.unlink(
           join(
             this.configService.getOrThrow<string>('storages.avatars.path'),
             group.avatarFilename,
@@ -257,7 +257,7 @@ export class GroupsService {
         );
       }
       group.avatarFilename = filename;
-      await fs.promises.writeFile(
+      await fs.writeFile(
         join(
           this.configService.getOrThrow<string>('storages.avatars.path'),
           filename,
