@@ -14,6 +14,7 @@ services:
         condition: service_healthy
     environment:
       - MARIADB_HOST=mariadb
+      - COMPILER_API_URL=http://compiler:3001
     healthcheck:
       test: "wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1"
       start_period: 10s
