@@ -17,7 +17,7 @@ export default () => ({
       url: process.env.COMPILER_API_URL || 'http://compiler:3001',
       timeout: process.env.COMPILER_API_TIMEOUT
         ? +process.env.COMPILER_API_TIMEOUT
-        : 120000,
+        : 150000,
     },
   },
   storages: {

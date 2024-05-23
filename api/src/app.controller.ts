@@ -1,5 +1,7 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { AxiosResponse } from 'axios';
+import { Observable } from 'rxjs';
 
 import { AppService } from './app.service';
 import { Public } from './auth/public.decorator';
@@ -20,9 +22,9 @@ export class AppController {
 
   @ApiBearerAuth()
   @Post('/compile-and-run')
-  async compileAndRun(
+  compileAndRun(
     @Body() compileAndRunDto: CompileAndRunDto,
-  ): Promise<CompileAndRunResponse> {
-    return await this.appService.compileAndRun(compileAndRunDto);
+  ): Observable<AxiosResponse<CompileAndRunResponse>> {
+    return this.appService.compileAndRun(compileAndRunDto);
   }
 }

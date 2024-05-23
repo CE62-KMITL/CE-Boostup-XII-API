@@ -1,4 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import { AxiosResponse } from 'axios';
+import { Observable } from 'rxjs';
 
 import { CompilerService } from './compiler/compiler.service';
 import {
@@ -14,9 +16,9 @@ export class AppService {
     return 'Swagger UI is available at <a href="/api">/api</a>';
   }
 
-  async compileAndRun(
+  compileAndRun(
     compileAndRunDto: CompileAndRunDto,
-  ): Promise<CompileAndRunResponse> {
-    return await this.compilerService.compileAndRun(compileAndRunDto);
+  ): Observable<AxiosResponse<CompileAndRunResponse>> {
+    return this.compilerService.compileAndRunStream(compileAndRunDto);
   }
 }
