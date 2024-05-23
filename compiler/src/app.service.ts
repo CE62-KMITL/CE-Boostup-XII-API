@@ -1,4 +1,4 @@
-import * as fs from 'fs';
+import * as fs from 'fs/promises';
 import { join } from 'path';
 
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
@@ -38,7 +38,7 @@ export class AppService implements OnModuleInit {
 
   private async createTemporaryDirectories(): Promise<void> {
     for (const path of ['executables', 'metadata']) {
-      await fs.promises.mkdir(
+      await fs.mkdir(
         join(
           this.configService.getOrThrow<string>('storages.temporary.path'),
           path,
@@ -82,102 +82,6 @@ export class AppService implements OnModuleInit {
     const hoistResult = this.hoistIncludes(compileAndRunDto.code);
     let code = hoistResult.code;
     const includeCount = hoistResult.includeCount;
-    if (compileAndRunDto.allowedHeaders !== null) {
-      const {
-        exitCode: preCompilationExitCode,
-        isolateOutput: preCompilationIsolateOutput,
-        output: precompilationOutput,
-        metadata: precompilationMetadata,
-      } = await this.executor.execute(
-        [
-          `/usr/bin/${compiler}`,
-          '-pass-exit-codes',
-          `-fdiagnostics-color=${compileAndRunDto.formattedDiagnostic ? 'always' : 'never'}`,
-          `-fdiagnostics-urls=${compileAndRunDto.formattedDiagnostic ? 'always' : 'never'}`,
-          `--std=${compileAndRunDto.language}`,
-          `${codeFilename}`,
-          '-H',
-        ],
-        -requestId,
-        {
-          inputTexts: [{ name: codeFilename, text: code }],
-          processLimit: null,
-          inheritEnvironment: true,
-          memoryLimit: compileAndRunDto.compilationMemoryLimit,
-          timeLimit: compileAndRunDto.compilationTimeLimit,
-          wallTimeLimit: compilationWallTimeLimit,
-          fileSizeLimit: ConfigConstants.compiler.maxExecutableSize,
-        },
-      );
-      if (preCompilationExitCode !== 0) {
-        const exitSignal = precompilationMetadata.exitsig
-          ? +precompilationMetadata.exitsig
-          : 0;
-        let resultCode = ResultCode.CE;
-        if (
-          precompilationOutput.includes('memory exhausted') ||
-          precompilationOutput.includes('out of memory') ||
-          precompilationOutput.includes(
-            'Segmentation fault signal terminated program',
-          ) ||
-          exitSignal === 11 ||
-          exitSignal === 127
-        ) {
-          resultCode = ResultCode.CMLE;
-        }
-        if (precompilationOutput.includes('File size limit exceeded')) {
-          resultCode = ResultCode.COLE;
-        }
-        if (precompilationMetadata.status === 'TO') {
-          resultCode = ResultCode.CTLE;
-        }
-        const outputLines = precompilationOutput.split('\n');
-        let lastHeaderLine: number | undefined = outputLines.findIndex(
-          (line) => !line.startsWith('.'),
-        );
-        if (lastHeaderLine === -1) {
-          lastHeaderLine = undefined;
-        }
-        let firstIncludeGuardWarningLine: number | undefined =
-          outputLines.findLastIndex(
-            (line) =>
-              line.trim() === 'Multiple include guards may be useful for:',
-          );
-        if (firstIncludeGuardWarningLine === -1) {
-          firstIncludeGuardWarningLine = undefined;
-        }
-        const compilerMessage =
-          outputLines
-            .slice(lastHeaderLine, firstIncludeGuardWarningLine)
-            .join('\n') + '\n';
-        return new CompileAndRunResponse({
-          compilerOutput: compilerMessage + preCompilationIsolateOutput,
-          compilationTime: precompilationMetadata.time
-            ? +precompilationMetadata.time
-            : undefined,
-          compilationMemory: precompilationMetadata['max-rss']
-            ? +precompilationMetadata['max-rss'] * 1024
-            : undefined,
-          code: resultCode,
-        });
-      }
-      const headerMatches = precompilationOutput.matchAll(/^\. .*\/(.*)$/gm);
-      for (const headerMatch of headerMatches) {
-        const header = headerMatch[1];
-        if (!compileAndRunDto.allowedHeaders.includes(header)) {
-          return new CompileAndRunResponse({
-            compilerOutput: `Prepreprocessor: Fatal error: Header ${header} is not allowed\nCompilation terminated.\nExited with error status 1\n`,
-            compilationTime: precompilationMetadata.time
-              ? +precompilationMetadata.time
-              : undefined,
-            compilationMemory: precompilationMetadata['max-rss']
-              ? +precompilationMetadata['max-rss'] * 1024
-              : undefined,
-            code: ResultCode.HNA,
-          });
-        }
-      }
-    }
     code = this.addBannendFunctionAsserts(
       code,
       compileAndRunDto.bannedFunctions,
@@ -192,7 +96,7 @@ export class AppService implements OnModuleInit {
       const {
         exitCode: compilationExitCode,
         isolateOutput: compilationIsolateOutput,
-        output: compilationOutput,
+        output: compilationOutputWithHeaders,
         metadata: compilationMetadata,
       } = await this.executor.execute(
         [
@@ -206,6 +110,7 @@ export class AppService implements OnModuleInit {
           `-march=${this.configService.getOrThrow<string>('compiler.march')}`,
           `-mtune=${this.configService.getOrThrow<string>('compiler.mtune')}`,
           `${codeFilename}`,
+          '-H',
           '-o',
           'out.o',
         ],
@@ -221,6 +126,47 @@ export class AppService implements OnModuleInit {
           fileSizeLimit: ConfigConstants.compiler.maxExecutableSize,
         },
       );
+      if (compileAndRunDto.allowedHeaders !== null) {
+        const headerMatches =
+          compilationOutputWithHeaders.matchAll(/^\. .*\/(.*)$/gm);
+        for (const headerMatch of headerMatches) {
+          const header = headerMatch[1];
+          if (!compileAndRunDto.allowedHeaders.includes(header)) {
+            return new CompileAndRunResponse({
+              compilerOutput: `Prepreprocessor: Fatal error: Header ${header} is not allowed\nCompilation terminated.\nExited with error status 1\n`,
+              compilationTime: compilationMetadata.time
+                ? +compilationMetadata.time
+                : undefined,
+              compilationMemory: compilationMetadata['max-rss']
+                ? +compilationMetadata['max-rss'] * 1024
+                : undefined,
+              code: ResultCode.HNA,
+            });
+          }
+        }
+      }
+      const outputLines = compilationOutputWithHeaders.split('\n');
+      let lastHeaderLine: number | undefined = outputLines.findIndex(
+        (line) => !line.startsWith('.'),
+      );
+      if (lastHeaderLine === -1) {
+        lastHeaderLine = undefined;
+      }
+      let firstIncludeGuardWarningLine: number | undefined =
+        outputLines.findLastIndex(
+          (line) =>
+            line.trim() === 'Multiple include guards may be useful for:',
+        );
+      if (firstIncludeGuardWarningLine === -1) {
+        firstIncludeGuardWarningLine = undefined;
+      }
+      let compilationOutput =
+        outputLines
+          .slice(lastHeaderLine, firstIncludeGuardWarningLine)
+          .join('\n') + '\n';
+      if (compilationOutput === '\n') {
+        compilationOutput = '';
+      }
       if (compilationExitCode !== 0) {
         const bannedFunctionMatches = compilationOutput.matchAll(
           /error: static assertion failed: "Function (.*?) is not allowed\."/gm,
@@ -278,19 +224,18 @@ export class AppService implements OnModuleInit {
           code: resultCode,
         });
       }
-      const executableSize = (await fs.promises.stat(executableFilePath)).size;
+      const executableSize = (await fs.stat(executableFilePath)).size;
       const rawOutputs = await Promise.all(
-        compileAndRunDto.inputs.map(
-          async (input) =>
-            await this.executor.execute('out.o', -requestId, {
-              stdin: input,
-              inputFiles: [{ name: 'out.o', path: executableFilePath }],
-              memoryLimit: compileAndRunDto.memoryLimit,
-              timeLimit: compileAndRunDto.timeLimit,
-              wallTimeLimit: wallTimeLimit,
-              openFilesLimit: ConfigConstants.executor.maxOpenFiles,
-              fileSizeLimit: ConfigConstants.executor.maxOutputSize,
-            }),
+        compileAndRunDto.inputs.map((input) =>
+          this.executor.execute('out.o', -requestId, {
+            stdin: input,
+            inputFiles: [{ name: 'out.o', path: executableFilePath }],
+            memoryLimit: compileAndRunDto.memoryLimit,
+            timeLimit: compileAndRunDto.timeLimit,
+            wallTimeLimit: wallTimeLimit,
+            openFilesLimit: ConfigConstants.executor.maxOpenFiles,
+            fileSizeLimit: ConfigConstants.executor.maxOutputSize,
+          }),
         ),
       );
       const outputs = rawOutputs.map((rawOutput) =>
@@ -325,9 +270,9 @@ export class AppService implements OnModuleInit {
       });
     } finally {
       try {
-        await fs.promises.unlink(executableFilePath);
+        await fs.unlink(executableFilePath);
       } catch (e) {
-        this.logger.warn(
+        this.logger.verbose(
           `Failed to delete executable file at ${executableFilePath}: ${e}`,
         );
       }
@@ -358,6 +303,9 @@ export class AppService implements OnModuleInit {
     bannedFunctions: string[],
     insertAt: number,
   ): string {
+    if (bannedFunctions.length === 0) {
+      return code;
+    }
     const bannedFunctionLines: string[] = [];
     for (const bannedFunction of bannedFunctions) {
       bannedFunctionLines.push(
@@ -370,8 +318,7 @@ export class AppService implements OnModuleInit {
       '\n\n' +
       bannedFunctionLines.join('\n') +
       '\n' +
-      codeLines.slice(insertAt).join('\n') +
-      '\n'
+      codeLines.slice(insertAt).join('\n')
     );
   }
 

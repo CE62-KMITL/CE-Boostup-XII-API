@@ -1,4 +1,4 @@
-import * as fs from 'fs';
+import * as fs from 'fs/promises';
 import { join } from 'path';
 
 import {
@@ -76,9 +76,9 @@ export class UsersService implements OnModuleInit {
       'storages.avatars.path',
     );
     try {
-      await fs.promises.access(avatarsPath);
+      await fs.access(avatarsPath);
     } catch (error) {
-      await fs.promises.mkdir(avatarsPath, { recursive: true });
+      await fs.mkdir(avatarsPath, { recursive: true });
     }
   }
 
@@ -373,7 +373,7 @@ export class UsersService implements OnModuleInit {
       const [, fileExt, fileData] = matches;
       const filename = `${id}.${fileExt}`;
       if (user.avatarFilename) {
-        await fs.promises.unlink(
+        await fs.unlink(
           join(
             this.configService.getOrThrow<string>('storages.avatars.path'),
             user.avatarFilename,
@@ -381,7 +381,7 @@ export class UsersService implements OnModuleInit {
         );
       }
       user.avatarFilename = filename;
-      await fs.promises.writeFile(
+      await fs.writeFile(
         join(
           this.configService.getOrThrow<string>('storages.avatars.path'),
           filename,
