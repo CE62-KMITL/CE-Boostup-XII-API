@@ -9,8 +9,10 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  OnModuleInit,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
 import { AttachmentsService } from 'src/attachments/attachments.service';
 import { Attachment } from 'src/attachments/entities/attachment.entity';
 import { isSomeRolesIn } from 'src/auth/roles';
@@ -36,17 +38,25 @@ import { UpdateProblemDto } from './dto/update-problem.dto';
 import { Problem, ProblemResponse } from './entities/problem.entity';
 
 @Injectable()
-export class ProblemsService {
+export class ProblemsService implements OnModuleInit {
+  private submissionsService: SubmissionsService;
+
   constructor(
     @InjectRepository(Problem)
     private readonly problemsRepository: EntityRepository<Problem>,
     private readonly entityManager: EntityManager,
+    private readonly moduleRef: ModuleRef,
     private readonly usersService: UsersService,
-    private readonly submissionsService: SubmissionsService,
     private readonly problemTagsService: ProblemTagsService,
     private readonly attachmentsService: AttachmentsService,
     private readonly compilerService: CompilerService,
   ) {}
+
+  onModuleInit(): void {
+    this.submissionsService = this.moduleRef.get(SubmissionsService, {
+      strict: false,
+    });
+  }
 
   async create(
     originUser: AuthenticatedUser,
@@ -120,6 +130,9 @@ export class ProblemsService {
     if (findAllDto.difficulties) {
       const difficulties = findAllDto.difficulties.split(',').map(Number);
       where.difficulty = { $in: difficulties };
+    }
+    if (findAllDto.publicationStatus) {
+      where.publicationStatus = findAllDto.publicationStatus;
     }
     const offset: number = (findAllDto.page - 1) * findAllDto.perPage;
     const limit: number = findAllDto.perPage;

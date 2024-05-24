@@ -102,7 +102,7 @@ export class User {
     email: string,
     roles: Role[],
     displayName: string,
-    group?: Group,
+    group?: Rel<Group>,
   ) {
     this.email = email;
     this.roles = roles;

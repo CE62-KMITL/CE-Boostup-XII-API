@@ -7,8 +7,10 @@ import { InjectRepository } from '@mikro-orm/nestjs';
 import {
   Injectable,
   NotFoundException,
+  OnModuleInit,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
 import { isSomeRolesIn } from 'src/auth/roles';
 import { CompilerService } from 'src/compiler/compiler.service';
 import { Problem } from 'src/problems/entities/problem.entity';
@@ -31,15 +33,23 @@ import {
 } from './entities/submission.entity';
 
 @Injectable()
-export class SubmissionsService {
+export class SubmissionsService implements OnModuleInit {
+  private problemsService: ProblemsService;
+
   constructor(
     @InjectRepository(Submission)
     private readonly submissionsRepository: EntityRepository<Submission>,
     private readonly entityManager: EntityManager,
+    private readonly moduleRef: ModuleRef,
     private readonly usersService: UsersService,
-    private readonly problemsService: ProblemsService,
     private readonly compilerService: CompilerService,
   ) {}
+
+  onModuleInit(): void {
+    this.problemsService = this.moduleRef.get(ProblemsService, {
+      strict: false,
+    });
+  }
 
   async create(
     originUser: AuthenticatedUser,

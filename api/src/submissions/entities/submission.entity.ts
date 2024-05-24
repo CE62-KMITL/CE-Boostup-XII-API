@@ -53,22 +53,24 @@ export class Submission {
 
 export class SubmissionResponse {
   id: string;
-  owner: User;
-  problem: Problem;
-  code: string;
-  language: ProgrammingLanguage;
-  outputCodes: string[];
-  accepted: boolean;
-  compilationTime: number;
-  compilationMemory: number;
-  executionTime: number;
-  executionMemory: number;
-  createdAt: Date;
+  owner?: User;
+  problem?: { id: string; title: string };
+  code?: string;
+  language?: ProgrammingLanguage;
+  outputCodes?: string[];
+  accepted?: boolean;
+  compilationTime?: number;
+  compilationMemory?: number;
+  executionTime?: number;
+  executionMemory?: number;
+  createdAt?: Date;
 
   constructor(submission: Submission) {
     this.id = submission.id;
     this.owner = submission.owner;
-    this.problem = submission.problem;
+    this.problem = submission.problem
+      ? { id: submission.problem.id, title: submission.problem.title }
+      : undefined;
     this.code = submission.code;
     this.language = submission.language;
     this.outputCodes = submission.outputCodes;

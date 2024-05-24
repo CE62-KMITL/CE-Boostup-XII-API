@@ -1,5 +1,5 @@
 import { MikroOrmModule } from '@mikro-orm/nestjs';
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { AttachmentsModule } from 'src/attachments/attachments.module';
 import { CompilerModule } from 'src/compiler/compiler.module';
 import { ProblemTagsModule } from 'src/problem-tags/problem-tags.module';
@@ -14,7 +14,7 @@ import { ProblemsService } from './problems.service';
   imports: [
     MikroOrmModule.forFeature([Problem]),
     UsersModule,
-    SubmissionsModule,
+    forwardRef(() => SubmissionsModule),
     ProblemTagsModule,
     AttachmentsModule,
     CompilerModule,
