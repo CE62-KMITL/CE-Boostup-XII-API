@@ -1,3 +1,4 @@
+import { Rel } from '@mikro-orm/core';
 import {
   Entity,
   ManyToOne,
@@ -30,7 +31,7 @@ export class Attachment {
   }
 
   @ManyToOne({ entity: () => User, joinColumn: 'owner_id' })
-  owner: User;
+  owner: Rel<User>;
 
   @Property({ type: types.datetime, lazy: true })
   createdAt: Date = new Date();

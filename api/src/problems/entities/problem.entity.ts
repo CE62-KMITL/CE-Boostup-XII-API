@@ -1,3 +1,4 @@
+import { Rel } from '@mikro-orm/core';
 import {
   Collection,
   Entity,
@@ -110,7 +111,7 @@ export class Problem {
   tags: Collection<ProblemTag> = new Collection<ProblemTag>(this);
 
   @ManyToOne({ entity: () => User })
-  owner: User;
+  owner: Rel<User>;
 
   @Property({
     type: types.string,

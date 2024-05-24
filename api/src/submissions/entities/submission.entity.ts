@@ -1,3 +1,4 @@
+import { Rel } from '@mikro-orm/core';
 import {
   Entity,
   Enum,
@@ -17,10 +18,10 @@ export class Submission {
   id: string = uuidv4();
 
   @ManyToOne({ entity: () => User, joinColumn: 'owner_id' })
-  owner: User;
+  owner: Rel<User>;
 
   @ManyToOne({ entity: () => Problem, joinColumn: 'problem_id' })
-  problem: Problem;
+  problem: Rel<Problem>;
 
   @Property({ type: types.text, lazy: true })
   code: string;
