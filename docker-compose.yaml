@@ -29,6 +29,15 @@ services:
       - NET_ADMIN
     expose:
       - "3001"
+    volumes:
+      - type: tmpfs
+        target: /tmp/ce-boostup-xii
+        tmpfs:
+          size: 1GB
+      - type: tmpfs
+        target: /var/local/lib/isolate
+        tmpfs:
+          size: 4GB
     deploy:
       resources:
         limits:

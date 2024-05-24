@@ -1,4 +1,11 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+} from '@nestjs/common';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { AxiosResponse } from 'axios';
 import { Observable } from 'rxjs';
@@ -21,6 +28,7 @@ export class AppController {
   }
 
   @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
   @Post('/compile-and-run')
   compileAndRun(
     @Body() compileAndRunDto: CompileAndRunDto,
