@@ -22,6 +22,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiConsumes, ApiParam, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { Express } from 'express';
 import type { Response } from 'express';
 import { Public } from 'src/auth/public.decorator';
@@ -44,6 +45,11 @@ export class AttachmentsController {
     private readonly attachmentsService: AttachmentsService,
   ) {}
 
+  @Throttle({
+    short: { limit: 5 },
+    medium: { limit: 20 },
+    long: { limit: 60 },
+  })
   @Post()
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('file'))

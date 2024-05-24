@@ -10,7 +10,6 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Throttle } from '@nestjs/throttler';
 import { isSomeRolesIn } from 'src/auth/roles';
 import { Problem } from 'src/problems/entities/problem.entity';
 import { assignDefined } from 'src/shared/assign-defined';
@@ -34,11 +33,6 @@ export class SavesService {
     private readonly usersService: UsersService,
   ) {}
 
-  @Throttle({
-    short: { limit: 5 },
-    medium: { limit: 10 },
-    long: { limit: 20 },
-  })
   async create(
     originUser: AuthenticatedUser,
     createSaveDto: CreateSaveDto,

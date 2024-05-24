@@ -15,7 +15,6 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Throttle } from '@nestjs/throttler';
 import { isSomeRolesIn } from 'src/auth/roles';
 import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
 import { Role } from 'src/shared/enums/role.enum';
@@ -52,11 +51,6 @@ export class AttachmentsService implements OnModuleInit {
     }
   }
 
-  @Throttle({
-    short: { limit: 5 },
-    medium: { limit: 20 },
-    long: { limit: 60 },
-  })
   async create(
     originUser: AuthenticatedUser,
     createAttachmentDto: CreateAttachmentDto,
