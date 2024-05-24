@@ -43,12 +43,15 @@ describe('GroupsController', () => {
           return {
             create: jest.fn(),
             findOne: jest.fn(),
+            remove: jest.fn(),
+            findOneInternal: jest.fn(),
             groupsRepository: {
               count: jest.fn(),
               findOne: jest.fn()
             },
             entityManager: {
               persistAndFlush: jest.fn(),
+              removeAndFlush: jest.fn()
             },
           };
         }
@@ -124,7 +127,7 @@ describe('GroupsController', () => {
     expect(service.create).toHaveBeenCalledWith(createGroup);
   });
 
-  it('should allow access for Admin and SuperAdmin role to call findOne', async () => {
+  it('should call findOne', async () => {
 
     const authenticatedUser: AuthenticatedUser = {
       id: '0',
@@ -252,5 +255,103 @@ describe('GroupsController', () => {
     await expect(controller.findOne(mockAuthenticatedReq, mockID)).rejects.toThrow(NotFoundException);
     expect(service.findOne).toHaveBeenCalledWith(authenticatedUser, mockID);
   });
+
+  it('should call remove', async () => {
+    const createGroup: CreateGroupDto = {
+      name: 'NewGroup',
+      description: 'A new group description.',
+    };
+  
+    const group: Group = new Group();
+    group.name = createGroup.name;
+    group.description = createGroup.description;
+  
+    const groupRes: GroupResponse = new GroupResponse(group);
+  
+    jest.spyOn(service, 'create').mockResolvedValue(groupRes);
+    jest.spyOn(service['groupsRepository'], 'count').mockResolvedValue(0);
+  
+    const result = await controller.create(createGroup);
+  
+    expect(result).toEqual(groupRes);
+    expect(service.create).toHaveBeenCalledWith(createGroup);
+  
+    jest.spyOn(service, 'findOneInternal').mockResolvedValue(group);
+  
+    jest.spyOn(service, 'remove').mockImplementation(async (id) => {
+      const group = await service.findOneInternal({ id });
+      if (!group) {
+        throw new NotFoundException({
+          message: 'Group not found',
+          errors: { id: 'Group not found' },
+        });
+      }
+      await service['entityManager'].removeAndFlush(group);
+      return;
+    });
+
+    const lastResult = await controller.remove(group.id);
+  
+    expect(lastResult).toEqual(undefined);
+    expect(service.remove).toHaveBeenCalledWith(group.id);
+  });
+  
+  it('should throw NotFoundException when it not found the group : remove', async () => {
+
+    const mockID : string =  uuidv4();
+
+    const createGroup: CreateGroupDto = {
+      name: 'NewGroup',
+      description: 'A new group description.',
+    };
+
+    const group: Group = new Group();
+    group.name = createGroup.name;
+    group.description = createGroup.description;
+
+    const groupRes: GroupResponse = new GroupResponse(group);
+
+    jest.spyOn(service, 'create').mockResolvedValue(groupRes);
+    jest.spyOn(service['groupsRepository'], 'count').mockResolvedValue(0);
+    jest.spyOn(service['groupsRepository'], 'findOne').mockResolvedValue(0);
+    jest.spyOn(service, 'findOneInternal').mockImplementation( async(where)=> {
+      const group = await service['groupsRepository'].findOne(where, {
+        populate: [
+          'description',
+          'members',
+          'avatarFilename',
+          'createdAt',
+          'updatedAt',
+        ],
+      });
+      if (!group) {
+        throw new NotFoundException({
+          message: 'Group not found',
+          errors: { where: 'Group not found' },
+        });
+      }
+      return group;
+    });
+    jest.spyOn(service, 'remove').mockImplementation(async (id) => {
+      const group = await service.findOneInternal({ id });
+      if (!group) {
+        throw new NotFoundException({
+          message: 'Group not found',
+          errors: { id: 'Group not found' },
+        });
+      }
+      await service['entityManager'].removeAndFlush(group);
+      return;
+    });
+
+    const result_1 = await controller.create(createGroup);
+
+    expect(result_1).toEqual(groupRes);
+    expect(service.create).toHaveBeenCalledWith(createGroup);
+
+    await expect(controller.remove(mockID)).rejects.toThrow(NotFoundException);
+    expect(service.remove).toHaveBeenCalledWith(mockID);
+  });
+
 });
 
