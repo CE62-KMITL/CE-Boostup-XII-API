@@ -2,10 +2,11 @@ import { join } from 'path';
 
 import { LoadStrategy, MariaDbDriver } from '@mikro-orm/mariadb';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
-import { Module } from '@nestjs/common';
+import { ExecutionContext, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 
@@ -22,6 +23,7 @@ import { MailModule } from './mail/mail.module';
 import { ProblemTagsModule } from './problem-tags/problem-tags.module';
 import { ProblemsModule } from './problems/problems.module';
 import { SavesModule } from './saves/saves.module';
+import { getUserIdTracker, skipIfPublicOrSuperAdmin } from './shared/throttler';
 import { SubmissionsModule } from './submissions/submissions.module';
 import { UsersModule } from './users/users.module';
 
@@ -86,6 +88,33 @@ import { UsersModule } from './users/users.module';
       }),
       inject: [ConfigService],
     }),
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => [
+        {
+          name: 'short',
+          ttl: configService.getOrThrow<number>('rateLimit.short.ttl'),
+          limit: configService.getOrThrow<number>('rateLimit.short.limit'),
+          getTracker: getUserIdTracker,
+          skipIf: skipIfPublicOrSuperAdmin,
+        },
+        {
+          name: 'medium',
+          ttl: configService.getOrThrow<number>('rateLimit.medium.ttl'),
+          limit: configService.getOrThrow<number>('rateLimit.medium.limit'),
+          getTracker: getUserIdTracker,
+          skipIf: skipIfPublicOrSuperAdmin,
+        },
+        {
+          name: 'long',
+          ttl: configService.getOrThrow<number>('rateLimit.long.ttl'),
+          limit: configService.getOrThrow<number>('rateLimit.long.limit'),
+          getTracker: getUserIdTracker,
+          skipIf: skipIfPublicOrSuperAdmin,
+        },
+      ],
+      inject: [ConfigService],
+    }),
     AuthModule,
     UsersModule,
     GroupsModule,
@@ -107,6 +136,10 @@ import { UsersModule } from './users/users.module';
     {
       provide: APP_GUARD,
       useClass: RolesGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
     },
   ],
 })

@@ -7,6 +7,7 @@ import {
   Post,
 } from '@nestjs/common';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { AxiosResponse } from 'axios';
 import { Observable } from 'rxjs';
 
@@ -28,6 +29,11 @@ export class AppController {
   }
 
   @ApiBearerAuth()
+  @Throttle({
+    short: { limit: 5 },
+    medium: { limit: 20 },
+    long: { limit: 60 },
+  })
   @HttpCode(HttpStatus.OK)
   @Post('/compile-and-run')
   compileAndRun(
