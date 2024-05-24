@@ -10,5 +10,6 @@ import { ProblemTagsService } from './problem-tags.service';
   imports: [MikroOrmModule.forFeature([ProblemTag]), UsersModule],
   controllers: [ProblemTagsController],
   providers: [ProblemTagsService],
+  exports: [ProblemTagsService],
 })
 export class ProblemTagsModule {}

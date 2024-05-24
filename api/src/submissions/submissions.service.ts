@@ -58,7 +58,7 @@ export class SubmissionsService {
     if (!problem) {
       throw new NotFoundException({
         message: 'Problem not found',
-        errors: { problemId: 'Problem not found' },
+        errors: { problem: 'Problem not found' },
       });
     }
     const code = createSubmissionDto.code;
@@ -274,6 +274,35 @@ export class SubmissionsService {
       });
     }
     return new SubmissionResponse(submission);
+  }
+
+  async findOneInternal(where: FilterQuery<Submission>): Promise<Submission> {
+    const submission = await this.submissionsRepository.findOne(where, {
+      populate: [
+        'owner',
+        'problem',
+        'code',
+        'language',
+        'outputCodes',
+        'accepted',
+        'compilationTime',
+        'compilationMemory',
+        'executionTime',
+        'executionMemory',
+        'createdAt',
+      ],
+    });
+    if (!submission) {
+      throw new NotFoundException({
+        message: 'Submission not found',
+        errors: { where: 'Submission not found' },
+      });
+    }
+    return submission;
+  }
+
+  async countInternal(where: FilterQuery<Submission>): Promise<number> {
+    return this.submissionsRepository.count(where);
   }
 
   async runTestcases(

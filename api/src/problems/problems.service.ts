@@ -11,10 +11,12 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { AttachmentsService } from 'src/attachments/attachments.service';
 import { Attachment } from 'src/attachments/entities/attachment.entity';
 import { isSomeRolesIn } from 'src/auth/roles';
 import { CompilerService } from 'src/compiler/compiler.service';
 import { ProblemTag } from 'src/problem-tags/entities/problem-tag.entity';
+import { ProblemTagsService } from 'src/problem-tags/problem-tags.service';
 import { assignDefined } from 'src/shared/assign-defined';
 import { compareOutput } from 'src/shared/compare-output';
 import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
@@ -24,7 +26,7 @@ import { Role } from 'src/shared/enums/role.enum';
 import { AuthenticatedUser } from 'src/shared/interfaces/authenticated-request.interface';
 import { parseIntOptional } from 'src/shared/parse-int-optional';
 import { parseSort } from 'src/shared/parse-sort';
-import { Submission } from 'src/submissions/entities/submission.entity';
+import { SubmissionsService } from 'src/submissions/submissions.service';
 import { User } from 'src/users/entities/user.entity';
 import { UsersService } from 'src/users/users.service';
 
@@ -40,6 +42,9 @@ export class ProblemsService {
     private readonly problemsRepository: EntityRepository<Problem>,
     private readonly entityManager: EntityManager,
     private readonly usersService: UsersService,
+    private readonly submissionsService: SubmissionsService,
+    private readonly problemTagsService: ProblemTagsService,
+    private readonly attachmentsService: AttachmentsService,
     private readonly compilerService: CompilerService,
   ) {}
 
@@ -58,9 +63,9 @@ export class ProblemsService {
     const attachments: Attachment[] = [];
     const tags: ProblemTag[] = [];
     for (const attachmentId of createProblemDto.attachments) {
-      const attachment = await this.entityManager
-        .getRepository(Attachment)
-        .findOne({ id: attachmentId });
+      const attachment = await this.attachmentsService.findOneInternal({
+        id: attachmentId,
+      });
       if (!attachment) {
         throw new BadRequestException({
           message: 'Attachment not found',
@@ -70,9 +75,7 @@ export class ProblemsService {
       attachments.push(attachment);
     }
     for (const tagId of createProblemDto.tags) {
-      const tag = await this.entityManager
-        .getRepository(ProblemTag)
-        .findOne({ id: tagId });
+      const tag = await this.problemTagsService.findOneInternal({ id: tagId });
       if (!tag) {
         throw new BadRequestException({
           message: 'Tag not found',
@@ -571,9 +574,9 @@ export class ProblemsService {
     if (updateProblemDto.attachments) {
       const attachments: Attachment[] = [];
       for (const attachmentId of updateProblemDto.attachments) {
-        const attachment = await this.entityManager
-          .getRepository(Attachment)
-          .findOne({ id: attachmentId });
+        const attachment = await this.attachmentsService.findOneInternal({
+          id: attachmentId,
+        });
         if (!attachment) {
           throw new BadRequestException({
             message: 'Attachment not found',
@@ -588,9 +591,9 @@ export class ProblemsService {
     if (updateProblemDto.tags) {
       const tags: ProblemTag[] = [];
       for (const tagId of updateProblemDto.tags) {
-        const tag = await this.entityManager
-          .getRepository(ProblemTag)
-          .findOne({ id: tagId });
+        const tag = await this.problemTagsService.findOneInternal({
+          id: tagId,
+        });
         if (!tag) {
           throw new BadRequestException({
             message: 'Tag not found',
@@ -632,16 +635,18 @@ export class ProblemsService {
     problem: Problem,
     user: User,
   ): Promise<CompletionStatus> {
-    // Switch this to submission service
-    const acceptedSubmissions = await this.entityManager
-      .getRepository(Submission)
-      .count({ problem, owner: user, accepted: true });
+    const acceptedSubmissions = await this.submissionsService.countInternal({
+      problem,
+      owner: user,
+      accepted: true,
+    });
     if (acceptedSubmissions) {
       return CompletionStatus.Solved;
     }
-    const submissions = await this.entityManager
-      .getRepository(Submission)
-      .count({ problem, owner: user });
+    const submissions = await this.submissionsService.countInternal({
+      problem,
+      owner: user,
+    });
     if (submissions) {
       return CompletionStatus.Attempted;
     }
