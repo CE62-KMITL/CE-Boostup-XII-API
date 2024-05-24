@@ -1,3 +1,4 @@
+import { Rel } from '@mikro-orm/core';
 import {
   Collection,
   Entity,
@@ -51,7 +52,7 @@ export class User {
     eager: true,
     joinColumn: 'group_id',
   })
-  group?: Group;
+  group?: Rel<Group>;
 
   @ManyToMany({
     entity: () => Problem,

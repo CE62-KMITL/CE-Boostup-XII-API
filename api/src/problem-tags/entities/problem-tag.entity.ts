@@ -1,3 +1,4 @@
+import { Rel } from '@mikro-orm/core';
 import {
   Entity,
   ManyToOne,
@@ -25,7 +26,7 @@ export class ProblemTag {
   description: string;
 
   @ManyToOne({ entity: () => User })
-  owner: User;
+  owner: Rel<User>;
 
   @Property({ type: types.datetime, lazy: true })
   createdAt: Date = new Date();
