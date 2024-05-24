@@ -11,5 +11,6 @@ import { ProblemsService } from './problems.service';
   imports: [MikroOrmModule.forFeature([Problem]), UsersModule, CompilerModule],
   controllers: [ProblemsController],
   providers: [ProblemsService],
+  exports: [ProblemsService],
 })
 export class ProblemsModule {}

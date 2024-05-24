@@ -658,6 +658,11 @@ export class ProblemsService {
       code: problem.solution,
       language: problem.solutionLanguage,
       inputs: allTestcases.map((testcase) => testcase.input),
+      optimizationLevel: problem.optimizationLevel,
+      allowedHeaders: problem.allowedHeaders,
+      bannedFunctions: problem.bannedFunctions,
+      timeLimit: problem.timeLimit,
+      memoryLimit: problem.memoryLimit,
     });
     if (result.code || !result.outputs) {
       throw new BadRequestException({
