@@ -48,27 +48,19 @@ export default () => ({
   rateLimit: {
     short: {
       ttl: process.env.RATE_LIMIT_SHORT_WINDOW
-        ? +process.env.RATE_LIMIT_SHORT_WINDOW
-        : 5,
+        ? +process.env.RATE_LIMIT_SHORT_WINDOW * 1000
+        : 5000,
       limit: process.env.RATE_LIMIT_SHORT_LIMIT
         ? +process.env.RATE_LIMIT_SHORT_LIMIT
         : 200,
     },
-    medium: {
-      ttl: process.env.RATE_LIMIT_MEDIUM_WINDOW
-        ? +process.env.RATE_LIMIT_MEDIUM_WINDOW
-        : 30,
-      limit: process.env.RATE_LIMIT_MEDIUM_LIMIT
-        ? +process.env.RATE_LIMIT_MEDIUM_LIMIT
-        : 800,
-    },
     long: {
       ttl: process.env.RATE_LIMIT_LONG_WINDOW
-        ? +process.env.RATE_LIMIT_LONG_WINDOW
-        : 300,
+        ? +process.env.RATE_LIMIT_LONG_WINDOW * 1000
+        : 60000,
       limit: process.env.RATE_LIMIT_LONG_LIMIT
         ? +process.env.RATE_LIMIT_LONG_LIMIT
-        : 4000,
+        : 800,
     },
   },
 });

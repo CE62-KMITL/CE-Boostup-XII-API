@@ -64,4 +64,7 @@ export const ConfigConstants = {
     maxTimeLimit: 5,
     maxMemoryLimit: 128 * 1024 * 1024,
   },
+  slowRateLimit: {
+    slow: { ttl: 30000, limit: 20 },
+  },
 };

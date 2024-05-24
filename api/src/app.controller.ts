@@ -17,6 +17,7 @@ import {
   CompileAndRunDto,
   CompileAndRunResponse,
 } from './compiler/dto/compile-and-run.dto';
+import { ConfigConstants } from './config/config-constants';
 
 @Controller()
 export class AppController {
@@ -29,11 +30,7 @@ export class AppController {
   }
 
   @ApiBearerAuth()
-  @Throttle({
-    short: { limit: 5 },
-    medium: { limit: 20 },
-    long: { limit: 60 },
-  })
+  @Throttle(ConfigConstants.slowRateLimit)
   @HttpCode(HttpStatus.OK)
   @Post('/compile-and-run')
   compileAndRun(

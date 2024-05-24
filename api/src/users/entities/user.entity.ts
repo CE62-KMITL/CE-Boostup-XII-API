@@ -49,7 +49,6 @@ export class User {
   @ManyToOne({
     entity: () => Group,
     nullable: true,
-    eager: true,
     joinColumn: 'group_id',
   })
   group?: Rel<Group>;

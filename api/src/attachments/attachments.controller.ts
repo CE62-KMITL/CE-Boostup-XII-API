@@ -27,6 +27,7 @@ import { Express } from 'express';
 import type { Response } from 'express';
 import { Public } from 'src/auth/public.decorator';
 import { Roles } from 'src/auth/roles.decorator';
+import { ConfigConstants } from 'src/config/config-constants';
 import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
 import { Role } from 'src/shared/enums/role.enum';
 import { AuthenticatedRequest } from 'src/shared/interfaces/authenticated-request.interface';
@@ -45,11 +46,7 @@ export class AttachmentsController {
     private readonly attachmentsService: AttachmentsService,
   ) {}
 
-  @Throttle({
-    short: { limit: 5 },
-    medium: { limit: 20 },
-    long: { limit: 60 },
-  })
+  @Throttle(ConfigConstants.slowRateLimit)
   @Post()
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('file'))

@@ -303,6 +303,7 @@ export class UsersService implements OnModuleInit {
         'roles',
         'hashedPassword',
         'bio',
+        'group',
         'totalScoreOffset',
         'unlockedHints',
         'lastEmailRequestedAt',
