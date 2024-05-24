@@ -27,7 +27,7 @@ export const ConfigConstants = {
     maxOutputLength: 65535, // Must be less than or equal to 65535
     maxHintLength: 65535, // Must be less than or equal to 65535
     minTestcaseCount: 1,
-    maxTestcaseCount: 4096,
+    maxTestcaseCount: 64,
     minExampleTestcaseCount: 0,
     maxExampleTestcaseCount: 16,
     maxTestcaseInputLength: 65535,
@@ -55,7 +55,7 @@ export const ConfigConstants = {
     maxExecutableSize: 64 * 1024 * 1024,
   },
   executor: {
-    maxInputCount: 4 * 1024,
+    maxInputCount: 64,
     maxInputSize: 256 * 1024,
     maxOutputSize: 16 * 1024 * 1024,
     maxOpenFiles: 4, // stdin, stdout, stderr, libc.so.6
