@@ -22,6 +22,7 @@ export class CompilerService {
     } catch (error) {
       return new CompileAndRunResponse({
         code: ResultCode.IE,
+        compilerOutput: 'Internal compiler service error\n',
       });
     }
   }
