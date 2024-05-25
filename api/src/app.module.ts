@@ -105,6 +105,7 @@ import { UsersModule } from './users/users.module';
           getTracker: getUserIdTracker,
           skipIf: skipIfPublicOrSuperAdmin,
         },
+        // To be overridden using @Throttle decorator
         {
           name: 'slow',
           ttl: 0,

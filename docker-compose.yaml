@@ -29,21 +29,15 @@ services:
       - NET_ADMIN
     expose:
       - "3001"
-    volumes:
-      - type: tmpfs
-        target: /tmp/ce-boostup-xii
-        tmpfs:
-          size: 1GB
-      - type: tmpfs
-        target: /var/local/lib/isolate
-        tmpfs:
-          size: 4GB
+    tmpfs:
+      - /tmp/ce-boostup-xii:mode=755,size=1073741824,uid=1000,gid=1000
+      - /var/local/lib/isolate:exec,mode=755,size=4294967296,uid=1000,gid=1000
     deploy:
       resources:
         limits:
           memory: 4GB
     healthcheck:
-      test: "wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1"
+      test: "wget --no-verbose --tries=1 --spider http://localhost:3001 || exit 1"
       start_period: 10s
       start_interval: 1s
     restart: unless-stopped
