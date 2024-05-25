@@ -2,6 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { HttpException, Injectable } from '@nestjs/common';
 import { AxiosResponse } from 'axios';
 import { Observable, catchError, firstValueFrom, map } from 'rxjs';
+import { ResultCode } from 'src/shared/enums/result-code.enum';
 
 import {
   CompileAndRunDto,
@@ -15,6 +16,19 @@ export class CompilerService {
   async compileAndRun(
     compileAndRunDto: CompileAndRunDto,
   ): Promise<CompileAndRunResponse> {
+    try {
+      const response = await this.getCompileAndRunResponse(compileAndRunDto);
+      return new CompileAndRunResponse(response.data);
+    } catch (error) {
+      return new CompileAndRunResponse({
+        code: ResultCode.IE,
+      });
+    }
+  }
+
+  private async getCompileAndRunResponse(
+    compileAndRunDto: CompileAndRunDto,
+  ): Promise<AxiosResponse<CompileAndRunResponse>> {
     const observable = this.httpService
       .post('compile-and-run', compileAndRunDto)
       .pipe(
@@ -22,8 +36,7 @@ export class CompilerService {
           throw new HttpException(error.response.data, error.response.status);
         }),
       );
-    const response = await firstValueFrom(observable);
-    return new CompileAndRunResponse(response.data);
+    return await firstValueFrom(observable);
   }
 
   compileAndRunStream(
