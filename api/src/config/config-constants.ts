@@ -55,7 +55,7 @@ export const ConfigConstants = {
     maxMemoryLimit: 512 * 1024 * 1024,
   },
   executor: {
-    maxInputCount: 64,
+    maxInputCount: 16,
     maxInputSize: 256 * 1024,
     maxOutputSize: 16 * 1024 * 1024,
     defaultTimeLimit: 1,
