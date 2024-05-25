@@ -302,6 +302,8 @@ export class ProblemsService implements OnModuleInit {
         'owner',
         'credits',
         'publicationStatus',
+        'reviewer',
+        'reviewComment',
         'userSolvedCount',
         'createdAt',
         'updatedAt',
@@ -377,6 +379,8 @@ export class ProblemsService implements OnModuleInit {
         'owner',
         'credits',
         'publicationStatus',
+        'reviewer',
+        'reviewComment',
         'createdAt',
         'updatedAt',
       ],
@@ -486,6 +490,10 @@ export class ProblemsService implements OnModuleInit {
                   errors: { publicationStatus: 'Insufficient permissions' },
                 });
               }
+              problem.reviewer = await this.usersService.findOneInternal({
+                id: originUser.id,
+              });
+              problem.reviewComment = updateProblemDto.reviewComment || null;
               break;
             default:
               throw new BadRequestException({
@@ -582,6 +590,18 @@ export class ProblemsService implements OnModuleInit {
       throw new ForbiddenException({
         message: 'Insufficient permissions',
         errors: { id: 'Insufficient permissions' },
+      });
+    }
+    if (
+      problem.publicationStatus !== PublicationStatus.Draft &&
+      !isSomeRolesIn(originUser.roles, [Role.SuperAdmin])
+    ) {
+      await this.entityManager.flush();
+      throw new BadRequestException({
+        message: `${problem.publicationStatus} problem cannot be modified`,
+        errors: {
+          id: `${problem.publicationStatus} problem cannot be modified`,
+        },
       });
     }
     if (updateProblemDto.attachments) {

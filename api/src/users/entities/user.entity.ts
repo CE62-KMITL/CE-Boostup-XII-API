@@ -51,7 +51,7 @@ export class User {
     nullable: true,
     joinColumn: 'group_id',
   })
-  group?: Rel<Group>;
+  group: Rel<Group> | null;
 
   @ManyToMany({
     entity: () => Problem,
@@ -87,10 +87,10 @@ export class User {
   lastProblemSolvedAt: Date;
 
   @Property({ type: types.datetime, nullable: true, lazy: true })
-  lastEmailRequestedAt?: Date;
+  lastEmailRequestedAt: Date | null = null;
 
   @Property({ type: types.string, length: 255, nullable: true, lazy: true })
-  avatarFilename?: string;
+  avatarFilename: string | null = null;
 
   @Property({ type: types.datetime, lazy: true })
   createdAt: Date = new Date();
@@ -107,7 +107,7 @@ export class User {
     this.email = email;
     this.roles = roles;
     this.displayName = displayName;
-    this.group = group;
+    this.group = group || null;
     this.bio = '';
     this.hashedPassword = '';
   }
@@ -139,7 +139,7 @@ export class UserResponse {
     this.totalScore = parseIntOptional(user.totalScore);
     this.problemSolvedCount = parseIntOptional(user.problemSolvedCount);
     this.lastProblemSolvedAt = user.lastProblemSolvedAt;
-    this.lastEmailRequestedAt = user.lastEmailRequestedAt;
+    this.lastEmailRequestedAt = user.lastEmailRequestedAt || undefined;
     this.createdAt = user.createdAt;
     this.updatedAt = user.updatedAt;
   }

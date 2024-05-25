@@ -39,6 +39,7 @@ export const ConfigConstants = {
     minDifficulty: 1,
     maxDifficulty: 5,
     maxCreditsLength: 255, // Must be less than or equal to 65535
+    maxReviewCommentLength: 65535, // Must be less than or equal to 65535
   },
   save: {
     maxCodeLength: 65535, // Must be less than or equal to 65535

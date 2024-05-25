@@ -73,7 +73,7 @@ export class Group {
   lastProblemSolvedAt: Date;
 
   @Property({ type: types.string, length: 255, nullable: true, lazy: true })
-  avatarFilename?: string;
+  avatarFilename: string | null = null;
 
   @Property({ type: types.datetime, lazy: true })
   createdAt: Date = new Date();

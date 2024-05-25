@@ -123,6 +123,12 @@ export class Problem {
   @Enum({ items: () => PublicationStatus, lazy: true })
   publicationStatus: PublicationStatus;
 
+  @ManyToOne({ entity: () => User })
+  reviewer: Rel<User>;
+
+  @Property({ type: types.text, nullable: true, lazy: true })
+  reviewComment: string | null = null;
+
   @Formula(
     (alias) =>
       `(SELECT COUNT(DISTINCT \`owner_id\`) FROM \`submission\` WHERE \`submission\`.\`problem_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1)`,
@@ -169,6 +175,8 @@ export class ProblemResponse {
   owner?: { id: string; displayName: string };
   credits?: string;
   publicationStatus?: PublicationStatus;
+  reviewer?: { id: string; displayName: string };
+  reviewComment?: string;
   completionStatus?: CompletionStatus;
   userSolvedCount?: number;
   createdAt?: Date;
@@ -220,6 +228,13 @@ export class ProblemResponse {
       : undefined;
     this.credits = problem.credits;
     this.publicationStatus = problem.publicationStatus;
+    this.reviewer = problem.reviewer
+      ? {
+          id: problem.reviewer.id,
+          displayName: problem.reviewer.displayName,
+        }
+      : undefined;
+    this.reviewComment = problem.reviewComment || undefined;
     this.completionStatus = extra.completionStatus || undefined;
     this.userSolvedCount = problem.userSolvedCount;
     this.createdAt = problem.createdAt;
