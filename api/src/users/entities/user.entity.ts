@@ -64,7 +64,7 @@ export class User {
 
   @Formula(
     (alias) =>
-      `(SELECT SUM(\`score\`) + ${alias}.\`total_score_offset\` FROM \`problem\` WHERE \`problem\`.\`id\` IN (SELECT DISTINCT \`problem_id\` FROM \`submission\` WHERE \`submission\`.\`owner_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1))`,
+      `(SELECT SUM(\`score\`) + ${alias}.\`total_score_offset\` FROM \`problem\` WHERE \`problem\`.\`id\` IN (SELECT DISTINCT \`problem_id\` FROM \`submission\` WHERE \`submission\`.\`owner_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1) AND \`problem\`.\`publication_status\` = 'Published')`,
     { type: types.integer, lazy: true },
   )
   totalScore: number | null;
@@ -72,6 +72,7 @@ export class User {
   @Property({ type: types.integer, lazy: true })
   totalScoreOffset: number = 0;
 
+  // TODO: Exclude problems that are not published
   @Formula(
     (alias) =>
       `(SELECT COUNT(DISTINCT \`problem_id\`) FROM \`submission\` WHERE \`submission\`.\`owner_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1)`,
@@ -79,6 +80,7 @@ export class User {
   )
   problemSolvedCount: number | null;
 
+  // TODO: Exclude problems that are not published
   @Formula(
     (alias) =>
       `(SELECT MAX(\`created_at\`) FROM \`submission\` WHERE \`submission\`.\`owner_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1)`,
