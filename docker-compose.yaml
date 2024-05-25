@@ -31,7 +31,7 @@ services:
       - "3001"
     tmpfs:
       - /tmp/ce-boostup-xii:mode=755,size=1073741824,uid=1000,gid=1000
-      - /var/local/lib/isolate:exec,mode=755,size=4294967296,uid=1000,gid=1000
+      - /var/local/lib/isolate:exec,mode=755,size=4294967296,uid=0,gid=0
     deploy:
       resources:
         limits:
