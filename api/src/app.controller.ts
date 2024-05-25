@@ -30,7 +30,7 @@ export class AppController {
   }
 
   @ApiBearerAuth()
-  @Throttle(ConfigConstants.slowRateLimit)
+  @Throttle(ConfigConstants.secondaryRateLimits.compileAndRun)
   @HttpCode(HttpStatus.OK)
   @Post('/compile-and-run')
   compileAndRun(

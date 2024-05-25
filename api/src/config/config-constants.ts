@@ -63,7 +63,10 @@ export const ConfigConstants = {
     maxTimeLimit: 5,
     maxMemoryLimit: 128 * 1024 * 1024,
   },
-  slowRateLimit: {
-    slow: { ttl: 30000, limit: 20 },
+  secondaryRateLimits: {
+    compileAndRun: { secondary: { ttl: 30000, limit: 12 } },
+    createSave: { secondary: { ttl: 30000, limit: 10 } },
+    createSubmission: { secondary: { ttl: 30000, limit: 15 } },
+    createAttachment: { secondary: { ttl: 60000, limit: 20 } },
   },
 };

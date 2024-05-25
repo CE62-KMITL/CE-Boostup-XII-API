@@ -107,7 +107,7 @@ import { UsersModule } from './users/users.module';
         },
         // To be overridden using @Throttle decorator
         {
-          name: 'slow',
+          name: 'secondary',
           ttl: 0,
           limit: Infinity,
           getTracker: getUserIdTracker,

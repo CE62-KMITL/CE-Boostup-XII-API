@@ -30,7 +30,7 @@ import { SavesService } from './saves.service';
 export class SavesController {
   constructor(private readonly savesService: SavesService) {}
 
-  @Throttle(ConfigConstants.slowRateLimit)
+  @Throttle(ConfigConstants.secondaryRateLimits.createSave)
   @Post()
   async create(
     @Req() request: AuthenticatedRequest,

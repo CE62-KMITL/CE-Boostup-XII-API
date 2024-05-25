@@ -46,7 +46,7 @@ export class AttachmentsController {
     private readonly attachmentsService: AttachmentsService,
   ) {}
 
-  @Throttle(ConfigConstants.slowRateLimit)
+  @Throttle(ConfigConstants.secondaryRateLimits.createAttachment)
   @Post()
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('file'))
