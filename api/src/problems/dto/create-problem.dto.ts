@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type, Transform } from 'class-transformer';
 import {
   ArrayMaxSize,
@@ -6,12 +6,14 @@ import {
   IsArray,
   IsEnum,
   IsNumber,
+  IsOptional,
   IsString,
   IsUUID,
   Max,
   MaxLength,
   Min,
   MinLength,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 import { ConfigConstants } from 'src/config/config-constants';
@@ -29,42 +31,47 @@ export class CreateProblemDto {
   @MaxLength(ConfigConstants.problem.maxTitleLength)
   title: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     maxLength: ConfigConstants.problem.maxDescriptionLength,
     example: 'Calculate the sum of two numbers',
   })
   @IsString()
   @MaxLength(ConfigConstants.problem.maxDescriptionLength)
-  description: string;
+  @IsOptional()
+  description?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     maxLength: ConfigConstants.problem.maxInputLength,
     example: '2 numbers separated by a space',
   })
   @IsString()
   @MaxLength(ConfigConstants.problem.maxInputLength)
-  input: string;
+  @IsOptional()
+  input?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     maxLength: ConfigConstants.problem.maxOutputLength,
     example: 'The sum of the two numbers',
   })
   @IsString()
   @MaxLength(ConfigConstants.problem.maxOutputLength)
-  output: string;
+  @IsOptional()
+  output?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     maxLength: ConfigConstants.problem.maxHintLength,
     example: 'Use the + operator',
   })
   @IsString()
   @MaxLength(ConfigConstants.problem.maxHintLength)
-  hint: string;
+  @IsOptional()
+  hint?: string;
 
-  @ApiProperty({ minimum: 0, example: 100 })
+  @ApiPropertyOptional({ minimum: 0, example: 100 })
   @IsNumber()
   @Min(0)
-  hintCost: number;
+  @ValidateIf((object) => object.hint !== undefined)
+  hintCost?: number;
 
   @ApiProperty({
     type: 'array',
@@ -83,7 +90,7 @@ export class CreateProblemDto {
   @Type(() => Testcase)
   testcases: Testcase[];
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     type: 'array',
     items: { type: 'object' },
     minLength: ConfigConstants.problem.minExampleTestcaseCount,
@@ -95,16 +102,18 @@ export class CreateProblemDto {
   @ArrayMaxSize(ConfigConstants.problem.maxExampleTestcaseCount)
   @ValidateNested({ each: true })
   @Type(() => Testcase)
-  exampleTestcases: Testcase[];
+  @IsOptional()
+  exampleTestcases?: Testcase[];
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     maxLength: ConfigConstants.problem.maxStarterCodeLength,
     example:
       '#include <stdio.h>\n\nint main() {\n    int a, b;\n    scanf("%d %d", &a, &b);\n    printf("%d\\n", a + b);\n    return 0;\n}',
   })
   @IsString()
   @MaxLength(ConfigConstants.problem.maxStarterCodeLength)
-  starterCode: string;
+  @IsOptional()
+  starterCode?: string;
 
   @ApiProperty({
     maxLength: ConfigConstants.problem.maxSolutionLength,
@@ -120,25 +129,27 @@ export class CreateProblemDto {
   @IsEnum(ProgrammingLanguage)
   solutionLanguage: ProgrammingLanguage;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     type: 'array',
     items: { type: 'string' },
     example: ['stdio.h'],
   })
   @IsArray()
   @IsString({ each: true })
-  allowedHeaders: string[];
+  @IsOptional()
+  allowedHeaders?: string[];
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     type: 'array',
     items: { type: 'string' },
     example: ['system'],
   })
   @IsArray()
   @IsString({ each: true })
-  bannedFunctions: string[];
+  @IsOptional()
+  bannedFunctions?: string[];
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     minimum: 0,
     maximum: ConfigConstants.problem.maxTimeLimit,
     example: 0.01,
@@ -146,9 +157,10 @@ export class CreateProblemDto {
   @IsNumber()
   @Min(0)
   @Max(ConfigConstants.problem.maxTimeLimit)
-  timeLimit: number;
+  @IsOptional()
+  timeLimit?: number;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     minimum: 0,
     maximum: ConfigConstants.problem.maxMemoryLimit,
     example: 16384,
@@ -156,7 +168,8 @@ export class CreateProblemDto {
   @IsNumber()
   @Min(0)
   @Max(ConfigConstants.problem.maxMemoryLimit)
-  memoryLimit: number;
+  @IsOptional()
+  memoryLimit?: number;
 
   @ApiProperty({
     minimum: ConfigConstants.problem.minDifficulty,
@@ -173,36 +186,40 @@ export class CreateProblemDto {
   @Min(0)
   score: number;
 
-  @ApiProperty({ example: 'O1', enum: OptimizationLevel })
+  @ApiPropertyOptional({ example: 'O1', enum: OptimizationLevel })
   @Transform(({ value }) => value.toUpperCase())
   @IsEnum(OptimizationLevel)
-  optimizationLevel: OptimizationLevel;
+  @IsOptional()
+  optimizationLevel?: OptimizationLevel;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     type: 'array',
     items: { type: 'string' },
     example: ['28fdc367-e76c-4b60-912a-de937aa40f7f'],
   })
   @IsArray()
   @IsUUID('4', { each: true })
-  attachments: string[];
+  @IsOptional()
+  attachments?: string[];
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     type: 'array',
     items: { type: 'string' },
     example: ['28fdc367-e76c-4b60-912a-de937aa40f7f'],
   })
   @IsArray()
   @IsUUID('4', { each: true })
-  tags: string[];
+  @IsOptional()
+  tags?: string[];
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     maxLength: ConfigConstants.problem.maxCreditsLength,
     example: 'The great book of knowledge',
   })
   @IsString()
   @MaxLength(ConfigConstants.problem.maxCreditsLength)
-  credits: string;
+  @IsOptional()
+  credits?: string;
 }
 
 export class Testcase {
@@ -214,3 +231,20 @@ export class Testcase {
   @MaxLength(ConfigConstants.problem.maxTestcaseOutputLength)
   output: string;
 }
+
+export const createProblemDtoDefault: Partial<CreateProblemDto> = {
+  description: '',
+  input: '',
+  output: '',
+  hint: '',
+  exampleTestcases: [],
+  starterCode: '',
+  allowedHeaders: [],
+  bannedFunctions: [],
+  timeLimit: ConfigConstants.problem.defaultTimeLimit,
+  memoryLimit: ConfigConstants.problem.defaultMemoryLimit,
+  optimizationLevel: OptimizationLevel.O1,
+  attachments: [],
+  tags: [],
+  credits: '',
+};

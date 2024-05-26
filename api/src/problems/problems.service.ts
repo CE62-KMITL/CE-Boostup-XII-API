@@ -19,6 +19,7 @@ import { isSomeRolesIn } from 'src/auth/roles';
 import { CompilerService } from 'src/compiler/compiler.service';
 import { ProblemTag } from 'src/problem-tags/entities/problem-tag.entity';
 import { ProblemTagsService } from 'src/problem-tags/problem-tags.service';
+import { assignDefault } from 'src/shared/assign-default';
 import { assignDefined } from 'src/shared/assign-defined';
 import { compareOutput } from 'src/shared/compare-output';
 import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
@@ -32,7 +33,10 @@ import { SubmissionsService } from 'src/submissions/submissions.service';
 import { User } from 'src/users/entities/user.entity';
 import { UsersService } from 'src/users/users.service';
 
-import { CreateProblemDto } from './dto/create-problem.dto';
+import {
+  CreateProblemDto,
+  createProblemDtoDefault,
+} from './dto/create-problem.dto';
 import { FindAllDto } from './dto/find-all.dto';
 import { UpdateProblemDto } from './dto/update-problem.dto';
 import { Problem, ProblemResponse } from './entities/problem.entity';
@@ -62,6 +66,7 @@ export class ProblemsService implements OnModuleInit {
     originUser: AuthenticatedUser,
     createProblemDto: CreateProblemDto,
   ): Promise<ProblemResponse> {
+    assignDefault(createProblemDto, createProblemDtoDefault);
     const user = await this.usersService.findOneInternal({ id: originUser.id });
     if (!user) {
       throw new UnauthorizedException({
@@ -72,27 +77,33 @@ export class ProblemsService implements OnModuleInit {
     const problem = new Problem();
     const attachments: Attachment[] = [];
     const tags: ProblemTag[] = [];
-    for (const attachmentId of createProblemDto.attachments) {
-      const attachment = await this.attachmentsService.findOneInternal({
-        id: attachmentId,
-      });
-      if (!attachment) {
-        throw new BadRequestException({
-          message: 'Attachment not found',
-          errors: { attachments: `Attachment not found: ${attachmentId}` },
+    if (createProblemDto.attachments) {
+      for (const attachmentId of createProblemDto.attachments) {
+        const attachment = await this.attachmentsService.findOneInternal({
+          id: attachmentId,
         });
+        if (!attachment) {
+          throw new BadRequestException({
+            message: 'Attachment not found',
+            errors: { attachments: `Attachment not found: ${attachmentId}` },
+          });
+        }
+        attachments.push(attachment);
       }
-      attachments.push(attachment);
     }
-    for (const tagId of createProblemDto.tags) {
-      const tag = await this.problemTagsService.findOneInternal({ id: tagId });
-      if (!tag) {
-        throw new BadRequestException({
-          message: 'Tag not found',
-          errors: { tags: `Tag not found: ${tagId}` },
+    if (createProblemDto.tags) {
+      for (const tagId of createProblemDto.tags) {
+        const tag = await this.problemTagsService.findOneInternal({
+          id: tagId,
         });
+        if (!tag) {
+          throw new BadRequestException({
+            message: 'Tag not found',
+            errors: { tags: `Tag not found: ${tagId}` },
+          });
+        }
+        tags.push(tag);
       }
-      tags.push(tag);
     }
     assignDefined(problem, {
       ...createProblemDto,

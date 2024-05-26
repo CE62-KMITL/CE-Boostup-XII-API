@@ -46,7 +46,7 @@ export class GroupsService {
     }
     const group = new Group();
     group.name = createGroupDto.name;
-    group.description = createGroupDto.description;
+    group.description = createGroupDto.description || '';
     await this.entityManager.persistAndFlush(group);
     return new GroupResponse(group);
   }

@@ -34,8 +34,10 @@ export const ConfigConstants = {
     maxTestcaseOutputLength: 16 * 1024 * 1024,
     maxStarterCodeLength: 65535, // Must be less than or equal to 65535
     maxSolutionLength: 65535, // Must be less than or equal to 65535
+    defaultTimeLimit: 1,
     maxTimeLimit: 5,
-    maxMemoryLimit: 262144, // Must be less than or equal to 2147483648
+    defaultMemoryLimit: 32 * 1024 * 1024, // Must be less than or equal to 2147483648
+    maxMemoryLimit: 128 * 1024 * 1024, // Must be less than or equal to 2147483648
     minDifficulty: 1,
     maxDifficulty: 5,
     maxCreditsLength: 255, // Must be less than or equal to 65535

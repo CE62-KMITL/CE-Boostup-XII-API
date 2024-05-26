@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsString, MaxLength, MinLength } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import { ConfigConstants } from 'src/config/config-constants';
 
 export class CreateGroupDto {
@@ -13,11 +13,12 @@ export class CreateGroupDto {
   @MaxLength(ConfigConstants.group.maxNameLength)
   name: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     maxLength: ConfigConstants.group.maxDescriptionLength,
     example: 'Ducks group',
   })
   @IsString()
   @MaxLength(ConfigConstants.group.maxDescriptionLength)
-  description: string;
+  @IsOptional()
+  description?: string;
 }

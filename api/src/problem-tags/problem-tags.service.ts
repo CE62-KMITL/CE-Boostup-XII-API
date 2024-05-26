@@ -55,7 +55,7 @@ export class ProblemTagsService {
     }
     const problemTag = new ProblemTag();
     problemTag.name = createProblemTagDto.name;
-    problemTag.description = createProblemTagDto.description;
+    problemTag.description = createProblemTagDto.description || '';
     problemTag.owner = user;
     await this.entityManager.persistAndFlush(problemTag);
     return new ProblemTagResponse(problemTag);
