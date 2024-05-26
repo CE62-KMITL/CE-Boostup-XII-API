@@ -56,7 +56,6 @@ export class AttachmentsService implements OnModuleInit {
     createAttachmentDto: CreateAttachmentDto,
     file: Express.Multer.File,
   ): Promise<AttachmentResponse> {
-    // TODO: Add rate limiting
     const user = await this.usersService.findOneInternal({ id: originUser.id });
     if (!user) {
       throw new UnauthorizedException({

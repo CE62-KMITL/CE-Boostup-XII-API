@@ -27,18 +27,21 @@ export const ConfigConstants = {
     maxOutputLength: 65535, // Must be less than or equal to 65535
     maxHintLength: 65535, // Must be less than or equal to 65535
     minTestcaseCount: 1,
-    maxTestcaseCount: 4096,
+    maxTestcaseCount: 64,
     minExampleTestcaseCount: 0,
     maxExampleTestcaseCount: 16,
-    maxTestcaseInputLength: 65535,
-    maxTestcaseOutputLength: 65535,
+    maxTestcaseInputLength: 256 * 1024,
+    maxTestcaseOutputLength: 16 * 1024 * 1024,
     maxStarterCodeLength: 65535, // Must be less than or equal to 65535
     maxSolutionLength: 65535, // Must be less than or equal to 65535
-    maxTimeLimit: 30,
-    maxMemoryLimit: 262144, // Must be less than or equal to 2147483648
+    defaultTimeLimit: 1,
+    maxTimeLimit: 5,
+    defaultMemoryLimit: 32 * 1024 * 1024, // Must be less than or equal to 2147483648
+    maxMemoryLimit: 128 * 1024 * 1024, // Must be less than or equal to 2147483648
     minDifficulty: 1,
     maxDifficulty: 5,
     maxCreditsLength: 255, // Must be less than or equal to 65535
+    maxReviewCommentLength: 65535, // Must be less than or equal to 65535
   },
   save: {
     maxCodeLength: 65535, // Must be less than or equal to 65535
@@ -50,18 +53,22 @@ export const ConfigConstants = {
     maxCodeLength: 256 * 1024,
     defaultTimeLimit: 5,
     defaultMemoryLimit: 128 * 1024 * 1024,
-    maxTimeLimit: 30,
+    maxTimeLimit: 15,
     maxMemoryLimit: 512 * 1024 * 1024,
-    maxExecutableSize: 64 * 1024 * 1024,
   },
   executor: {
-    maxInputCount: 4 * 1024,
+    maxInputCount: 16,
     maxInputSize: 256 * 1024,
     maxOutputSize: 16 * 1024 * 1024,
-    maxOpenFiles: 4, // stdin, stdout, stderr, libc.so.6
     defaultTimeLimit: 1,
-    defaultMemoryLimit: 64 * 1024 * 1024,
-    maxTimeLimit: 30,
-    maxMemoryLimit: 256 * 1024 * 1024,
+    defaultMemoryLimit: 32 * 1024 * 1024,
+    maxTimeLimit: 5,
+    maxMemoryLimit: 128 * 1024 * 1024,
+  },
+  secondaryRateLimits: {
+    compileAndRun: { secondary: { ttl: 30000, limit: 12 } },
+    createSave: { secondary: { ttl: 30000, limit: 10 } },
+    createSubmission: { secondary: { ttl: 30000, limit: 15 } },
+    createAttachment: { secondary: { ttl: 60000, limit: 20 } },
   },
 };

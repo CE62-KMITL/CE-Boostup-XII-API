@@ -30,5 +30,6 @@ import { Attachment } from './entities/attachment.entity';
   ],
   controllers: [AttachmentsController],
   providers: [AttachmentsService],
+  exports: [AttachmentsService],
 })
 export class AttachmentsModule {}

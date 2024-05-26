@@ -1,5 +1,13 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+} from '@nestjs/common';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { AxiosResponse } from 'axios';
 import { Observable } from 'rxjs';
 
@@ -9,6 +17,7 @@ import {
   CompileAndRunDto,
   CompileAndRunResponse,
 } from './compiler/dto/compile-and-run.dto';
+import { ConfigConstants } from './config/config-constants';
 
 @Controller()
 export class AppController {
@@ -21,6 +30,8 @@ export class AppController {
   }
 
   @ApiBearerAuth()
+  @Throttle(ConfigConstants.secondaryRateLimits.compileAndRun)
+  @HttpCode(HttpStatus.OK)
   @Post('/compile-and-run')
   compileAndRun(
     @Body() compileAndRunDto: CompileAndRunDto,

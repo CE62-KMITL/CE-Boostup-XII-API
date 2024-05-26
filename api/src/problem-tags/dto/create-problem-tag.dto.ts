@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsString, MaxLength, MinLength } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import { ConfigConstants } from 'src/config/config-constants';
 
 export class CreateProblemTagDto {
@@ -13,11 +13,12 @@ export class CreateProblemTagDto {
   @MaxLength(ConfigConstants.problemTag.maxNameLength)
   name: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     maxLength: ConfigConstants.problemTag.maxDescriptionLength,
     example: 'Things involving square brackets',
   })
   @IsString()
   @MaxLength(ConfigConstants.problemTag.maxDescriptionLength)
-  description: string;
+  @IsOptional()
+  description?: string;
 }

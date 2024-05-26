@@ -13,6 +13,8 @@ export class Executor {
     boxesRoot: string,
     boxCount: number,
     metadataStoragePath: string,
+    wallTimeLimitMultiplier: number = 1.5,
+    wallTimeLimitOffset: number = 5,
   ) {
     this.boxesRoot = boxesRoot;
     this.metadataStoragePath = metadataStoragePath;
@@ -26,6 +28,8 @@ export class Executor {
         }),
     );
     this.semaphore = new Semaphore(boxCount);
+    this.wallTimeLimitMultiplier = wallTimeLimitMultiplier;
+    this.wallTimeLimitOffset = wallTimeLimitOffset;
   }
 
   private readonly boxesRoot: string;
@@ -33,6 +37,8 @@ export class Executor {
   private readonly metadataStoragePath: string;
   private readonly availableBoxes: number[];
   private readonly shells: Shell[];
+  private readonly wallTimeLimitMultiplier: number;
+  private readonly wallTimeLimitOffset: number;
 
   private readonly logger = new Logger(Executor.name);
   private readonly semaphore: Semaphore;
@@ -183,7 +189,11 @@ export class Executor {
       if (options.timeLimit) {
         commandTimeout =
           ConfigConstants.isolate.baseCommandTimeout +
-          Math.max(options.timeLimit * 4, options.timeLimit + 30) * 1000;
+          Math.max(
+            options.timeLimit * this.wallTimeLimitMultiplier,
+            options.timeLimit + this.wallTimeLimitOffset,
+          ) *
+            1000;
       }
       if (options.wallTimeLimit) {
         commandTimeout =

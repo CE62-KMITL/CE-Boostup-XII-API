@@ -7,11 +7,14 @@ import { InjectRepository } from '@mikro-orm/nestjs';
 import {
   Injectable,
   NotFoundException,
+  OnModuleInit,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
 import { isSomeRolesIn } from 'src/auth/roles';
 import { CompilerService } from 'src/compiler/compiler.service';
 import { Problem } from 'src/problems/entities/problem.entity';
+import { ProblemsService } from 'src/problems/problems.service';
 import { assignDefined } from 'src/shared/assign-defined';
 import { compareOutput } from 'src/shared/compare-output';
 import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
@@ -30,14 +33,23 @@ import {
 } from './entities/submission.entity';
 
 @Injectable()
-export class SubmissionsService {
+export class SubmissionsService implements OnModuleInit {
+  private problemsService: ProblemsService;
+
   constructor(
     @InjectRepository(Submission)
     private readonly submissionsRepository: EntityRepository<Submission>,
     private readonly entityManager: EntityManager,
+    private readonly moduleRef: ModuleRef,
     private readonly usersService: UsersService,
     private readonly compilerService: CompilerService,
   ) {}
+
+  onModuleInit(): void {
+    this.problemsService = this.moduleRef.get(ProblemsService, {
+      strict: false,
+    });
+  }
 
   async create(
     originUser: AuthenticatedUser,
@@ -50,16 +62,13 @@ export class SubmissionsService {
         errors: { token: 'Invalid token' },
       });
     }
-    const problem = await this.entityManager
-      .getRepository(Problem)
-      .findOne(
-        { id: createSubmissionDto.problem },
-        { populate: ['testcases'] },
-      );
+    const problem = await this.problemsService.findOneInternal({
+      id: createSubmissionDto.problem,
+    });
     if (!problem) {
       throw new NotFoundException({
         message: 'Problem not found',
-        errors: { problemId: 'Problem not found' },
+        errors: { problem: 'Problem not found' },
       });
     }
     const code = createSubmissionDto.code;
@@ -70,7 +79,7 @@ export class SubmissionsService {
       compilationMemory,
       executionTime,
       executionMemory,
-    } = await this.runTestcases(code, language, problem.testcases);
+    } = await this.runTestcases(code, language, problem);
     const accepted = outputCodes.every((code) => code === ResultCode.AC);
     const submission = new Submission();
     assignDefined(submission, {
@@ -277,10 +286,39 @@ export class SubmissionsService {
     return new SubmissionResponse(submission);
   }
 
+  async findOneInternal(where: FilterQuery<Submission>): Promise<Submission> {
+    const submission = await this.submissionsRepository.findOne(where, {
+      populate: [
+        'owner',
+        'problem',
+        'code',
+        'language',
+        'outputCodes',
+        'accepted',
+        'compilationTime',
+        'compilationMemory',
+        'executionTime',
+        'executionMemory',
+        'createdAt',
+      ],
+    });
+    if (!submission) {
+      throw new NotFoundException({
+        message: 'Submission not found',
+        errors: { where: 'Submission not found' },
+      });
+    }
+    return submission;
+  }
+
+  async countInternal(where: FilterQuery<Submission>): Promise<number> {
+    return this.submissionsRepository.count(where);
+  }
+
   async runTestcases(
     code: string,
     language: ProgrammingLanguage,
-    testcases: { input: string; output: string }[],
+    problem: Problem,
   ): Promise<{
     outputCodes: ResultCode[];
     compilationTime: number | undefined;
@@ -288,10 +326,16 @@ export class SubmissionsService {
     executionTime: number | undefined;
     executionMemory: number | undefined;
   }> {
+    const testcases = problem.testcases;
     const result = await this.compilerService.compileAndRun({
       code,
       language,
       inputs: testcases.map((testcase) => testcase.input),
+      optimizationLevel: problem.optimizationLevel,
+      allowedHeaders: problem.allowedHeaders,
+      bannedFunctions: problem.bannedFunctions,
+      timeLimit: problem.timeLimit,
+      memoryLimit: problem.memoryLimit,
     });
     if (result.code || !result.outputs) {
       const resultCode = result.code || ResultCode.CE;

@@ -1,5 +1,10 @@
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export default () => ({
+  port: process.env.PORT ? +process.env.PORT : 3000,
+  maxBodySize: process.env.MAX_BODY_SIZE || '96MB',
+  CorsAllowedOrigins: process.env.CORS_ALLOWED_ORIGINS
+    ? process.env.CORS_ALLOWED_ORIGINS.split(/, */)
+    : ['*'],
   database: {
     host: process.env.MARIADB_HOST || 'mariadb',
     port: process.env.MARIADB_PORT ? +process.env.MARIADB_PORT : 3306,
@@ -44,5 +49,23 @@ export default () => ({
     smtpPassword: process.env.MAIL_SMTP_PASSWORD,
     from: process.env.MAIL_FROM,
     fromAddress: process.env.MAIL_FROM_ADDRESS,
+  },
+  rateLimit: {
+    short: {
+      ttl: process.env.RATE_LIMIT_SHORT_WINDOW
+        ? +process.env.RATE_LIMIT_SHORT_WINDOW * 1000
+        : 5000,
+      limit: process.env.RATE_LIMIT_SHORT_LIMIT
+        ? +process.env.RATE_LIMIT_SHORT_LIMIT
+        : 200,
+    },
+    long: {
+      ttl: process.env.RATE_LIMIT_LONG_WINDOW
+        ? +process.env.RATE_LIMIT_LONG_WINDOW * 1000
+        : 60000,
+      limit: process.env.RATE_LIMIT_LONG_LIMIT
+        ? +process.env.RATE_LIMIT_LONG_LIMIT
+        : 800,
+    },
   },
 });

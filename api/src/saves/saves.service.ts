@@ -11,7 +11,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { isSomeRolesIn } from 'src/auth/roles';
-import { Problem } from 'src/problems/entities/problem.entity';
+import { ProblemsService } from 'src/problems/problems.service';
 import { assignDefined } from 'src/shared/assign-defined';
 import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
 import { Role } from 'src/shared/enums/role.enum';
@@ -31,13 +31,13 @@ export class SavesService {
     private readonly savesRepository: EntityRepository<Save>,
     private readonly entityManager: EntityManager,
     private readonly usersService: UsersService,
+    private readonly problemsService: ProblemsService,
   ) {}
 
   async create(
     originUser: AuthenticatedUser,
     createSaveDto: CreateSaveDto,
   ): Promise<SaveResponse> {
-    // TODO: Add rate limiting
     const user = await this.usersService.findOneInternal({ id: originUser.id });
     if (!user) {
       throw new UnauthorizedException({
@@ -45,13 +45,13 @@ export class SavesService {
         errors: { token: 'Invalid token' },
       });
     }
-    const problem = await this.entityManager
-      .getRepository(Problem)
-      .findOne({ id: createSaveDto.problemId });
+    const problem = await this.problemsService.findOneInternal({
+      id: createSaveDto.problem,
+    });
     if (!problem) {
       throw new NotFoundException({
         message: 'Problem not found',
-        errors: { problemId: 'Problem not found' },
+        errors: { problem: 'Problem not found' },
       });
     }
     const save = new Save();

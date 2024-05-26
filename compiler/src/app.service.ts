@@ -24,6 +24,8 @@ export class AppService implements OnModuleInit {
         this.configService.getOrThrow<string>('storages.temporary.path'),
         'metadata',
       ),
+      this.configService.getOrThrow<number>('executor.wallTimeLimitMultiplier'),
+      this.configService.getOrThrow<number>('executor.wallTimeLimitOffset'),
     );
   }
 
@@ -72,12 +74,20 @@ export class AppService implements OnModuleInit {
         ? ''
         : `-W${compileAndRunDto.warningLevel}`;
     const compilationWallTimeLimit = Math.max(
-      compileAndRunDto.compilationTimeLimit * 4,
-      compileAndRunDto.compilationTimeLimit + 30,
+      compileAndRunDto.compilationTimeLimit *
+        this.configService.getOrThrow<number>(
+          'executor.wallTimeLimitMultiplier',
+        ),
+      compileAndRunDto.compilationTimeLimit +
+        this.configService.getOrThrow<number>('executor.wallTimeLimitOffset'),
     );
     const wallTimeLimit = Math.max(
-      compileAndRunDto.timeLimit * 4,
-      compileAndRunDto.timeLimit + 30,
+      compileAndRunDto.timeLimit *
+        this.configService.getOrThrow<number>(
+          'executor.wallTimeLimitMultiplier',
+        ),
+      compileAndRunDto.timeLimit +
+        this.configService.getOrThrow<number>('executor.wallTimeLimitOffset'),
     );
     const hoistResult = this.hoistIncludes(compileAndRunDto.code);
     let code = hoistResult.code;

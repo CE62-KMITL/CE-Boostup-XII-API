@@ -9,12 +9,17 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  OnModuleInit,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
+import { AttachmentsService } from 'src/attachments/attachments.service';
 import { Attachment } from 'src/attachments/entities/attachment.entity';
 import { isSomeRolesIn } from 'src/auth/roles';
 import { CompilerService } from 'src/compiler/compiler.service';
 import { ProblemTag } from 'src/problem-tags/entities/problem-tag.entity';
+import { ProblemTagsService } from 'src/problem-tags/problem-tags.service';
+import { assignDefault } from 'src/shared/assign-default';
 import { assignDefined } from 'src/shared/assign-defined';
 import { compareOutput } from 'src/shared/compare-output';
 import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
@@ -24,29 +29,44 @@ import { Role } from 'src/shared/enums/role.enum';
 import { AuthenticatedUser } from 'src/shared/interfaces/authenticated-request.interface';
 import { parseIntOptional } from 'src/shared/parse-int-optional';
 import { parseSort } from 'src/shared/parse-sort';
-import { Submission } from 'src/submissions/entities/submission.entity';
+import { SubmissionsService } from 'src/submissions/submissions.service';
 import { User } from 'src/users/entities/user.entity';
 import { UsersService } from 'src/users/users.service';
 
-import { CreateProblemDto } from './dto/create-problem.dto';
+import {
+  CreateProblemDto,
+  createProblemDtoDefault,
+} from './dto/create-problem.dto';
 import { FindAllDto } from './dto/find-all.dto';
 import { UpdateProblemDto } from './dto/update-problem.dto';
 import { Problem, ProblemResponse } from './entities/problem.entity';
 
 @Injectable()
-export class ProblemsService {
+export class ProblemsService implements OnModuleInit {
+  private submissionsService: SubmissionsService;
+
   constructor(
     @InjectRepository(Problem)
     private readonly problemsRepository: EntityRepository<Problem>,
     private readonly entityManager: EntityManager,
+    private readonly moduleRef: ModuleRef,
     private readonly usersService: UsersService,
+    private readonly problemTagsService: ProblemTagsService,
+    private readonly attachmentsService: AttachmentsService,
     private readonly compilerService: CompilerService,
   ) {}
+
+  onModuleInit(): void {
+    this.submissionsService = this.moduleRef.get(SubmissionsService, {
+      strict: false,
+    });
+  }
 
   async create(
     originUser: AuthenticatedUser,
     createProblemDto: CreateProblemDto,
   ): Promise<ProblemResponse> {
+    assignDefault(createProblemDto, createProblemDtoDefault);
     const user = await this.usersService.findOneInternal({ id: originUser.id });
     if (!user) {
       throw new UnauthorizedException({
@@ -57,29 +77,33 @@ export class ProblemsService {
     const problem = new Problem();
     const attachments: Attachment[] = [];
     const tags: ProblemTag[] = [];
-    for (const attachmentId of createProblemDto.attachments) {
-      const attachment = await this.entityManager
-        .getRepository(Attachment)
-        .findOne({ id: attachmentId });
-      if (!attachment) {
-        throw new BadRequestException({
-          message: 'Attachment not found',
-          errors: { attachments: `Attachment not found: ${attachmentId}` },
+    if (createProblemDto.attachments) {
+      for (const attachmentId of createProblemDto.attachments) {
+        const attachment = await this.attachmentsService.findOneInternal({
+          id: attachmentId,
         });
+        if (!attachment) {
+          throw new BadRequestException({
+            message: 'Attachment not found',
+            errors: { attachments: `Attachment not found: ${attachmentId}` },
+          });
+        }
+        attachments.push(attachment);
       }
-      attachments.push(attachment);
     }
-    for (const tagId of createProblemDto.tags) {
-      const tag = await this.entityManager
-        .getRepository(ProblemTag)
-        .findOne({ id: tagId });
-      if (!tag) {
-        throw new BadRequestException({
-          message: 'Tag not found',
-          errors: { tags: `Tag not found: ${tagId}` },
+    if (createProblemDto.tags) {
+      for (const tagId of createProblemDto.tags) {
+        const tag = await this.problemTagsService.findOneInternal({
+          id: tagId,
         });
+        if (!tag) {
+          throw new BadRequestException({
+            message: 'Tag not found',
+            errors: { tags: `Tag not found: ${tagId}` },
+          });
+        }
+        tags.push(tag);
       }
-      tags.push(tag);
     }
     assignDefined(problem, {
       ...createProblemDto,
@@ -117,6 +141,9 @@ export class ProblemsService {
     if (findAllDto.difficulties) {
       const difficulties = findAllDto.difficulties.split(',').map(Number);
       where.difficulty = { $in: difficulties };
+    }
+    if (findAllDto.publicationStatus) {
+      where.publicationStatus = findAllDto.publicationStatus;
     }
     const offset: number = (findAllDto.page - 1) * findAllDto.perPage;
     const limit: number = findAllDto.perPage;
@@ -263,8 +290,19 @@ export class ProblemsService {
     originUser: AuthenticatedUser,
     id: string,
   ): Promise<ProblemResponse> {
+    const user = await this.usersService.findOneInternal({ id: originUser.id });
+    if (!user) {
+      throw new UnauthorizedException({
+        message: 'Invalid token',
+        errors: { token: 'Invalid token' },
+      });
+    }
     if (
-      isSomeRolesIn(originUser.roles, [Role.Staff, Role.Admin, Role.SuperAdmin])
+      isSomeRolesIn(originUser.roles, [
+        Role.Reviewer,
+        Role.Admin,
+        Role.SuperAdmin,
+      ])
     ) {
       const populate = [
         'description',
@@ -286,6 +324,8 @@ export class ProblemsService {
         'owner',
         'credits',
         'publicationStatus',
+        'reviewer',
+        'reviewComment',
         'userSolvedCount',
         'createdAt',
         'updatedAt',
@@ -300,7 +340,9 @@ export class ProblemsService {
           errors: { id: 'Problem not found' },
         });
       }
-      return new ProblemResponse(problem);
+      return new ProblemResponse(problem, {
+        completionStatus: await this.getCompletionStatus(problem, user),
+      });
     }
     const populate = [
       'description',
@@ -335,7 +377,9 @@ export class ProblemsService {
     if (userUnlockedHint) {
       this.problemsRepository.populate(problem, ['hint']);
     }
-    return new ProblemResponse(problem);
+    return new ProblemResponse(problem, {
+      completionStatus: await this.getCompletionStatus(problem, user),
+    });
   }
 
   async findOneInternal(where: FilterQuery<Problem>): Promise<Problem> {
@@ -361,6 +405,8 @@ export class ProblemsService {
         'owner',
         'credits',
         'publicationStatus',
+        'reviewer',
+        'reviewComment',
         'createdAt',
         'updatedAt',
       ],
@@ -470,6 +516,10 @@ export class ProblemsService {
                   errors: { publicationStatus: 'Insufficient permissions' },
                 });
               }
+              problem.reviewer = await this.usersService.findOneInternal({
+                id: originUser.id,
+              });
+              problem.reviewComment = updateProblemDto.reviewComment || null;
               break;
             default:
               throw new BadRequestException({
@@ -568,12 +618,24 @@ export class ProblemsService {
         errors: { id: 'Insufficient permissions' },
       });
     }
+    if (
+      problem.publicationStatus !== PublicationStatus.Draft &&
+      !isSomeRolesIn(originUser.roles, [Role.SuperAdmin])
+    ) {
+      await this.entityManager.flush();
+      throw new BadRequestException({
+        message: `${problem.publicationStatus} problem cannot be modified`,
+        errors: {
+          id: `${problem.publicationStatus} problem cannot be modified`,
+        },
+      });
+    }
     if (updateProblemDto.attachments) {
       const attachments: Attachment[] = [];
       for (const attachmentId of updateProblemDto.attachments) {
-        const attachment = await this.entityManager
-          .getRepository(Attachment)
-          .findOne({ id: attachmentId });
+        const attachment = await this.attachmentsService.findOneInternal({
+          id: attachmentId,
+        });
         if (!attachment) {
           throw new BadRequestException({
             message: 'Attachment not found',
@@ -588,9 +650,9 @@ export class ProblemsService {
     if (updateProblemDto.tags) {
       const tags: ProblemTag[] = [];
       for (const tagId of updateProblemDto.tags) {
-        const tag = await this.entityManager
-          .getRepository(ProblemTag)
-          .findOne({ id: tagId });
+        const tag = await this.problemTagsService.findOneInternal({
+          id: tagId,
+        });
         if (!tag) {
           throw new BadRequestException({
             message: 'Tag not found',
@@ -632,16 +694,18 @@ export class ProblemsService {
     problem: Problem,
     user: User,
   ): Promise<CompletionStatus> {
-    // Switch this to submission service
-    const acceptedSubmissions = await this.entityManager
-      .getRepository(Submission)
-      .count({ problem, owner: user, accepted: true });
+    const acceptedSubmissions = await this.submissionsService.countInternal({
+      problem,
+      owner: user,
+      accepted: true,
+    });
     if (acceptedSubmissions) {
       return CompletionStatus.Solved;
     }
-    const submissions = await this.entityManager
-      .getRepository(Submission)
-      .count({ problem, owner: user });
+    const submissions = await this.submissionsService.countInternal({
+      problem,
+      owner: user,
+    });
     if (submissions) {
       return CompletionStatus.Attempted;
     }
@@ -658,6 +722,11 @@ export class ProblemsService {
       code: problem.solution,
       language: problem.solutionLanguage,
       inputs: allTestcases.map((testcase) => testcase.input),
+      optimizationLevel: problem.optimizationLevel,
+      allowedHeaders: problem.allowedHeaders,
+      bannedFunctions: problem.bannedFunctions,
+      timeLimit: problem.timeLimit,
+      memoryLimit: problem.memoryLimit,
     });
     if (result.code || !result.outputs) {
       throw new BadRequestException({
