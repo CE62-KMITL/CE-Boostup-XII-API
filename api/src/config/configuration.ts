@@ -1,5 +1,10 @@
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export default () => ({
+  port: process.env.PORT ? +process.env.PORT : 3000,
+  maxBodySize: process.env.MAX_BODY_SIZE || '96MB',
+  CorsAllowedOrigins: process.env.CORS_ALLOWED_ORIGINS
+    ? process.env.CORS_ALLOWED_ORIGINS.split(/, */)
+    : ['*'],
   database: {
     host: process.env.MARIADB_HOST || 'mariadb',
     port: process.env.MARIADB_PORT ? +process.env.MARIADB_PORT : 3306,
