@@ -1,5 +1,9 @@
 import { HttpService } from '@nestjs/axios';
-import { HttpException, Injectable } from '@nestjs/common';
+import {
+  HttpException,
+  Injectable,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { AxiosResponse } from 'axios';
 import { Observable, catchError, firstValueFrom, map } from 'rxjs';
 import { ResultCode } from 'src/shared/enums/result-code.enum';
@@ -34,7 +38,13 @@ export class CompilerService {
       .post('compile-and-run', compileAndRunDto)
       .pipe(
         catchError((error) => {
-          throw new HttpException(error.response.data, error.response.status);
+          if (error.response) {
+            throw new HttpException(error.response.data, error.response.status);
+          } else {
+            throw new ServiceUnavailableException({
+              message: 'Compiler service is unavailable',
+            });
+          }
         }),
       );
     return await firstValueFrom(observable);
@@ -46,7 +56,13 @@ export class CompilerService {
     return this.httpService.post('compile-and-run', compileAndRunDto).pipe(
       map((response) => response.data),
       catchError((error) => {
-        throw new HttpException(error.response.data, error.response.status);
+        if (error.response) {
+          throw new HttpException(error.response.data, error.response.status);
+        } else {
+          throw new ServiceUnavailableException({
+            message: 'Compiler service is unavailable',
+          });
+        }
       }),
     );
   }

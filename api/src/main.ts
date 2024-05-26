@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { json, urlencoded } from 'express';
+import helmet from 'helmet';
 import wcmatch from 'wildcard-match';
 
 import { AppModule } from './app.module';
@@ -14,22 +15,27 @@ async function bootstrap(): Promise<void> {
     logger: ConfigConstants.logLevels,
   });
   const configService = app.get(ConfigService);
-  app.use(json({ limit: configService.getOrThrow<string>('maxBodySize') }));
+
+  app.getHttpAdapter().getInstance().disable('x-powered-by');
+
+  // Disable most of the security headers as they are irrelevant for a REST API
   app.use(
-    urlencoded({
-      limit: configService.getOrThrow<string>('maxBodySize'),
-      extended: true,
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginOpenerPolicy: false,
+      crossOriginResourcePolicy: false,
+      originAgentCluster: false,
+      referrerPolicy: false,
+      strictTransportSecurity: false, // This should be handled by a reverse proxy or CDN
+      xDnsPrefetchControl: false,
+      xDownloadOptions: false,
+      xFrameOptions: false,
+      xPermittedCrossDomainPolicies: false,
+      xPoweredBy: false,
+      xXssProtection: false,
     }),
   );
-  await app.get(MikroORM).getSchemaGenerator().ensureDatabase();
-  await app.get(MikroORM).getSchemaGenerator().updateSchema(); // TODO: Move to migrations in production
-  app.useGlobalPipes(
-    new ValidationPipe({
-      transform: true,
-      transformOptions: { enableImplicitConversion: true },
-      errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-    }),
-  );
+
   const allowedOrigins =
     configService.getOrThrow<string[]>('CorsAllowedOrigins');
   const allowedOriginMatchers = allowedOrigins.map((origin) =>
@@ -44,6 +50,23 @@ async function bootstrap(): Promise<void> {
     optionsSuccessStatus: 200,
     exposedHeaders: 'Authorization',
   });
+
+  app.use(json({ limit: configService.getOrThrow<string>('maxBodySize') }));
+  app.use(
+    urlencoded({
+      limit: configService.getOrThrow<string>('maxBodySize'),
+      extended: true,
+    }),
+  );
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      transformOptions: { enableImplicitConversion: true },
+      errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+    }),
+  );
+
   const config = new DocumentBuilder()
     .addBearerAuth()
     .setTitle('CE Boostup XII API')
@@ -52,6 +75,11 @@ async function bootstrap(): Promise<void> {
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
+
+  const mikroOrm = app.get(MikroORM);
+  await mikroOrm.getSchemaGenerator().ensureDatabase();
+  await mikroOrm.getSchemaGenerator().updateSchema(); // TODO: Move to migrations in production
+
   await app.listen(configService.getOrThrow<number>('port'));
 }
 bootstrap();
