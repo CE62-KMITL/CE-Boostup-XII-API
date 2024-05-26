@@ -279,8 +279,19 @@ export class ProblemsService implements OnModuleInit {
     originUser: AuthenticatedUser,
     id: string,
   ): Promise<ProblemResponse> {
+    const user = await this.usersService.findOneInternal({ id: originUser.id });
+    if (!user) {
+      throw new UnauthorizedException({
+        message: 'Invalid token',
+        errors: { token: 'Invalid token' },
+      });
+    }
     if (
-      isSomeRolesIn(originUser.roles, [Role.Staff, Role.Admin, Role.SuperAdmin])
+      isSomeRolesIn(originUser.roles, [
+        Role.Reviewer,
+        Role.Admin,
+        Role.SuperAdmin,
+      ])
     ) {
       const populate = [
         'description',
@@ -318,7 +329,9 @@ export class ProblemsService implements OnModuleInit {
           errors: { id: 'Problem not found' },
         });
       }
-      return new ProblemResponse(problem);
+      return new ProblemResponse(problem, {
+        completionStatus: await this.getCompletionStatus(problem, user),
+      });
     }
     const populate = [
       'description',
@@ -353,7 +366,9 @@ export class ProblemsService implements OnModuleInit {
     if (userUnlockedHint) {
       this.problemsRepository.populate(problem, ['hint']);
     }
-    return new ProblemResponse(problem);
+    return new ProblemResponse(problem, {
+      completionStatus: await this.getCompletionStatus(problem, user),
+    });
   }
 
   async findOneInternal(where: FilterQuery<Problem>): Promise<Problem> {
