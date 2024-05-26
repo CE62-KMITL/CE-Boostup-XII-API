@@ -39,7 +39,7 @@ async function bootstrap(): Promise<void> {
   const allowedOrigins =
     configService.getOrThrow<string[]>('CorsAllowedOrigins');
   const allowedOriginMatchers = allowedOrigins.map((origin) =>
-    wcmatch(origin, { separator: '.' }),
+    wcmatch(origin, { separator: false }),
   );
   const allowedOriginRegexes = allowedOriginMatchers.map(
     (matcher) => matcher.regexp,
