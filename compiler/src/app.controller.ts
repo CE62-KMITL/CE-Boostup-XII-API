@@ -1,4 +1,11 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+} from '@nestjs/common';
 
 import { AppService } from './app.service';
 import {
@@ -11,10 +18,16 @@ export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Get()
-  getHello(): string {
-    return this.appService.getHello();
+  getRoot(): string {
+    return this.appService.getRoot();
   }
 
+  @Get('box-statuses')
+  async getBoxStatuses(): Promise<{ total: number; available: number[] }> {
+    return await this.appService.getBoxStatuses();
+  }
+
+  @HttpCode(HttpStatus.OK)
   @Post('compile-and-run')
   async compileAndRun(
     @Body() compileAndRunDto: CompileAndRunDto,

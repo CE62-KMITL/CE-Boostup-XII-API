@@ -1,4 +1,4 @@
-import * as fs from 'fs';
+import * as fs from 'fs/promises';
 import { join } from 'path';
 
 import {
@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { isSomeRolesIn } from 'src/auth/roles';
+import { assignDefined } from 'src/shared/assign-defined';
 import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
 import { Role } from 'src/shared/enums/role.enum';
 import { AuthenticatedUser } from 'src/shared/interfaces/authenticated-request.interface';
@@ -45,7 +46,7 @@ export class GroupsService {
     }
     const group = new Group();
     group.name = createGroupDto.name;
-    group.description = createGroupDto.description;
+    group.description = createGroupDto.description || '';
     await this.entityManager.persistAndFlush(group);
     return new GroupResponse(group);
   }
@@ -249,7 +250,7 @@ export class GroupsService {
       const [, fileExt, fileData] = matches;
       const filename = `${id}.${fileExt}`;
       if (group.avatarFilename) {
-        await fs.promises.unlink(
+        await fs.unlink(
           join(
             this.configService.getOrThrow<string>('storages.avatars.path'),
             group.avatarFilename,
@@ -257,7 +258,7 @@ export class GroupsService {
         );
       }
       group.avatarFilename = filename;
-      await fs.promises.writeFile(
+      await fs.writeFile(
         join(
           this.configService.getOrThrow<string>('storages.avatars.path'),
           filename,
@@ -267,7 +268,7 @@ export class GroupsService {
       );
       delete updateGroupDto.avatar;
     }
-    Object.assign(group, updateGroupDto);
+    assignDefined(group, updateGroupDto);
     await this.entityManager.flush();
     return await this.findOne(originUser, id);
   }

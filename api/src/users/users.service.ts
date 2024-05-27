@@ -1,4 +1,4 @@
-import * as fs from 'fs';
+import * as fs from 'fs/promises';
 import { join } from 'path';
 
 import {
@@ -17,12 +17,12 @@ import {
 import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
 import { isRolesHigher, isSomeRolesIn } from 'src/auth/roles';
+import { GroupsService } from 'src/groups/groups.service';
+import { assignDefined } from 'src/shared/assign-defined';
 import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
 import { Role } from 'src/shared/enums/role.enum';
 import { AuthenticatedUser } from 'src/shared/interfaces/authenticated-request.interface';
 import { parseSort } from 'src/shared/parse-sort';
-
-import { Group } from '../groups/entities/group.entity';
 
 import { CreateUserDto } from './dto/create-user.dto';
 import { FindAllDto } from './dto/find-all.dto';
@@ -36,6 +36,7 @@ export class UsersService implements OnModuleInit {
     private readonly usersRepository: EntityRepository<User>,
     private readonly entityManager: EntityManager,
     private readonly configService: ConfigService,
+    private readonly groupsService: GroupsService,
   ) {}
 
   onModuleInit(): void {
@@ -76,9 +77,9 @@ export class UsersService implements OnModuleInit {
       'storages.avatars.path',
     );
     try {
-      await fs.promises.access(avatarsPath);
+      await fs.access(avatarsPath);
     } catch (error) {
-      await fs.promises.mkdir(avatarsPath, { recursive: true });
+      await fs.mkdir(avatarsPath, { recursive: true });
     }
   }
 
@@ -95,13 +96,13 @@ export class UsersService implements OnModuleInit {
         errors: { email: 'Email already in use' },
       });
     }
-    const group = await this.entityManager
-      .getRepository(Group)
-      .findOne({ id: createUserDto.group });
+    const group = await this.groupsService.findOneInternal({
+      id: createUserDto.group,
+    });
     if (!group) {
       throw new BadRequestException({
         message: 'Group not found',
-        errors: { groupId: 'Group not found' },
+        errors: { group: 'Group not found' },
       });
     }
     if (!isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])) {
@@ -302,6 +303,7 @@ export class UsersService implements OnModuleInit {
         'roles',
         'hashedPassword',
         'bio',
+        'group',
         'totalScoreOffset',
         'unlockedHints',
         'lastEmailRequestedAt',
@@ -338,13 +340,13 @@ export class UsersService implements OnModuleInit {
           errors: { id: 'Insufficient permissions' },
         });
       }
-      const group = await this.entityManager
-        .getRepository(Group)
-        .findOne({ id: updateUserDto.group });
+      const group = await this.groupsService.findOneInternal({
+        id: updateUserDto.group,
+      });
       if (!group) {
         throw new BadRequestException({
           message: 'Group not found',
-          errors: { groupId: 'Group not found' },
+          errors: { group: 'Group not found' },
         });
       }
       user.group = group;
@@ -373,7 +375,7 @@ export class UsersService implements OnModuleInit {
       const [, fileExt, fileData] = matches;
       const filename = `${id}.${fileExt}`;
       if (user.avatarFilename) {
-        await fs.promises.unlink(
+        await fs.unlink(
           join(
             this.configService.getOrThrow<string>('storages.avatars.path'),
             user.avatarFilename,
@@ -381,7 +383,7 @@ export class UsersService implements OnModuleInit {
         );
       }
       user.avatarFilename = filename;
-      await fs.promises.writeFile(
+      await fs.writeFile(
         join(
           this.configService.getOrThrow<string>('storages.avatars.path'),
           filename,
@@ -411,7 +413,7 @@ export class UsersService implements OnModuleInit {
       delete updateUserDto.oldPassword;
       delete updateUserDto.password;
     }
-    Object.assign(user, updateUserDto);
+    assignDefined(user, updateUserDto);
     await this.entityManager.flush();
     return await this.findOne(originUser, id);
   }
@@ -427,7 +429,7 @@ export class UsersService implements OnModuleInit {
         errors: { where: 'User not found' },
       });
     }
-    Object.assign(user, data);
+    assignDefined(user, data);
     await this.entityManager.flush();
     return user;
   }

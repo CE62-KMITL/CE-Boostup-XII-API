@@ -9,5 +9,6 @@ import { GroupsService } from './groups.service';
   imports: [MikroOrmModule.forFeature([Group])],
   controllers: [GroupsController],
   providers: [GroupsService],
+  exports: [GroupsService],
 })
 export class GroupsModule {}

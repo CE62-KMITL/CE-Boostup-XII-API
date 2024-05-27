@@ -1,39 +1,38 @@
-import * as fs from 'fs';
+import * as fs from 'fs/promises';
 import { join } from 'path';
 
-import {
-  Injectable,
-  InternalServerErrorException,
-  Logger,
-  OnModuleInit,
-} from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import { ConfigConstants } from './config/config-constants';
 import {
   CompileAndRunDto,
+  CompileAndRunOutput,
   CompileAndRunResponse,
 } from './dto/compile-and-run.dto';
 import { ResultCode } from './enums/result-code.enum';
 import { WarningLevel } from './enums/warning-level.enum';
-import { execAsync } from './exec-async';
-import { Executor } from './executor';
-import { loadKeyValue } from './load-key-value';
+import { ExecutionResult, Executor } from './executor';
 
 @Injectable()
 export class AppService implements OnModuleInit {
-  constructor(private readonly configService: ConfigService) { }
+  constructor(private readonly configService: ConfigService) {
+    this.executor = new Executor(
+      ConfigConstants.isolate.box_root,
+      this.configService.getOrThrow<number>('isolate.boxCount'),
+      join(
+        this.configService.getOrThrow<string>('storages.temporary.path'),
+        'metadata',
+      ),
+      this.configService.getOrThrow<number>('executor.wallTimeLimitMultiplier'),
+      this.configService.getOrThrow<number>('executor.wallTimeLimitOffset'),
+    );
+  }
+
+  private requestId = 0;
 
   private readonly logger = new Logger(AppService.name);
-  private readonly executor = new Executor(
-    ConfigConstants.isolate.box_root,
-    ConfigConstants.isolate.max_box_count,
-    join(
-      this.configService.getOrThrow<string>('storages.temporary.path'),
-      'metadata',
-    ),
-    this.logger,
-  );
+  private readonly executor: Executor;
 
   onModuleInit(): void {
     this.createTemporaryDirectories();
@@ -41,7 +40,7 @@ export class AppService implements OnModuleInit {
 
   private async createTemporaryDirectories(): Promise<void> {
     for (const path of ['executables', 'metadata']) {
-      await fs.promises.mkdir(
+      await fs.mkdir(
         join(
           this.configService.getOrThrow<string>('storages.temporary.path'),
           path,
@@ -51,15 +50,22 @@ export class AppService implements OnModuleInit {
     }
   }
 
-  getHello(): string {
-    return 'Hello World!';
+  getRoot(): string {
+    return 'Swagger UI is available at <a href="/api">/api</a>';
+  }
+
+  async getBoxStatuses(): Promise<{ total: number; available: number[] }> {
+    const { total, available } = await this.executor.getBoxStatuses();
+    return {
+      total,
+      available: available.toSorted((a, b) => a - b),
+    };
   }
 
   async compileAndRun(
     compileAndRunDto: CompileAndRunDto,
   ): Promise<CompileAndRunResponse> {
-    let isolateOutput: string = '';
-    const inputCount = compileAndRunDto.inputs.length;
+    const requestId = this.requestId++;
     const isCpp = compileAndRunDto.language.includes('++');
     const compiler = isCpp ? 'g++' : 'gcc';
     const codeFilename = isCpp ? 'code.cpp' : 'code.c';
@@ -67,442 +73,220 @@ export class AppService implements OnModuleInit {
       compileAndRunDto.warningLevel === WarningLevel.Default
         ? ''
         : `-W${compileAndRunDto.warningLevel}`;
+    const compilationWallTimeLimit = Math.max(
+      compileAndRunDto.compilationTimeLimit *
+        this.configService.getOrThrow<number>(
+          'executor.wallTimeLimitMultiplier',
+        ),
+      compileAndRunDto.compilationTimeLimit +
+        this.configService.getOrThrow<number>('executor.wallTimeLimitOffset'),
+    );
     const wallTimeLimit = Math.max(
-      compileAndRunDto.timeLimit * 1.5,
-      compileAndRunDto.timeLimit + 5,
+      compileAndRunDto.timeLimit *
+        this.configService.getOrThrow<number>(
+          'executor.wallTimeLimitMultiplier',
+        ),
+      compileAndRunDto.timeLimit +
+        this.configService.getOrThrow<number>('executor.wallTimeLimitOffset'),
     );
     const hoistResult = this.hoistIncludes(compileAndRunDto.code);
     let code = hoistResult.code;
     const includeCount = hoistResult.includeCount;
-    const boxCount = Math.min(
-      inputCount,
-      ConfigConstants.isolate.max_box_count,
-    );
-    try {
-      await execAsync('isolate --init -b 0', {
-        encoding: 'utf-8',
-        timeout: 1000,
-      });
-    } catch (e) {
-      console.error('Error when trying to initialize isolate');
-      console.error(e);
-      throw new InternalServerErrorException({
-        message: 'Failed to initialize isolate',
-        errors: { internal: 'Failed to initialize isolate' },
-      });
-    }
-    await fs.promises.writeFile(
-      join(ConfigConstants.isolate.box_root, '0', 'box', codeFilename),
-      code,
-      { encoding: 'utf-8' },
-    );
-    try {
-      const { stderr } = await execAsync(
-        `isolate --run -b 0 -p -e --stderr-to-stdout -o gcc-precompilation-output.txt -M ${join(this.configService.getOrThrow<string>('storages.temporary.path'), 'metadata', 'compiler', `compilation.txt`)} -m ${Math.round(compileAndRunDto.compilationMemoryLimit / 1024).toFixed(0)} -w ${compileAndRunDto.compilationTimeLimit.toFixed(3)} -f ${Math.ceil(ConfigConstants.compiler.maxExecutableSize / 1024).toFixed(0)} -- /usr/bin/${compiler} -fdiagnostics-color=${compileAndRunDto.formattedDiagnostic ? 'always' : 'never'} -fdiagnostics-urls=${compileAndRunDto.formattedDiagnostic ? 'always' : 'never'} --std=${compileAndRunDto.language} ${codeFilename} -H`,
-        {
-          encoding: 'utf-8',
-          env: {
-            PATH: '/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin',
-          },
-          timeout: compileAndRunDto.compilationTimeLimit * 1000 + 1000,
-        },
-      );
-      isolateOutput = stderr;
-    } catch (e) {
-      const output = await fs.promises.readFile(
-        join(
-          ConfigConstants.isolate.box_root,
-          '0',
-          'box',
-          'gcc-precompilation-output.txt',
-        ),
-        { encoding: 'utf-8' },
-      );
-      const metadataText = await fs.promises.readFile(
-        join(
-          this.configService.getOrThrow<string>('storages.temporary.path'),
-          'metadata',
-          'compiler',
-          `compilation.txt`,
-        ),
-        { encoding: 'utf-8' },
-      );
-      const metadata = loadKeyValue(metadataText);
-      let code = ResultCode.CE;
-      if (isolateOutput.includes('Time limit exceeded')) {
-        code = ResultCode.CTLE;
-      }
-      if (output.includes('File size limit exceeded')) {
-        code = ResultCode.COLE;
-      }
-      if (output.includes('memory exhausted')) {
-        code = ResultCode.CMLE;
-      }
-      const outputLines = output.split('\n');
-      let lastHeaderLine = 0;
-      for (let i = 0; i < outputLines.length; i++) {
-        if (outputLines[i].startsWith('. ')) {
-          lastHeaderLine = i;
-        } else {
-          break;
-        }
-      }
-      let firstIncludeGuardWarningLine = 0;
-      for (let i = outputLines.length - 1; i > lastHeaderLine; i--) {
-        if (
-          outputLines[i].includes('Multiple include guards may be useful for:')
-        ) {
-          firstIncludeGuardWarningLine = i;
-          break;
-        }
-      }
-      let warning = '';
-      if (firstIncludeGuardWarningLine > 0) {
-        warning = outputLines
-          .slice(lastHeaderLine + 1, firstIncludeGuardWarningLine)
-          .join('\n');
-      }
-      return new CompileAndRunResponse({
-        compilerOutput: (warning || output) + isolateOutput,
-        compilationTime: metadata.time ? +metadata.time : undefined,
-        compilationMemory: metadata['max-rss']
-          ? +metadata['max-rss'] * 1024
-          : undefined,
-        code: code,
-      });
-    }
-    const preCompilationOutput = await fs.promises.readFile(
-      join(
-        ConfigConstants.isolate.box_root,
-        '0',
-        'box',
-        'gcc-precompilation-output.txt',
-      ),
-      { encoding: 'utf-8' },
-    );
-    const headerMatches = preCompilationOutput.matchAll(/^\. .*\/(.*)$/gm);
-    if (headerMatches) {
-      for (const headerMatch of headerMatches) {
-        const header = headerMatch[1];
-        if (!compileAndRunDto.allowedHeaders.includes(header)) {
-          return new CompileAndRunResponse({
-            compilerOutput: `Prepreprocessor: Fatal error: Header ${header} is not allowed\nCompilation terminated.\nExited with error status 1`,
-            code: ResultCode.HNA,
-          });
-        }
-      }
-    }
-    try {
-      await execAsync('isolate --cleanup -b 0', {
-        encoding: 'utf-8',
-        timeout: 1000,
-      });
-    } catch (e) {
-      console.error('Error when trying to cleanup isolate');
-      console.error(e);
-    }
-    try {
-      await execAsync('isolate --init -b 0', {
-        encoding: 'utf-8',
-        timeout: 1000,
-      });
-    } catch (e) {
-      console.error('Error when trying to initialize isolate');
-      console.error(e);
-      throw new InternalServerErrorException({
-        message: 'Failed to initialize isolate',
-        errors: { internal: 'Failed to initialize isolate' },
-      });
-    }
     code = this.addBannendFunctionAsserts(
       code,
       compileAndRunDto.bannedFunctions,
       includeCount,
     );
-    await fs.promises.writeFile(
-      join(ConfigConstants.isolate.box_root, '0', 'box', codeFilename),
-      code,
-      { encoding: 'utf-8' },
+    const executableFilePath = join(
+      this.configService.getOrThrow<string>('storages.temporary.path'),
+      'executables',
+      `out-${requestId}.o`,
     );
     try {
-      const { stderr } = await execAsync(
-        `isolate --run -b 0 -p -e --stderr-to-stdout -o gcc-compilation-output.txt -M ${join(this.configService.getOrThrow<string>('storages.temporary.path'), 'metadata', 'compiler', `compilation.txt`)} -m ${Math.round(compileAndRunDto.compilationMemoryLimit / 1024).toFixed(0)} -w ${compileAndRunDto.compilationTimeLimit.toFixed(3)} -f ${Math.ceil(ConfigConstants.compiler.maxExecutableSize / 1024).toFixed(0)} -- /usr/bin/${compiler} -fdiagnostics-color=${compileAndRunDto.formattedDiagnostic ? 'always' : 'never'} -fdiagnostics-urls=${compileAndRunDto.formattedDiagnostic ? 'always' : 'never'} --std=${compileAndRunDto.language} ${warningString} -${compileAndRunDto.optimizationLevel} ${codeFilename} -o out.o`,
+      const {
+        exitCode: compilationExitCode,
+        isolateOutput: compilationIsolateOutput,
+        output: compilationOutputWithHeaders,
+        metadata: compilationMetadata,
+      } = await this.executor.execute(
+        [
+          `/usr/bin/${compiler}`,
+          '-pass-exit-codes',
+          `-fdiagnostics-color=${compileAndRunDto.formattedDiagnostic ? 'always' : 'never'}`,
+          `-fdiagnostics-urls=${compileAndRunDto.formattedDiagnostic ? 'always' : 'never'}`,
+          `--std=${compileAndRunDto.language}`,
+          `${warningString}`,
+          `-${compileAndRunDto.optimizationLevel}`,
+          `-march=${this.configService.getOrThrow<string>('compiler.march')}`,
+          `-mtune=${this.configService.getOrThrow<string>('compiler.mtune')}`,
+          `${codeFilename}`,
+          '-H',
+          '-o',
+          'out.o',
+        ],
+        -requestId,
         {
-          encoding: 'utf-8',
-          env: {
-            PATH: '/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin',
-          },
-          timeout: compileAndRunDto.compilationTimeLimit * 1000 + 1000,
+          inputTexts: [{ name: codeFilename, text: code }],
+          outputFiles: [{ name: 'out.o', path: executableFilePath }],
+          processLimit: null,
+          inheritEnvironment: true,
+          memoryLimit: compileAndRunDto.compilationMemoryLimit,
+          timeLimit: compileAndRunDto.compilationTimeLimit,
+          wallTimeLimit: compilationWallTimeLimit,
+          fileSizeLimit: ConfigConstants.compiler.maxExecutableSize,
         },
       );
-      isolateOutput = stderr;
-    } catch (e) {
-      const compilationOutput = await fs.promises.readFile(
-        join(
-          ConfigConstants.isolate.box_root,
-          '0',
-          'box',
-          'gcc-compilation-output.txt',
-        ),
-        { encoding: 'utf-8' },
+      if (compileAndRunDto.allowedHeaders !== null) {
+        const headerMatches =
+          compilationOutputWithHeaders.matchAll(/^\. .*\/(.*)$/gm);
+        for (const headerMatch of headerMatches) {
+          const header = headerMatch[1];
+          if (!compileAndRunDto.allowedHeaders.includes(header)) {
+            return new CompileAndRunResponse({
+              compilerOutput: `Prepreprocessor: Fatal error: Header ${header} is not allowed\nCompilation terminated.\nExited with error status 1\n`,
+              compilationTime: compilationMetadata.time
+                ? +compilationMetadata.time
+                : undefined,
+              compilationMemory: compilationMetadata['max-rss']
+                ? +compilationMetadata['max-rss'] * 1024
+                : undefined,
+              code: ResultCode.HNA,
+            });
+          }
+        }
+      }
+      const outputLines = compilationOutputWithHeaders.split('\n');
+      let lastHeaderLine: number | undefined = outputLines.findIndex(
+        (line) => !line.startsWith('.'),
       );
-      const bannedFunctionMatches = compilationOutput.matchAll(
-        /error: static assertion failed: "Function (.*?) is not allowed\."/gm,
-      );
-      if (bannedFunctionMatches) {
+      if (lastHeaderLine === -1) {
+        lastHeaderLine = undefined;
+      }
+      let firstIncludeGuardWarningLine: number | undefined =
+        outputLines.findLastIndex(
+          (line) =>
+            line.trim() === 'Multiple include guards may be useful for:',
+        );
+      if (firstIncludeGuardWarningLine === -1) {
+        firstIncludeGuardWarningLine = undefined;
+      }
+      let compilationOutput =
+        outputLines
+          .slice(lastHeaderLine, firstIncludeGuardWarningLine)
+          .join('\n') + '\n';
+      if (compilationOutput === '\n') {
+        compilationOutput = '';
+      }
+      if (compilationExitCode !== 0) {
+        const bannedFunctionMatches = compilationOutput.matchAll(
+          /error: static assertion failed: "Function (.*?) is not allowed\."/gm,
+        );
         const bannedFunctions = Array.from(
           bannedFunctionMatches,
           (match) => match[1],
         );
-        return new CompileAndRunResponse({
-          compilerOutput: `Prepreprocessor: Fatal error: Function ${bannedFunctions[0]} is not allowed\nCompilation terminated.\nExited with error status 1`,
-          code: ResultCode.FNA,
-        });
-      }
-      const metadataText = await fs.promises.readFile(
-        join(
-          this.configService.getOrThrow<string>('storages.temporary.path'),
-          'metadata',
-          'compiler',
-          `compilation.txt`,
-        ),
-        { encoding: 'utf-8' },
-      );
-      const metadata = loadKeyValue(metadataText);
-      let code = ResultCode.CE;
-      if (isolateOutput.includes('Time limit exceeded')) {
-        code = ResultCode.CTLE;
-      }
-      if (compilationOutput.includes('File size limit exceeded')) {
-        code = ResultCode.COLE;
-      }
-      if (compilationOutput.includes('memory exhausted')) {
-        code = ResultCode.CMLE;
-      }
-      return new CompileAndRunResponse({
-        compilerOutput: compilationOutput + isolateOutput,
-        compilationTime: metadata.time ? +metadata.time : undefined,
-        compilationMemory: metadata['max-rss']
-          ? +metadata['max-rss'] * 1024
-          : undefined,
-        code: code,
-      });
-    }
-    const compilationOutput = await fs.promises.readFile(
-      join(
-        ConfigConstants.isolate.box_root,
-        '0',
-        'box',
-        'gcc-compilation-output.txt',
-      ),
-      { encoding: 'utf-8' },
-    );
-    const compilationMetadata = loadKeyValue(
-      await fs.promises.readFile(
-        join(
-          this.configService.getOrThrow<string>('storages.temporary.path'),
-          'metadata',
-          'compiler',
-          `compilation.txt`,
-        ),
-        { encoding: 'utf-8' },
-      ),
-    );
-    const compiledFilePath = join(
-      this.configService.getOrThrow<string>('storages.temporary.path'),
-      'executables',
-      'out.o',
-    );
-    await fs.promises.copyFile(
-      join(ConfigConstants.isolate.box_root, '0', 'box', 'out.o'),
-      compiledFilePath,
-    );
-    const executableSize = (await fs.promises.stat(compiledFilePath)).size;
-    try {
-      await execAsync('isolate --cleanup -b 0', {
-        encoding: 'utf-8',
-        timeout: 1000,
-      });
-    } catch (e) {
-      console.error('Error when trying to cleanup isolate');
-      console.error(e);
-    }
-    const outputs: CompileAndRunResponse['outputs'] = [];
-    let batchNumber = -1;
-    while (compileAndRunDto.inputs.length > 0) {
-      const batchSize = Math.min(boxCount, compileAndRunDto.inputs.length);
-      batchNumber++;
-      const boxes = Array.from({ length: batchSize }, (_, i) => i);
-      try {
-        await Promise.all(
-          boxes.map(
-            async (box) =>
-              await execAsync(`isolate --init -b ${box}`, {
-                encoding: 'utf-8',
-                timeout: 1000,
-              }),
-          ),
-        );
-      } catch (e) {
-        console.error('Error when trying to initialize isolate');
-        console.error(e);
-        throw new InternalServerErrorException({
-          message: 'Failed to initialize isolate',
-          errors: { internal: 'Failed to initialize isolate' },
-        });
-      }
-      await Promise.all(
-        boxes.map(
-          async (box) =>
-            await fs.promises.copyFile(
-              compiledFilePath,
-              join(
-                ConfigConstants.isolate.box_root,
-                box.toString(),
-                'box',
-                'out.o',
-              ),
-            ),
-        ),
-      );
-      await Promise.all(
-        boxes.map(
-          async (box) =>
-            await fs.promises.writeFile(
-              join(
-                ConfigConstants.isolate.box_root,
-                box.toString(),
-                'box',
-                'stdin.txt',
-              ),
-              compileAndRunDto.inputs[box],
-              { encoding: 'utf-8' },
-            ),
-        ),
-      );
-      compileAndRunDto.inputs.splice(0, batchSize);
-      await Promise.all(
-        boxes.map(async (box) => {
-          let isolateOutput: string = '';
-          try {
-            const { stderr } = await execAsync(
-              `isolate --run -b ${box} --stderr-to-stdout -o output.txt -M ${join(this.configService.getOrThrow<string>('storages.temporary.path'), 'metadata', 'executor', `box-${box}.txt`)} -i stdin.txt -m ${Math.round(compileAndRunDto.memoryLimit / 1024).toFixed(0)} -t ${compileAndRunDto.timeLimit.toFixed(3)} -w ${wallTimeLimit.toFixed(3)} -f ${Math.round(ConfigConstants.executor.maxOutputSize / 1024).toFixed(0)} -- out.o`,
-              {
-                encoding: 'utf-8',
-                timeout: wallTimeLimit * 1000 + 1000,
-              },
-            );
-            isolateOutput = stderr;
-          } catch (e) {
-            const output = await fs.promises.readFile(
-              join(
-                ConfigConstants.isolate.box_root,
-                box.toString(),
-                'box',
-                'output.txt',
-              ),
-              { encoding: 'utf-8' },
-            );
-            const metadataText = await fs.promises.readFile(
-              join(
-                this.configService.getOrThrow<string>(
-                  'storages.temporary.path',
-                ),
-                'metadata',
-                'executor',
-                `box-${box}.txt`,
-              ),
-              { encoding: 'utf-8' },
-            );
-            const metadata = loadKeyValue(metadataText);
-            let code = ResultCode.RTE;
-            if (isolateOutput.includes('Time limit exceeded')) {
-              code = ResultCode.TLE;
-            }
-            outputs[batchNumber * boxCount + box] = {
-              runtimeOutput: output + isolateOutput,
-              executionTime: metadata.time ? +metadata.time : undefined,
-              executionMemory: metadata['max-rss']
-                ? +metadata['max-rss'] * 1024
-                : undefined,
-              code: code,
-            };
-          }
-          const output = await fs.promises.readFile(
-            join(
-              ConfigConstants.isolate.box_root,
-              box.toString(),
-              'box',
-              'output.txt',
-            ),
-            { encoding: 'utf-8' },
-          );
-          const metadataText = await fs.promises.readFile(
-            join(
-              this.configService.getOrThrow<string>('storages.temporary.path'),
-              'metadata',
-              'executor',
-              `box-${box}.txt`,
-            ),
-            { encoding: 'utf-8' },
-          );
-          const metadata = loadKeyValue(metadataText);
-          if (metadata.time && +metadata.time > compileAndRunDto.timeLimit) {
-            outputs[batchNumber * boxCount + box] = {
-              runtimeOutput: output + isolateOutput,
-              executionTime: metadata.time ? +metadata.time : undefined,
-              executionMemory: metadata['max-rss']
-                ? +metadata['max-rss'] * 1024
-                : undefined,
-              code: ResultCode.TLE,
-            };
-          }
-          outputs[batchNumber * boxCount + box] = {
-            runtimeOutput: output,
-            executionTime: metadata.time ? +metadata.time : undefined,
-            executionMemory: metadata['max-rss']
-              ? +metadata['max-rss'] * 1024
+        if (bannedFunctions.length > 0) {
+          return new CompileAndRunResponse({
+            compilerOutput: `Prepreprocessor: Fatal error: Function ${bannedFunctions[0]} is not allowed\nCompilation terminated.\nExited with error status 1\n`,
+            compilationTime: compilationMetadata.time
+              ? +compilationMetadata.time
               : undefined,
-          };
-        }),
-      );
-    }
-    const boxes = Array.from({ length: boxCount }, (_, i) => i);
-    try {
-      await Promise.all(
-        boxes.map(
-          async (box) =>
-            await execAsync(`isolate --cleanup -b ${box}`, {
-              encoding: 'utf-8',
-              timeout: 1000,
-            }),
+            compilationMemory: compilationMetadata['max-rss']
+              ? +compilationMetadata['max-rss'] * 1024
+              : undefined,
+            code: ResultCode.FNA,
+          });
+        }
+        const exitSignal = compilationMetadata.exitsig
+          ? +compilationMetadata.exitsig
+          : 0;
+        let resultCode = ResultCode.CE;
+        if (
+          compilationOutput.includes('memory exhausted') ||
+          compilationOutput.includes('out of memory') ||
+          compilationOutput.includes(
+            'Segmentation fault signal terminated program',
+          ) ||
+          exitSignal === 11 ||
+          exitSignal === 127
+        ) {
+          resultCode = ResultCode.CMLE;
+        }
+        if (compilationOutput.includes('File size limit exceeded')) {
+          resultCode = ResultCode.COLE;
+        }
+        if (compilationMetadata.status === 'TO') {
+          resultCode = ResultCode.CTLE;
+        }
+        return new CompileAndRunResponse({
+          compilerOutput:
+            compilationOutput +
+            (compilationOutput && !compilationOutput.endsWith('\n')
+              ? '\n'
+              : '') +
+            compilationIsolateOutput,
+          compilationTime: compilationMetadata.time
+            ? +compilationMetadata.time
+            : undefined,
+          compilationMemory: compilationMetadata['max-rss']
+            ? +compilationMetadata['max-rss'] * 1024
+            : undefined,
+          code: resultCode,
+        });
+      }
+      const executableSize = (await fs.stat(executableFilePath)).size;
+      const rawOutputs = await Promise.all(
+        compileAndRunDto.inputs.map((input) =>
+          this.executor.execute('out.o', -requestId, {
+            stdin: input,
+            inputFiles: [{ name: 'out.o', path: executableFilePath }],
+            memoryLimit: compileAndRunDto.memoryLimit,
+            timeLimit: compileAndRunDto.timeLimit,
+            wallTimeLimit: wallTimeLimit,
+            openFilesLimit: ConfigConstants.executor.maxOpenFiles,
+            fileSizeLimit: ConfigConstants.executor.maxOutputSize,
+          }),
         ),
       );
-    } catch (e) {
-      console.error('Error when trying to cleanup isolate');
-      console.error(e);
+      const outputs = rawOutputs.map((rawOutput) =>
+        this.processOutput(
+          rawOutput,
+          compileAndRunDto.timeLimit,
+          compileAndRunDto.memoryLimit,
+        ),
+      );
+      const totalExecutionTime = outputs.reduce(
+        (acc, output) => (acc += output.executionTime || 0),
+        0,
+      );
+      const maxExecutionMemory = outputs.reduce(
+        (acc, output) => (acc = Math.max(acc, output.executionMemory || 0)),
+        0,
+      );
+      return new CompileAndRunResponse({
+        compilerOutput:
+          compilationOutput +
+          (compilationOutput && !compilationOutput.endsWith('\n') ? '\n' : ''),
+        compilationTime: compilationMetadata.time
+          ? +compilationMetadata.time
+          : undefined,
+        compilationMemory: compilationMetadata['max-rss']
+          ? +compilationMetadata['max-rss'] * 1024
+          : undefined,
+        executableSize: executableSize,
+        totalExecutionTime: totalExecutionTime,
+        maxExecutionMemory: maxExecutionMemory,
+        outputs,
+      });
+    } finally {
+      try {
+        await fs.unlink(executableFilePath);
+      } catch (e) {
+        this.logger.verbose(
+          `Failed to delete executable file at ${executableFilePath}: ${e}`,
+        );
+      }
     }
-    const totalExecutionTime = outputs.reduce(
-      (acc, output) => (acc += output.executionTime || 0),
-      0,
-    );
-    const maxExecutionMemory = outputs.reduce(
-      (acc, output) => (acc = Math.max(acc, output.executionMemory || 0)),
-      0,
-    );
-    return new CompileAndRunResponse({
-      compilerOutput: compilationOutput,
-      compilationTime: compilationMetadata.time
-        ? +compilationMetadata.time
-        : undefined,
-      compilationMemory: compilationMetadata['max-rss']
-        ? +compilationMetadata['max-rss'] * 1024
-        : undefined,
-      executableSize: executableSize,
-      totalExecutionTime: totalExecutionTime,
-      maxExecutionMemory: maxExecutionMemory,
-      outputs,
-    });
   }
 
   private hoistIncludes(code: string): { code: string; includeCount: number } {
@@ -519,7 +303,7 @@ export class AppService implements OnModuleInit {
       codeLines.push(line);
     }
     return {
-      code: includeLines.join('\n') + '\n\n' + codeLines.join('\n'),
+      code: includeLines.join('\n') + '\n\n' + codeLines.join('\n') + '\n',
       includeCount: includeLines.length,
     };
   }
@@ -529,6 +313,9 @@ export class AppService implements OnModuleInit {
     bannedFunctions: string[],
     insertAt: number,
   ): string {
+    if (bannedFunctions.length === 0) {
+      return code;
+    }
     const bannedFunctionLines: string[] = [];
     for (const bannedFunction of bannedFunctions) {
       bannedFunctionLines.push(
@@ -543,5 +330,58 @@ export class AppService implements OnModuleInit {
       '\n' +
       codeLines.slice(insertAt).join('\n')
     );
+  }
+
+  private processOutput(
+    output: ExecutionResult,
+    timeLimit: number,
+    memoryLimit: number,
+  ): CompileAndRunOutput {
+    const exitSignal = output.metadata.exitsig
+      ? +output.metadata.exitsig
+      : undefined;
+    let resultCode: ResultCode | undefined;
+    if (output.exitCode !== 0) {
+      resultCode = ResultCode.RE;
+      if (
+        (exitSignal === 11 || exitSignal === 127) &&
+        output.metadata['max-rss'] &&
+        +output.metadata['max-rss'] * 1024 >
+          Math.min(memoryLimit * 0.9, memoryLimit - 2 * 1024 * 1024)
+      ) {
+        resultCode = ResultCode.MLE;
+      }
+      if (exitSignal === 25) {
+        resultCode = ResultCode.OLE;
+      }
+      if (output.metadata.status === 'TO') {
+        resultCode = ResultCode.TLE;
+      }
+      if (output.metadata.status === 'XX') {
+        resultCode = ResultCode.IE;
+      }
+    }
+    if (
+      output.metadata['max-rss'] &&
+      +output.metadata['max-rss'] > memoryLimit
+    ) {
+      resultCode = ResultCode.MLE;
+    }
+    if (output.metadata.time && +output.metadata.time > timeLimit) {
+      resultCode = ResultCode.TLE;
+    }
+    return {
+      runtimeOutput: resultCode
+        ? output.output +
+          (output.output && !output.output.endsWith('\n') ? '\n' : '') +
+          output.isolateOutput
+        : output.output,
+      executionTime: output.metadata.time ? +output.metadata.time : undefined,
+      executionMemory: output.metadata['max-rss']
+        ? +output.metadata['max-rss'] * 1024
+        : undefined,
+      code: resultCode,
+      exitSignal: exitSignal,
+    };
   }
 }

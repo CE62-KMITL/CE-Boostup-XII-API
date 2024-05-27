@@ -1,18 +1,64 @@
 import { MikroORM } from '@mikro-orm/core';
 import { HttpStatus, ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { json, urlencoded } from 'express';
+import helmet from 'helmet';
+import wcmatch from 'wildcard-match';
 
 import { AppModule } from './app.module';
+import { ConfigConstants } from './config/config-constants';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule);
-  app.use(json({ limit: '64MB' }));
-  app.use(urlencoded({ limit: '64MB', extended: true }));
-  app.enableCors();
-  await app.get(MikroORM).getSchemaGenerator().ensureDatabase();
-  await app.get(MikroORM).getSchemaGenerator().updateSchema(); // TODO: Move to migrations in production
+  const app = await NestFactory.create(AppModule, {
+    logger: ConfigConstants.logLevels,
+  });
+  const configService = app.get(ConfigService);
+
+  app.getHttpAdapter().getInstance().disable('x-powered-by');
+
+  // Disable most of the security headers as they are irrelevant for a REST API
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginOpenerPolicy: false,
+      crossOriginResourcePolicy: false,
+      originAgentCluster: false,
+      referrerPolicy: false,
+      strictTransportSecurity: false, // This should be handled by a reverse proxy or CDN
+      xDnsPrefetchControl: false,
+      xDownloadOptions: false,
+      xFrameOptions: false,
+      xPermittedCrossDomainPolicies: false,
+      xPoweredBy: false,
+      xXssProtection: false,
+    }),
+  );
+
+  const allowedOrigins =
+    configService.getOrThrow<string[]>('CorsAllowedOrigins');
+  const allowedOriginMatchers = allowedOrigins.map((origin) =>
+    wcmatch(origin, { separator: false }),
+  );
+  const allowedOriginRegexes = allowedOriginMatchers.map(
+    (matcher) => matcher.regexp,
+  );
+  app.enableCors({
+    origin: allowedOriginRegexes,
+    methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+    optionsSuccessStatus: 200,
+    exposedHeaders: 'Authorization',
+  });
+
+  app.use(json({ limit: configService.getOrThrow<string>('maxBodySize') }));
+  app.use(
+    urlencoded({
+      limit: configService.getOrThrow<string>('maxBodySize'),
+      extended: true,
+    }),
+  );
+
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
@@ -20,6 +66,7 @@ async function bootstrap(): Promise<void> {
       errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
     }),
   );
+
   const config = new DocumentBuilder()
     .addBearerAuth()
     .setTitle('CE Boostup XII API')
@@ -28,6 +75,11 @@ async function bootstrap(): Promise<void> {
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
-  await app.listen(3000);
+
+  const mikroOrm = app.get(MikroORM);
+  await mikroOrm.getSchemaGenerator().ensureDatabase();
+  await mikroOrm.getSchemaGenerator().updateSchema(); // TODO: Move to migrations in production
+
+  await app.listen(configService.getOrThrow<number>('port'));
 }
 bootstrap();

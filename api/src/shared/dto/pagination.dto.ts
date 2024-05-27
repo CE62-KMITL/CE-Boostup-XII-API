@@ -12,7 +12,7 @@ export class PaginationRequestDto {
   @IsOptional()
   perPage: number = 100;
 
-  @ApiPropertyOptional({ example: 'id' })
+  @ApiPropertyOptional({ example: 'createdAt' })
   @IsString()
   @IsOptional()
   sort?: string;

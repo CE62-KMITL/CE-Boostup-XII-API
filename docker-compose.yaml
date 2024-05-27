@@ -14,6 +14,7 @@ services:
         condition: service_healthy
     environment:
       - MARIADB_HOST=mariadb
+      - COMPILER_API_URL=http://compiler:3001
     healthcheck:
       test: "wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1"
       start_period: 10s
@@ -28,8 +29,17 @@ services:
       - NET_ADMIN
     ports:
       - "5000:5000"
+    security_opt:
+      - apparmor:unconfined
     expose:
-      - "5000"
+      - "5001"
+    tmpfs:
+      - /tmp/ce-boostup-xii:mode=755,size=1073741824,uid=1000,gid=1000
+      - /var/local/lib/isolate:exec,mode=755,size=4294967296,uid=0,gid=0
+    deploy:
+      resources:
+        limits:
+          memory: 4GB
     healthcheck:
       test: "wget --no-verbose --tries=1 --spider http://localhost:5000 || exit 1"
       start_period: 10s

@@ -1,10 +1,16 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MailerService } from '@nestjs-modules/mailer';
 import { Webhook } from 'discord-webhook-node';
 
 @Injectable()
 export class MailService {
+  private readonly logger = new Logger(MailService.name);
+
   constructor(
     private readonly configService: ConfigService,
     private readonly mailerService: MailerService,

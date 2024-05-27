@@ -14,10 +14,10 @@ import {
   ValidateIf,
 } from 'class-validator';
 import { ConfigConstants } from 'src/config/config-constants';
-import { OptimizationLevel } from 'src/enums/optimization-level.enum';
-import { ProgrammingLanguage } from 'src/enums/programming-language.enum';
-import { ResultCode } from 'src/enums/result-code.enum';
-import { WarningLevel } from 'src/enums/warning-level.enum';
+import { OptimizationLevel } from 'src/shared/enums/optimization-level.enum';
+import { ProgrammingLanguage } from 'src/shared/enums/programming-language.enum';
+import { ResultCode } from 'src/shared/enums/result-code.enum';
+import { WarningLevel } from 'src/shared/enums/warning-level.enum';
 
 export class CompileAndRunDto {
   @ApiProperty({ example: 'C++17', enum: ProgrammingLanguage })
@@ -31,13 +31,13 @@ export class CompileAndRunDto {
   )
   @IsEnum(OptimizationLevel)
   @IsOptional()
-  optimizationLevel: OptimizationLevel = OptimizationLevel.O1;
+  optimizationLevel?: OptimizationLevel;
 
   @ApiPropertyOptional({ example: 'extra', enum: WarningLevel })
   @Transform(({ value }) => value.toLowerCase())
   @IsEnum(WarningLevel)
   @IsOptional()
-  warningLevel: WarningLevel = WarningLevel.Extra;
+  warningLevel?: WarningLevel;
 
   @ApiProperty({
     maxLength: ConfigConstants.compiler.maxCodeLength,
@@ -68,7 +68,7 @@ export class CompileAndRunDto {
   @IsString({ each: true })
   @ValidateIf((_, value) => value !== null)
   @IsOptional()
-  allowedHeaders: string[] | null = null;
+  allowedHeaders?: string[] | null;
 
   @ApiPropertyOptional({
     type: 'array',
@@ -78,7 +78,7 @@ export class CompileAndRunDto {
   @IsArray()
   @IsString({ each: true })
   @IsOptional()
-  bannedFunctions: string[] = [];
+  bannedFunctions?: string[];
 
   @ApiPropertyOptional({
     minimum: 0,
@@ -89,7 +89,7 @@ export class CompileAndRunDto {
   @Min(0)
   @Max(ConfigConstants.executor.maxTimeLimit)
   @IsOptional()
-  timeLimit: number = ConfigConstants.executor.defaultTimeLimit;
+  timeLimit?: number;
 
   @ApiPropertyOptional({
     minimum: 0,
@@ -100,7 +100,7 @@ export class CompileAndRunDto {
   @Min(0)
   @Max(ConfigConstants.executor.maxMemoryLimit)
   @IsOptional()
-  memoryLimit: number = ConfigConstants.executor.defaultMemoryLimit;
+  memoryLimit?: number;
 
   @ApiPropertyOptional({
     minimum: 0,
@@ -111,7 +111,7 @@ export class CompileAndRunDto {
   @Min(0)
   @Max(ConfigConstants.compiler.maxTimeLimit)
   @IsOptional()
-  compilationTimeLimit: number = ConfigConstants.compiler.defaultTimeLimit;
+  compilationTimeLimit?: number;
 
   @ApiPropertyOptional({
     minimum: 0,
@@ -122,7 +122,7 @@ export class CompileAndRunDto {
   @Min(0)
   @Max(ConfigConstants.compiler.maxMemoryLimit)
   @IsOptional()
-  compilationMemoryLimit: number = ConfigConstants.compiler.defaultMemoryLimit;
+  compilationMemoryLimit?: number;
 
   @ApiPropertyOptional({
     type: 'boolean',
@@ -130,7 +130,7 @@ export class CompileAndRunDto {
   })
   @IsBoolean()
   @IsOptional()
-  formattedDiagnostic: boolean = false;
+  formattedDiagnostic?: boolean;
 }
 
 export interface CompileAndRunOutput {

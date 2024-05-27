@@ -39,41 +39,44 @@ export class Group {
 
   @Formula(
     (alias) =>
-      `(SELECT SUM(\`score\` * (SELECT COUNT(DISTINCT \`user_id\`) FROM \`submission\` WHERE \`submission\`.\`problem_id\` = \`problem\`.\`id\` AND \`submission\`.\`user_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1)) + (SELECT SUM(\`total_score_offset\`) FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) FROM \`problem\`)`,
+      `(SELECT SUM(\`score\` * (SELECT COUNT(DISTINCT \`owner_id\`) FROM \`submission\` WHERE \`submission\`.\`problem_id\` = \`problem\`.\`id\` AND \`submission\`.\`owner_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1)) + (SELECT SUM(\`total_score_offset\`) FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) FROM \`problem\` WHERE \`problem\`.\`publication_status\` = 'Published')`,
     { type: types.integer, lazy: true },
   )
   totalScore: number | null;
 
   @Formula(
     (alias) =>
-      `(SELECT SUM(\`score\`) FROM \`problem\` WHERE \`problem\`.\`id\` IN (SELECT DISTINCT \`problem_id\` FROM \`submission\` WHERE \`submission\`.\`user_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1))`,
+      `(SELECT SUM(\`score\`) FROM \`problem\` WHERE \`problem\`.\`id\` IN (SELECT DISTINCT \`problem_id\` FROM \`submission\` WHERE \`submission\`.\`owner_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1) AND \`problem\`.\`publication_status\` = 'Published')`,
     { type: types.integer, lazy: true },
   )
   uniqueTotalScore: number | null;
 
+  // TODO: Exclude problems that are not published
   @Formula(
     (alias) =>
-      `(SELECT COUNT(DISTINCT \`problem_id\`, \`user_id\`) FROM \`submission\` WHERE \`submission\`.\`user_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1)`,
+      `(SELECT COUNT(DISTINCT \`problem_id\`, \`owner_id\`) FROM \`submission\` WHERE \`submission\`.\`owner_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1)`,
     { type: types.integer, lazy: true },
   )
   problemSolvedCount: number | null;
 
+  // TODO: Exclude problems that are not published
   @Formula(
     (alias) =>
-      `(SELECT COUNT(DISTINCT \`problem_id\`) FROM \`submission\` WHERE \`submission\`.\`user_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1)`,
+      `(SELECT COUNT(DISTINCT \`problem_id\`) FROM \`submission\` WHERE \`submission\`.\`owner_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1)`,
     { type: types.integer, lazy: true },
   )
   uniqueProblemSolvedCount: number | null;
 
+  // TODO: Exclude problems that are not published
   @Formula(
     (alias) =>
-      `(SELECT MAX(\`created_at\`) FROM \`submission\` WHERE \`submission\`.\`user_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1)`,
+      `(SELECT MAX(\`created_at\`) FROM \`submission\` WHERE \`submission\`.\`owner_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1)`,
     { type: types.datetime, lazy: true },
   )
   lastProblemSolvedAt: Date;
 
   @Property({ type: types.string, length: 255, nullable: true, lazy: true })
-  avatarFilename?: string;
+  avatarFilename: string | null = null;
 
   @Property({ type: types.datetime, lazy: true })
   createdAt: Date = new Date();

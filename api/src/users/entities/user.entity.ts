@@ -1,3 +1,4 @@
+import { Rel } from '@mikro-orm/core';
 import {
   Collection,
   Entity,
@@ -48,10 +49,9 @@ export class User {
   @ManyToOne({
     entity: () => Group,
     nullable: true,
-    eager: true,
     joinColumn: 'group_id',
   })
-  group?: Group;
+  group: Rel<Group> | null;
 
   @ManyToMany({
     entity: () => Problem,
@@ -64,7 +64,7 @@ export class User {
 
   @Formula(
     (alias) =>
-      `(SELECT SUM(\`score\`) + ${alias}.\`total_score_offset\` FROM \`problem\` WHERE \`problem\`.\`id\` IN (SELECT DISTINCT \`problem_id\` FROM \`submission\` WHERE \`submission\`.\`user_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1))`,
+      `(SELECT SUM(\`score\`) + ${alias}.\`total_score_offset\` FROM \`problem\` WHERE \`problem\`.\`id\` IN (SELECT DISTINCT \`problem_id\` FROM \`submission\` WHERE \`submission\`.\`owner_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1) AND \`problem\`.\`publication_status\` = 'Published')`,
     { type: types.integer, lazy: true },
   )
   totalScore: number | null;
@@ -72,25 +72,27 @@ export class User {
   @Property({ type: types.integer, lazy: true })
   totalScoreOffset: number = 0;
 
+  // TODO: Exclude problems that are not published
   @Formula(
     (alias) =>
-      `(SELECT COUNT(DISTINCT \`problem_id\`) FROM \`submission\` WHERE \`submission\`.\`user_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1)`,
+      `(SELECT COUNT(DISTINCT \`problem_id\`) FROM \`submission\` WHERE \`submission\`.\`owner_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1)`,
     { type: types.integer, lazy: true },
   )
   problemSolvedCount: number | null;
 
+  // TODO: Exclude problems that are not published
   @Formula(
     (alias) =>
-      `(SELECT MAX(\`created_at\`) FROM \`submission\` WHERE \`submission\`.\`user_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1)`,
+      `(SELECT MAX(\`created_at\`) FROM \`submission\` WHERE \`submission\`.\`owner_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1)`,
     { type: types.datetime, lazy: true },
   )
   lastProblemSolvedAt: Date;
 
   @Property({ type: types.datetime, nullable: true, lazy: true })
-  lastEmailRequestedAt?: Date;
+  lastEmailRequestedAt: Date | null = null;
 
   @Property({ type: types.string, length: 255, nullable: true, lazy: true })
-  avatarFilename?: string;
+  avatarFilename: string | null = null;
 
   @Property({ type: types.datetime, lazy: true })
   createdAt: Date = new Date();
@@ -102,12 +104,12 @@ export class User {
     email: string,
     roles: Role[],
     displayName: string,
-    group?: Group,
+    group?: Rel<Group>,
   ) {
     this.email = email;
     this.roles = roles;
     this.displayName = displayName;
-    this.group = group;
+    this.group = group || null;
     this.bio = '';
     this.hashedPassword = '';
   }
@@ -139,7 +141,7 @@ export class UserResponse {
     this.totalScore = parseIntOptional(user.totalScore);
     this.problemSolvedCount = parseIntOptional(user.problemSolvedCount);
     this.lastProblemSolvedAt = user.lastProblemSolvedAt;
-    this.lastEmailRequestedAt = user.lastEmailRequestedAt;
+    this.lastEmailRequestedAt = user.lastEmailRequestedAt || undefined;
     this.createdAt = user.createdAt;
     this.updatedAt = user.updatedAt;
   }

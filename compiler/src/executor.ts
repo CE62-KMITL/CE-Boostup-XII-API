@@ -1,52 +1,74 @@
-import * as fs from 'fs';
+import * as fs from 'fs/promises';
 import { join } from 'path';
 
-import { InternalServerErrorException } from '@nestjs/common';
+import { InternalServerErrorException, Logger } from '@nestjs/common';
+import { Semaphore } from 'async-mutex';
 
 import { ConfigConstants } from './config/config-constants';
-import { execAsync } from './exec-async';
 import { loadKeyValue } from './load-key-value';
+import { Shell } from './shell';
 
 export class Executor {
   constructor(
     boxesRoot: string,
     boxCount: number,
     metadataStoragePath: string,
-    logger: any = console,
+    wallTimeLimitMultiplier: number = 1.5,
+    wallTimeLimitOffset: number = 5,
   ) {
     this.boxesRoot = boxesRoot;
     this.metadataStoragePath = metadataStoragePath;
-    this.boxStatuses = Array(boxCount).fill(BoxStatus.Idle);
-    this.logger = logger;
+    this.boxCount = boxCount;
+    this.availableBoxes = Array.from({ length: boxCount }, (_, i) => i);
+    this.shells = Array.from(
+      { length: boxCount },
+      (_, i) =>
+        new Shell(i, '/bin/sh', {
+          PATH: '/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin',
+        }),
+    );
+    this.semaphore = new Semaphore(boxCount);
+    this.wallTimeLimitMultiplier = wallTimeLimitMultiplier;
+    this.wallTimeLimitOffset = wallTimeLimitOffset;
   }
 
-  private boxesRoot: string;
-  private metadataStoragePath: string;
-  private boxStatuses: BoxStatus[];
-  private logger: any;
+  private readonly boxesRoot: string;
+  private readonly boxCount: number;
+  private readonly metadataStoragePath: string;
+  private readonly availableBoxes: number[];
+  private readonly shells: Shell[];
+  private readonly wallTimeLimitMultiplier: number;
+  private readonly wallTimeLimitOffset: number;
+
+  private readonly logger = new Logger(Executor.name);
+  private readonly semaphore: Semaphore;
+
+  async getBoxStatuses(): Promise<{ total: number; available: number[] }> {
+    return { total: this.boxCount, available: this.availableBoxes };
+  }
 
   async execute(
-    command: string,
-    options: ExecutionOptions,
+    command: string | string[],
+    priority: number = 0,
+    options: ExecutionOptions = {},
   ): Promise<ExecutionResult> {
-    let box = -1;
-    while (box === -1) {
-      box = this.boxStatuses.findIndex((status) => status === BoxStatus.Idle);
-      if (box !== -1) {
-        break;
-      }
-      await new Promise((resolve) =>
-        setTimeout(resolve, ConfigConstants.executor.boxPollInterval),
-      );
+    const [, release] = await this.semaphore.acquire(1, priority);
+    const box = this.availableBoxes.pop();
+    if (box === undefined) {
+      release();
+      throw new InternalServerErrorException({
+        message: 'Failed to acquire isolate box',
+        errors: { internal: 'Failed to acquire isolate box' },
+      });
     }
-    this.boxStatuses[box] = BoxStatus.Running;
+    const shell = this.shells[box];
     const metadataFilePath = join(this.metadataStoragePath, `${box}.txt`);
     try {
       try {
-        await execAsync(`isolate --init -b ${box}`, {
-          encoding: 'utf-8',
-          timeout: ConfigConstants.isolate.baseCommandTimeout,
-        });
+        await shell.exec(
+          `isolate --init -b ${box}`,
+          ConfigConstants.isolate.baseCommandTimeout,
+        );
       } catch (e) {
         this.logger.error(`Failed to initialize isolate box ${box}: ${e}`);
         this.logger.error(`Command executed: \`isolate --init -b ${box}\``);
@@ -58,12 +80,11 @@ export class Executor {
       if (options.inputFiles) {
         try {
           await Promise.all(
-            options.inputFiles.map(
-              async (inputFile) =>
-                await fs.promises.copyFile(
-                  inputFile.path,
-                  join(this.boxesRoot, box.toString(), 'box', inputFile.name),
-                ),
+            options.inputFiles.map((inputFile) =>
+              fs.copyFile(
+                inputFile.path,
+                join(this.boxesRoot, box.toString(), 'box', inputFile.name),
+              ),
             ),
           );
         } catch (e) {
@@ -79,13 +100,12 @@ export class Executor {
       if (options.inputTexts) {
         try {
           await Promise.all(
-            options.inputTexts.map(
-              async (inputText) =>
-                await fs.promises.writeFile(
-                  join(this.boxesRoot, box.toString(), 'box', inputText.name),
-                  inputText.text,
-                  { encoding: 'utf-8' },
-                ),
+            options.inputTexts.map((inputText) =>
+              fs.writeFile(
+                join(this.boxesRoot, box.toString(), 'box', inputText.name),
+                inputText.text,
+                { encoding: 'utf-8' },
+              ),
             ),
           );
         } catch (e) {
@@ -97,6 +117,9 @@ export class Executor {
             errors: { internal: 'Failed to initialize environment' },
           });
         }
+      }
+      if (command instanceof Array) {
+        command = command.join(' ');
       }
       const fullCommandList = [];
       fullCommandList.push('isolate');
@@ -110,7 +133,7 @@ export class Executor {
       if (options.processLimit === null) {
         fullCommandList.push('-p');
       }
-      if (options.environment) {
+      if (options.inheritEnvironment) {
         fullCommandList.push('-e');
       }
       fullCommandList.push('--stderr-to-stdout');
@@ -118,6 +141,25 @@ export class Executor {
       fullCommandList.push('output.txt');
       fullCommandList.push('-M');
       fullCommandList.push(metadataFilePath);
+      if (options.stdin) {
+        try {
+          await fs.writeFile(
+            join(this.boxesRoot, box.toString(), 'box', 'stdin.txt'),
+            options.stdin,
+            { encoding: 'utf-8' },
+          );
+        } catch (e) {
+          this.logger.error(
+            `Failed to write stdin file in isolate box ${box}: ${e}`,
+          );
+          throw new InternalServerErrorException({
+            message: 'Failed to initialize environment',
+            errors: { internal: 'Failed to initialize environment' },
+          });
+        }
+        fullCommandList.push('-i');
+        fullCommandList.push('stdin.txt');
+      }
       if (options.memoryLimit) {
         fullCommandList.push('-m');
         fullCommandList.push(Math.round(options.memoryLimit / 1024).toFixed(0));
@@ -129,6 +171,10 @@ export class Executor {
       if (options.wallTimeLimit) {
         fullCommandList.push('-w');
         fullCommandList.push(options.wallTimeLimit.toFixed(3));
+      }
+      if (options.openFilesLimit) {
+        fullCommandList.push('-n');
+        fullCommandList.push(options.openFilesLimit.toFixed(0));
       }
       if (options.fileSizeLimit) {
         fullCommandList.push('-f');
@@ -143,24 +189,45 @@ export class Executor {
       if (options.timeLimit) {
         commandTimeout =
           ConfigConstants.isolate.baseCommandTimeout +
-          Math.max(options.timeLimit * 1.5, options.timeLimit + 5);
+          Math.max(
+            options.timeLimit * this.wallTimeLimitMultiplier,
+            options.timeLimit + this.wallTimeLimitOffset,
+          ) *
+            1000;
       }
       if (options.wallTimeLimit) {
         commandTimeout =
-          ConfigConstants.isolate.baseCommandTimeout + options.wallTimeLimit;
+          ConfigConstants.isolate.baseCommandTimeout +
+          options.wallTimeLimit * 1000;
       }
-      let isolateOutput = '';
+      let exitCode: number | string = '0';
       try {
-        const { stderr } = await execAsync(fullCommand, {
-          encoding: 'utf-8',
-          timeout: commandTimeout,
-          env: options.environment,
-        });
-        isolateOutput = stderr;
+        await shell.exec(fullCommand, commandTimeout);
       } catch (e) {
-        this.logger.log(
+        exitCode = '1';
+        this.logger.verbose(
           `Failed to execute user provided command: ${fullCommand}: ${e}`,
         );
+        if (e.killed) {
+          this.logger.error(
+            `Execution secondary timeout activated for isolate box ${box} with command: ${fullCommand}`,
+          );
+          throw new InternalServerErrorException({
+            message: 'Execution timeout',
+            errors: {
+              internal: 'Execution timeout, this may be due to heavy load',
+            },
+          });
+        }
+        if (e.stderr.includes('This box is currently in use')) {
+          this.logger.error(
+            `Isolate box ${box} is currently in use, this should not happen`,
+          );
+          throw new InternalServerErrorException({
+            message: 'Isolate box in use',
+            errors: { internal: 'Isolate box in use, this is abnormal' },
+          });
+        }
       }
       const outputFilePath = join(
         this.boxesRoot,
@@ -170,7 +237,7 @@ export class Executor {
       );
       let output = '';
       try {
-        output = await fs.promises.readFile(outputFilePath, {
+        output = await fs.readFile(outputFilePath, {
           encoding: 'utf-8',
         });
       } catch (e) {
@@ -178,10 +245,10 @@ export class Executor {
           `Failed to read output file from isolate box ${box} at ${outputFilePath}: ${e}`,
         );
       }
-      let metadata = {};
+      let metadata: Record<string, string> = {};
       try {
         metadata = loadKeyValue(
-          await fs.promises.readFile(metadataFilePath, {
+          await fs.readFile(metadataFilePath, {
             encoding: 'utf-8',
           }),
         );
@@ -190,40 +257,70 @@ export class Executor {
           `Failed to read metadata file from isolate box ${box} at ${metadataFilePath}: ${e}`,
         );
       }
-      return { isolateOutput, output, metadata };
-    } finally {
-      try {
-        await Promise.all([
-          execAsync(`isolate --cleanup -b ${box}`, {
-            encoding: 'utf-8',
-            timeout: ConfigConstants.isolate.baseCommandTimeout,
+      if (options.outputFiles) {
+        await Promise.allSettled(
+          options.outputFiles.map(async (outputFile) => {
+            try {
+              await fs.copyFile(
+                join(this.boxesRoot, box.toString(), 'box', outputFile.name),
+                outputFile.path,
+              );
+            } catch (e) {
+              this.logger.verbose(
+                `Failed to copy output file from isolate box ${box} at from ${outputFile.name} to ${outputFile.path}: ${e}`,
+              );
+            }
           }),
-          fs.promises.unlink(metadataFilePath),
-        ]);
-      } catch (e) {}
-      this.boxStatuses[box] = BoxStatus.Idle;
+        );
+      }
+      if (metadata.killed === '1') {
+        exitCode = '1';
+      }
+      if (metadata.exitsig) {
+        exitCode = metadata.exitsig;
+      }
+      if (metadata.exitcode) {
+        exitCode = metadata.exitcode;
+      }
+      exitCode = +exitCode;
+      const isolateOutput = metadata.message ? metadata.message + '\n' : '';
+      return { exitCode, isolateOutput, output, metadata };
+    } finally {
+      const cleanupStatuses = await Promise.allSettled([
+        shell.exec(
+          `isolate --cleanup -b ${box}`,
+          ConfigConstants.isolate.baseCommandTimeout,
+        ),
+        fs.unlink(metadataFilePath),
+      ]);
+      if (cleanupStatuses[0].status === 'rejected') {
+        this.logger.error(
+          `Failed to cleanup isolate box ${box}: ${cleanupStatuses[0].reason}`,
+        );
+      }
+      this.availableBoxes.push(box);
+      release();
     }
   }
 }
 
 export interface ExecutionOptions {
+  stdin?: string;
   inputFiles?: { name: string; path: string }[];
   inputTexts?: { name: string; text: string }[];
+  outputFiles?: { name: string; path: string }[];
   processLimit?: number | null;
-  environment?: { [key: string]: string };
+  inheritEnvironment?: boolean;
   memoryLimit?: number;
   timeLimit?: number;
   wallTimeLimit?: number;
+  openFilesLimit?: number;
   fileSizeLimit?: number;
 }
 
 export interface ExecutionResult {
+  exitCode: number;
   isolateOutput: string;
   output: string;
   metadata: { [key: string]: string };
-}
-
-enum BoxStatus {
-  Idle = 'Idle',
-  Running = 'Running',
 }

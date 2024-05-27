@@ -1,25 +1,27 @@
+import { LogLevel } from '@nestjs/common';
+
 export const ConfigConstants = {
+  logLevels: ['fatal', 'error', 'warn', 'log', 'verbose'] as LogLevel[], //, 'debug'],
   isolate: {
-    max_box_count: 64,
     box_root: '/var/local/lib/isolate/',
-    baseCommandTimeout: 1000,
+    baseCommandTimeout: 3000,
   },
   compiler: {
-    maxCodeLength: 65535,
-    defaultTimeLimit: 15,
-    defaultMemoryLimit: 256 * 1024 * 1024,
-    maxTimeLimit: 60,
+    maxCodeLength: 256 * 1024,
+    defaultTimeLimit: 5,
+    defaultMemoryLimit: 128 * 1024 * 1024,
+    maxTimeLimit: 15,
     maxMemoryLimit: 512 * 1024 * 1024,
     maxExecutableSize: 64 * 1024 * 1024,
   },
   executor: {
-    boxPollInterval: 100,
-    maxInputCount: 4 * 1024,
+    maxInputCount: 80,
     maxInputSize: 256 * 1024,
     maxOutputSize: 16 * 1024 * 1024,
+    maxOpenFiles: 4, // stdin, stdout, stderr, libc.so.6
     defaultTimeLimit: 1,
-    defaultMemoryLimit: 64 * 1024 * 1024,
-    maxTimeLimit: 30,
-    maxMemoryLimit: 256 * 1024 * 1024,
+    defaultMemoryLimit: 32 * 1024 * 1024,
+    maxTimeLimit: 5,
+    maxMemoryLimit: 128 * 1024 * 1024,
   },
 };

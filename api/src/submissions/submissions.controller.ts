@@ -3,17 +3,21 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
-  Delete,
-  HttpCode,
   HttpStatus,
   ParseUUIDPipe,
+  Req,
+  Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
+import { ConfigConstants } from 'src/config/config-constants';
+import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
+import { AuthenticatedRequest } from 'src/shared/interfaces/authenticated-request.interface';
 
 import { CreateSubmissionDto } from './dto/create-submission.dto';
-import { UpdateSubmissionDto } from './dto/update-submission.dto';
+import { FindAllDto } from './dto/find-all.dto';
+import { SubmissionResponse } from './entities/submission.entity';
 import { SubmissionsService } from './submissions.service';
 
 @ApiBearerAuth()
@@ -22,18 +26,29 @@ import { SubmissionsService } from './submissions.service';
 export class SubmissionsController {
   constructor(private readonly submissionsService: SubmissionsService) {}
 
+  @Throttle(ConfigConstants.secondaryRateLimits.createSubmission)
   @Post()
-  async create(@Body() createSubmissionDto: CreateSubmissionDto) {
-    return await this.submissionsService.create(createSubmissionDto);
+  async create(
+    @Req() request: AuthenticatedRequest,
+    @Body() createSubmissionDto: CreateSubmissionDto,
+  ): Promise<SubmissionResponse> {
+    return await this.submissionsService.create(
+      request.user,
+      createSubmissionDto,
+    );
   }
 
   @Get()
-  async findAll() {
-    return await this.submissionsService.findAll();
+  async findAll(
+    @Req() request: AuthenticatedRequest,
+    @Query() findAllDto: FindAllDto,
+  ): Promise<PaginatedResponse<SubmissionResponse>> {
+    return await this.submissionsService.findAll(request.user, findAllDto);
   }
 
   @Get(':id')
   async findOne(
+    @Req() request: AuthenticatedRequest,
     @Param(
       'id',
       new ParseUUIDPipe({
@@ -42,37 +57,7 @@ export class SubmissionsController {
       }),
     )
     id: string,
-  ) {
-    return await this.submissionsService.findOne(id);
-  }
-
-  @Patch(':id')
-  async update(
-    @Param(
-      'id',
-      new ParseUUIDPipe({
-        version: '4',
-        errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-      }),
-    )
-    id: string,
-    @Body() updateSubmissionDto: UpdateSubmissionDto,
-  ) {
-    return await this.submissionsService.update(id, updateSubmissionDto);
-  }
-
-  @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(
-    @Param(
-      'id',
-      new ParseUUIDPipe({
-        version: '4',
-        errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-      }),
-    )
-    id: string,
-  ) {
-    return await this.submissionsService.remove(id);
+  ): Promise<SubmissionResponse> {
+    return await this.submissionsService.findOne(request.user, id);
   }
 }

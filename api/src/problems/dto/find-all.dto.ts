@@ -1,16 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  ArrayUnique,
-  IsArray,
-  IsNumber,
-  IsOptional,
-  IsString,
-  IsUUID,
-  Max,
-  Min,
-} from 'class-validator';
-import { ConfigConstants } from 'src/config/config-constants';
+import { IsEnum, IsOptional, IsString, Matches } from 'class-validator';
 import { PaginationRequestDto } from 'src/shared/dto/pagination.dto';
+import { PublicationStatus } from 'src/shared/enums/publication-status.enum';
 
 export class FindAllDto extends PaginationRequestDto {
   @ApiPropertyOptional({ example: 'Arrary' })
@@ -19,27 +10,24 @@ export class FindAllDto extends PaginationRequestDto {
   search?: string;
 
   @ApiPropertyOptional({
-    type: 'array',
-    items: { type: 'string' },
-    example: ['28fdc367-e76c-4b60-912a-de937aa40f7f'],
+    type: 'string',
+    example: '28fdc367-e76c-4b60-912a-de937aa40f7f',
   })
-  @IsArray()
-  @IsUUID('4', { each: true })
-  tags: string[];
+  @IsOptional()
+  tags?: string;
 
   @ApiPropertyOptional({
-    type: 'array',
-    items: {
-      type: 'integer',
-      minimum: ConfigConstants.problem.minDifficulty,
-      maximum: ConfigConstants.problem.maxDifficulty,
-    },
-    example: [2, 3],
+    type: 'string',
+    example: '2,3',
   })
-  @IsArray()
-  @ArrayUnique()
-  @IsNumber({}, { each: true })
-  @Min(ConfigConstants.problem.minDifficulty, { each: true })
-  @Max(ConfigConstants.problem.maxDifficulty, { each: true })
-  difficulties: number[];
+  @Matches(/^[0-9]+(,[0-9]+)*$/, {
+    message: 'Difficulties must be a comma-separated list of integers',
+  })
+  @IsOptional()
+  difficulties?: string;
+
+  @ApiPropertyOptional({ example: 'Published' })
+  @IsEnum(PublicationStatus)
+  @IsOptional()
+  publicationStatus?: PublicationStatus;
 }

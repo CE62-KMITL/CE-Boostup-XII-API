@@ -13,6 +13,8 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
+import { ConfigConstants } from 'src/config/config-constants';
 import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
 import { AuthenticatedRequest } from 'src/shared/interfaces/authenticated-request.interface';
 
@@ -28,6 +30,7 @@ import { SavesService } from './saves.service';
 export class SavesController {
   constructor(private readonly savesService: SavesService) {}
 
+  @Throttle(ConfigConstants.secondaryRateLimits.createSave)
   @Post()
   async create(
     @Req() request: AuthenticatedRequest,

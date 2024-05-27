@@ -1,4 +1,4 @@
-import * as fs from 'fs';
+import * as fs from 'fs/promises';
 import { join } from 'path';
 
 import {
@@ -45,9 +45,9 @@ export class AttachmentsService implements OnModuleInit {
       'storages.attachments.path',
     );
     try {
-      await fs.promises.access(attachmentsPath);
+      await fs.access(attachmentsPath);
     } catch (error) {
-      await fs.promises.mkdir(attachmentsPath, { recursive: true });
+      await fs.mkdir(attachmentsPath, { recursive: true });
     }
   }
 
@@ -56,7 +56,6 @@ export class AttachmentsService implements OnModuleInit {
     createAttachmentDto: CreateAttachmentDto,
     file: Express.Multer.File,
   ): Promise<AttachmentResponse> {
-    // TODO: Add rate limiting
     const user = await this.usersService.findOneInternal({ id: originUser.id });
     if (!user) {
       throw new UnauthorizedException({
@@ -232,7 +231,7 @@ export class AttachmentsService implements OnModuleInit {
         errors: { id: 'Insufficient permissions' },
       });
     }
-    await fs.promises.unlink(
+    await fs.unlink(
       join(
         this.configService.getOrThrow<string>('storages.attachments.path'),
         attachment.filename,

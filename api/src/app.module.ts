@@ -6,6 +6,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 
@@ -15,12 +16,14 @@ import { AttachmentsModule } from './attachments/attachments.module';
 import { AuthGuard } from './auth/auth.guard';
 import { AuthModule } from './auth/auth.module';
 import { RolesGuard } from './auth/roles.guard';
+import { CompilerModule } from './compiler/compiler.module';
 import configuration from './config/configuration';
 import { GroupsModule } from './groups/groups.module';
 import { MailModule } from './mail/mail.module';
 import { ProblemTagsModule } from './problem-tags/problem-tags.module';
 import { ProblemsModule } from './problems/problems.module';
 import { SavesModule } from './saves/saves.module';
+import { getUserIdTracker, skipIfPublicOrSuperAdmin } from './shared/throttler';
 import { SubmissionsModule } from './submissions/submissions.module';
 import { UsersModule } from './users/users.module';
 
@@ -85,6 +88,34 @@ import { UsersModule } from './users/users.module';
       }),
       inject: [ConfigService],
     }),
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => [
+        {
+          name: 'short',
+          ttl: configService.getOrThrow<number>('rateLimit.short.ttl'),
+          limit: configService.getOrThrow<number>('rateLimit.short.limit'),
+          getTracker: getUserIdTracker,
+          skipIf: skipIfPublicOrSuperAdmin,
+        },
+        {
+          name: 'long',
+          ttl: configService.getOrThrow<number>('rateLimit.long.ttl'),
+          limit: configService.getOrThrow<number>('rateLimit.long.limit'),
+          getTracker: getUserIdTracker,
+          skipIf: skipIfPublicOrSuperAdmin,
+        },
+        // To be overridden using @Throttle decorator
+        {
+          name: 'secondary',
+          ttl: 0,
+          limit: Infinity,
+          getTracker: getUserIdTracker,
+          skipIf: skipIfPublicOrSuperAdmin,
+        },
+      ],
+      inject: [ConfigService],
+    }),
     AuthModule,
     UsersModule,
     GroupsModule,
@@ -94,6 +125,7 @@ import { UsersModule } from './users/users.module';
     SubmissionsModule,
     AttachmentsModule,
     MailModule,
+    CompilerModule,
   ],
   controllers: [AppController],
   providers: [
@@ -105,6 +137,10 @@ import { UsersModule } from './users/users.module';
     {
       provide: APP_GUARD,
       useClass: RolesGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
     },
   ],
 })
