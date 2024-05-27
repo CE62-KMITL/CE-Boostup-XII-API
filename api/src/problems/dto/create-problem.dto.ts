@@ -5,6 +5,7 @@ import {
   ArrayMinSize,
   IsArray,
   IsEnum,
+  IsInt,
   IsNumber,
   IsOptional,
   IsString,
@@ -74,6 +75,7 @@ export class CreateProblemDto {
 
   @ApiPropertyOptional({ type: 'integer', minimum: 0, example: 100 })
   @IsNumber()
+  @IsInt()
   @Min(0)
   @ValidateIf((object) => object.hint !== undefined)
   hintCost?: number;
@@ -175,6 +177,7 @@ export class CreateProblemDto {
     example: 16384,
   })
   @IsNumber()
+  @IsInt()
   @Min(0)
   @Max(ConfigConstants.problem.maxMemoryLimit)
   @IsOptional()
@@ -187,12 +190,14 @@ export class CreateProblemDto {
     example: 1,
   })
   @IsNumber()
+  @IsInt()
   @Min(ConfigConstants.problem.minDifficulty)
   @Max(ConfigConstants.problem.maxDifficulty)
   difficulty: number;
 
   @ApiProperty({ type: 'integer', minimum: 0, example: 100 })
   @IsNumber()
+  @IsInt()
   @Min(0)
   score: number;
 
