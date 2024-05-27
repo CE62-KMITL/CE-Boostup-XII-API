@@ -4,6 +4,7 @@ import { ConfigConstants } from 'src/config/config-constants';
 
 export class LoginDto {
   @ApiProperty({
+    type: 'string',
     maxLength: ConfigConstants.user.maxEmailLength,
     example: 'example@example.com',
   })
@@ -11,7 +12,7 @@ export class LoginDto {
   @IsEmail()
   username: string;
 
-  @ApiProperty({ example: 'P@ssw0rd!' })
+  @ApiProperty({ type: 'string', example: 'P@ssw0rd!' })
   @IsString()
   password: string;
 }

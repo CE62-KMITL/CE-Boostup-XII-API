@@ -17,13 +17,13 @@ export class UpdateProblemDto extends PartialType(CreateProblemDto) {
   @IsOptional()
   publicationStatus?: PublicationStatus;
 
-  @ApiPropertyOptional({ example: 'Outside of scope' })
+  @ApiPropertyOptional({ type: 'string', example: 'Outside of scope' })
   @IsString()
   @MaxLength(ConfigConstants.problem.maxReviewCommentLength)
   @IsOptional()
   reviewComment?: string;
 
-  @ApiPropertyOptional({ example: true })
+  @ApiPropertyOptional({ type: 'boolean', example: true })
   @IsBoolean()
   @IsOptional()
   unlockHint?: boolean;

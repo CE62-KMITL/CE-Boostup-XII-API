@@ -4,6 +4,7 @@ import { ConfigConstants } from 'src/config/config-constants';
 
 export class ResetPasswordDto {
   @ApiProperty({
+    type: 'string',
     example:
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTIzNDU2Nzg5LCJuYW1lIjoiSm9zZXBoIn0.OpOSSw7e485LOP5PrzScxHb7SR6sAOMRckfFwi4rp7o',
   })
@@ -11,6 +12,7 @@ export class ResetPasswordDto {
   token: string;
 
   @ApiProperty({
+    type: 'string',
     minLength: ConfigConstants.user.minPasswordLength,
     maxLength: ConfigConstants.user.maxPasswordLength,
     example: 'P@ssw0rd!',

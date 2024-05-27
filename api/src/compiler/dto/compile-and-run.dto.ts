@@ -40,6 +40,7 @@ export class CompileAndRunDto {
   warningLevel?: WarningLevel;
 
   @ApiProperty({
+    type: 'string',
     maxLength: ConfigConstants.compiler.maxCodeLength,
     example:
       '#include <stdio.h>\n\nint main() {\n    int a, b;\n    scanf("%d %d", &a, &b);\n    printf("%d\\n", a + b);\n    return 0;\n}',
@@ -81,6 +82,7 @@ export class CompileAndRunDto {
   bannedFunctions?: string[];
 
   @ApiPropertyOptional({
+    type: 'number',
     minimum: 0,
     maximum: ConfigConstants.executor.maxTimeLimit,
     example: ConfigConstants.executor.defaultTimeLimit,
@@ -92,6 +94,7 @@ export class CompileAndRunDto {
   timeLimit?: number;
 
   @ApiPropertyOptional({
+    type: 'integer',
     minimum: 0,
     maximum: ConfigConstants.executor.maxMemoryLimit,
     example: ConfigConstants.executor.defaultMemoryLimit,
@@ -103,6 +106,7 @@ export class CompileAndRunDto {
   memoryLimit?: number;
 
   @ApiPropertyOptional({
+    type: 'number',
     minimum: 0,
     maximum: ConfigConstants.compiler.maxTimeLimit,
     example: ConfigConstants.compiler.defaultTimeLimit,
@@ -114,6 +118,7 @@ export class CompileAndRunDto {
   compilationTimeLimit?: number;
 
   @ApiPropertyOptional({
+    type: 'integer',
     minimum: 0,
     maximum: ConfigConstants.compiler.maxMemoryLimit,
     example: ConfigConstants.compiler.defaultMemoryLimit,
