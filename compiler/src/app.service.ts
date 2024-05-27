@@ -123,6 +123,7 @@ export class AppService implements OnModuleInit {
           '-H',
           '-o',
           'out.o',
+          '-lm',
         ],
         -requestId,
         {
