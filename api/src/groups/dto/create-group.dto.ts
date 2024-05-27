@@ -4,6 +4,7 @@ import { ConfigConstants } from 'src/config/config-constants';
 
 export class CreateGroupDto {
   @ApiProperty({
+    type: 'string',
     minLength: ConfigConstants.group.minNameLength,
     maxLength: ConfigConstants.group.maxNameLength,
     example: 'Ducks',
@@ -14,6 +15,7 @@ export class CreateGroupDto {
   name: string;
 
   @ApiPropertyOptional({
+    type: 'string',
     maxLength: ConfigConstants.group.maxDescriptionLength,
     example: 'Ducks group',
   })

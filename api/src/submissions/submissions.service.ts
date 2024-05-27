@@ -231,6 +231,10 @@ export class SubmissionsService implements OnModuleInit {
     };
   }
 
+  async findAllInternal(where: FilterQuery<Submission>): Promise<Submission[]> {
+    return this.submissionsRepository.find(where);
+  }
+
   async findOne(
     originUser: AuthenticatedUser,
     id: string,

@@ -1,10 +1,16 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, MaxLength } from 'class-validator';
+import { IsOptional, IsString, MaxLength } from 'class-validator';
+import { ConfigConstants } from 'src/config/config-constants';
 
 export class CreateAttachmentDto {
-  @ApiPropertyOptional({ maxLength: 255, example: 'Virus.exe' })
+  @ApiPropertyOptional({
+    type: 'string',
+    maxLength: ConfigConstants.attachment.maxNameLength,
+    example: 'Virus.exe',
+  })
   @IsString()
-  @MaxLength(255)
+  @MaxLength(ConfigConstants.attachment.maxNameLength)
+  @IsOptional()
   name?: string;
 
   @ApiProperty({ type: 'file' })

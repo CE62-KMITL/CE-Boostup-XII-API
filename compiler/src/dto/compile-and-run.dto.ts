@@ -5,6 +5,7 @@ import {
   IsArray,
   IsBoolean,
   IsEnum,
+  IsInt,
   IsNumber,
   IsOptional,
   IsString,
@@ -97,6 +98,7 @@ export class CompileAndRunDto {
     example: ConfigConstants.executor.defaultMemoryLimit,
   })
   @IsNumber()
+  @IsInt()
   @Min(0)
   @Max(ConfigConstants.executor.maxMemoryLimit)
   @IsOptional()
@@ -119,6 +121,7 @@ export class CompileAndRunDto {
     example: ConfigConstants.compiler.defaultMemoryLimit,
   })
   @IsNumber()
+  @IsInt()
   @Min(0)
   @Max(ConfigConstants.compiler.maxMemoryLimit)
   @IsOptional()

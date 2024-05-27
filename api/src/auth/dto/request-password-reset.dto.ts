@@ -4,6 +4,7 @@ import { ConfigConstants } from 'src/config/config-constants';
 
 export class RequestPasswordResetDto {
   @ApiProperty({
+    type: 'string',
     maxLength: ConfigConstants.user.maxEmailLength,
     example: 'example@example.com',
   })
@@ -11,7 +12,7 @@ export class RequestPasswordResetDto {
   @IsEmail()
   email: string;
 
-  @ApiProperty({ example: 'https://www.ceboostup.com' })
+  @ApiProperty({ type: 'uri', example: 'https://www.ceboostup.com' })
   @IsUrl()
   siteUrl: string;
 }

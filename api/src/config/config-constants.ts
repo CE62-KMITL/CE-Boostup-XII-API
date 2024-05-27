@@ -49,6 +49,9 @@ export const ConfigConstants = {
   submission: {
     maxCodeLength: 65535, // Must be less than or equal to 65535
   },
+  attachment: {
+    maxNameLength: 255, // Must be less than or equal to 65535
+  },
   compiler: {
     maxCodeLength: 256 * 1024,
     defaultTimeLimit: 5,

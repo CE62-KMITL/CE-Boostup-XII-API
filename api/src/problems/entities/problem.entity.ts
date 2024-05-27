@@ -123,8 +123,8 @@ export class Problem {
   @Enum({ items: () => PublicationStatus, lazy: true })
   publicationStatus: PublicationStatus;
 
-  @ManyToOne({ entity: () => User })
-  reviewer: Rel<User>;
+  @ManyToOne({ entity: () => User, nullable: true })
+  reviewer: Rel<User> | null = null;
 
   @Property({ type: types.text, nullable: true, lazy: true })
   reviewComment: string | null = null;
