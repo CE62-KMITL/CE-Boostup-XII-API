@@ -51,18 +51,16 @@ export class Group {
   )
   uniqueTotalScore: number | null;
 
-  // TODO: Exclude problems that are not published
   @Formula(
     (alias) =>
-      `(SELECT COUNT(DISTINCT \`problem_id\`, \`owner_id\`) FROM \`submission\` WHERE \`submission\`.\`owner_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1)`,
+      `(SELECT COUNT(DISTINCT \`submission\`.\`problem_id\`, \`submission\`.\`owner_id\`) FROM \`submission\` INNER JOIN \`problem\` ON \`submission\`.\`problem_id\` = \`problem\`.\`id\` WHERE \`submission\`.\`owner_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1 AND \`problem\`.\`publication_status\` = 'Published')`,
     { type: types.integer, lazy: true },
   )
   problemSolvedCount: number | null;
 
-  // TODO: Exclude problems that are not published
   @Formula(
     (alias) =>
-      `(SELECT COUNT(DISTINCT \`problem_id\`) FROM \`submission\` WHERE \`submission\`.\`owner_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1)`,
+      `(SELECT COUNT(DISTINCT \`submission\`.\`problem_id\`) FROM \`submission\` INNER JOIN \`problem\` ON \`submission\`.\`problem_id\` = \`problem\`.\`id\` WHERE \`submission\`.\`owner_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1 AND \`problem\`.\`publication_status\` = 'Published')`,
     { type: types.integer, lazy: true },
   )
   uniqueProblemSolvedCount: number | null;
@@ -70,7 +68,7 @@ export class Group {
   // TODO: Exclude problems that are not published
   @Formula(
     (alias) =>
-      `(SELECT MAX(\`created_at\`) FROM \`submission\` WHERE \`submission\`.\`owner_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1)`,
+      `(SELECT MAX(\`submission\`.\`created_at\`) FROM \`submission\` INNER JOIN \`problem\` ON \`submission\`.\`problem_id\` = \`problem\`.\`id\` WHERE \`submission\`.\`owner_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1 AND \`problem\`.\`publication_status\` = 'Published')`,
     { type: types.datetime, lazy: true },
   )
   lastProblemSolvedAt: Date;
