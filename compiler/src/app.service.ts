@@ -22,7 +22,7 @@ import { loadKeyValue } from './load-key-value';
 
 @Injectable()
 export class AppService implements OnModuleInit {
-  constructor(private readonly configService: ConfigService) {}
+  constructor(private readonly configService: ConfigService) { }
 
   private readonly logger = new Logger(AppService.name);
   private readonly executor = new Executor(
