@@ -4,7 +4,6 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { json, urlencoded } from 'express';
-import helmet from 'helmet';
 import wcmatch from 'wildcard-match';
 
 import { AppModule } from './app.module';
@@ -17,24 +16,6 @@ async function bootstrap(): Promise<void> {
   const configService = app.get(ConfigService);
 
   app.getHttpAdapter().getInstance().disable('x-powered-by');
-
-  // Disable most of the security headers as they are irrelevant for a REST API
-  app.use(
-    helmet({
-      contentSecurityPolicy: false,
-      crossOriginOpenerPolicy: false,
-      crossOriginResourcePolicy: false,
-      originAgentCluster: false,
-      referrerPolicy: false,
-      strictTransportSecurity: false, // This should be handled by a reverse proxy or CDN
-      xDnsPrefetchControl: false,
-      xDownloadOptions: false,
-      xFrameOptions: false,
-      xPermittedCrossDomainPolicies: false,
-      xPoweredBy: false,
-      xXssProtection: false,
-    }),
-  );
 
   const allowedOrigins =
     configService.getOrThrow<string[]>('CorsAllowedOrigins');
