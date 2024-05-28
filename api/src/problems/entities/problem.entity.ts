@@ -70,8 +70,8 @@ export class Problem {
   @Enum({ items: () => ProgrammingLanguage, lazy: true })
   solutionLanguage: ProgrammingLanguage;
 
-  @Property({ type: types.array, lazy: true })
-  allowedHeaders: string[];
+  @Property({ type: types.array, nullable: true, lazy: true })
+  allowedHeaders: string[] | null;
 
   @Property({ type: types.array, lazy: true })
   bannedFunctions: string[];
@@ -157,7 +157,7 @@ export class ProblemResponse {
   starterCode?: string;
   solution?: string;
   solutionLanguage?: ProgrammingLanguage;
-  allowedHeaders?: string[];
+  allowedHeaders?: string[] | null;
   bannedFunctions?: string[];
   timeLimit?: number;
   memoryLimit?: number;
