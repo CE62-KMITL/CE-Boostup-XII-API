@@ -171,6 +171,27 @@ export class SavesService {
     return new SaveResponse(save);
   }
 
+  async findForProblem(
+    originUser: AuthenticatedUser,
+    problemId: string,
+  ): Promise<SaveResponse> {
+    const saves = await this.savesRepository.find(
+      { owner: originUser.id, problem: problemId },
+      {
+        populate: ['problem', 'code', 'createdAt', 'updatedAt'],
+        limit: 1,
+        orderBy: { updatedAt: 'desc' },
+      },
+    );
+    if (saves.length === 0) {
+      throw new NotFoundException({
+        message: 'Save not found',
+        errors: { id: 'Save not found' },
+      });
+    }
+    return new SaveResponse(saves[0]);
+  }
+
   async findOneInternal(where: FilterQuery<Save>): Promise<Save | null> {
     return await this.savesRepository.findOne(where, {
       populate: ['owner', 'problem', 'code'],
