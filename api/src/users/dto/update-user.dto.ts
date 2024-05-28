@@ -9,7 +9,6 @@ import {
 } from 'class-validator';
 import { ConfigConstants } from 'src/config/config-constants';
 import { Group } from 'src/groups/entities/group.entity';
-import { Problem } from 'src/problems/entities/problem.entity';
 
 import { CreateUserDto } from './create-user.dto';
 
@@ -60,7 +59,6 @@ export class UpdateUserInternalDto {
   hashedPassword?: string;
   displayName?: string;
   bio?: string;
-  unlockedHints?: Problem[];
   totalScoreOffset?: number;
   group?: Group;
   lastEmailRequestedAt?: Date;

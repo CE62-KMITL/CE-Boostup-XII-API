@@ -193,17 +193,12 @@ export class ProblemTagsService {
     return new ProblemTagResponse(problemTag);
   }
 
-  async findOneInternal(where: FilterQuery<ProblemTag>): Promise<ProblemTag> {
-    const problemTag = await this.problemTagsRepository.findOne(where, {
+  async findOneInternal(
+    where: FilterQuery<ProblemTag>,
+  ): Promise<ProblemTag | null> {
+    return await this.problemTagsRepository.findOne(where, {
       populate: ['description', 'owner', 'createdAt', 'updatedAt'],
     });
-    if (!problemTag) {
-      throw new NotFoundException({
-        message: 'ProblemTag not found',
-        errors: { where: 'ProblemTag not found' },
-      });
-    }
-    return problemTag;
   }
 
   async update(

@@ -201,17 +201,12 @@ export class AttachmentsService implements OnModuleInit {
     return new AttachmentResponse(attachment);
   }
 
-  async findOneInternal(where: FilterQuery<Attachment>): Promise<Attachment> {
-    const attachment = await this.attachmentsRepository.findOne(where, {
+  async findOneInternal(
+    where: FilterQuery<Attachment>,
+  ): Promise<Attachment | null> {
+    return await this.attachmentsRepository.findOne(where, {
       populate: ['owner', 'filename', 'createdAt'],
     });
-    if (!attachment) {
-      throw new NotFoundException({
-        message: 'Attachment not found',
-        errors: { where: 'Attachment not found' },
-      });
-    }
-    return attachment;
   }
 
   async remove(originUser: AuthenticatedUser, id: string): Promise<void> {

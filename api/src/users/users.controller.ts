@@ -130,6 +130,12 @@ export class UsersController {
     id: string,
   ): Promise<StreamableFile> {
     const user = await this.usersService.findOneInternal({ id });
+    if (!user) {
+      throw new NotFoundException({
+        message: 'User not found',
+        errors: { id: 'User not found' },
+      });
+    }
     if (!user.avatarFilename) {
       throw new NotFoundException({
         message: 'Avatar not found',

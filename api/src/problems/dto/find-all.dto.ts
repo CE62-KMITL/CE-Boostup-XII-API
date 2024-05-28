@@ -1,6 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsOptional, IsString, Matches } from 'class-validator';
 import { PaginationRequestDto } from 'src/shared/dto/pagination.dto';
+import { CompletionStatus } from 'src/shared/enums/completion-status.enum';
 import { PublicationStatus } from 'src/shared/enums/publication-status.enum';
 
 export class FindAllDto extends PaginationRequestDto {
@@ -30,4 +31,9 @@ export class FindAllDto extends PaginationRequestDto {
   @IsEnum(PublicationStatus)
   @IsOptional()
   publicationStatus?: PublicationStatus;
+
+  @ApiPropertyOptional({ example: 'Unattempted', enum: CompletionStatus })
+  @IsEnum(CompletionStatus)
+  @IsOptional()
+  completionStatus?: CompletionStatus;
 }

@@ -98,6 +98,12 @@ export class AuthService {
       });
     }
     const user = await this.usersService.findOneInternal({ id: payload.id });
+    if (!user) {
+      throw new BadRequestException({
+        message: 'Invalid token',
+        errors: { token: 'Invalid token' },
+      });
+    }
     if (user.hashedPassword) {
       throw new BadRequestException({
         message: 'User already exists',
@@ -182,6 +188,12 @@ export class AuthService {
       });
     }
     const user = await this.usersService.findOneInternal({ id: payload.id });
+    if (!user) {
+      throw new BadRequestException({
+        message: 'Invalid token',
+        errors: { token: 'Invalid token' },
+      });
+    }
     if (!user.hashedPassword) {
       throw new BadRequestException({
         message: 'User not found',

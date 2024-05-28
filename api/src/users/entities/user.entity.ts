@@ -1,10 +1,8 @@
 import { Rel } from '@mikro-orm/core';
 import {
-  Collection,
   Entity,
   Enum,
   Formula,
-  ManyToMany,
   ManyToOne,
   PrimaryKey,
   Property,
@@ -12,7 +10,6 @@ import {
 } from '@mikro-orm/mariadb';
 import { ConfigConstants } from 'src/config/config-constants';
 import { Group } from 'src/groups/entities/group.entity';
-import { Problem } from 'src/problems/entities/problem.entity';
 import { Role } from 'src/shared/enums/role.enum';
 import { parseIntOptional } from 'src/shared/parse-int-optional';
 import { v4 as uuidv4 } from 'uuid';
@@ -32,7 +29,7 @@ export class User {
   email: string;
 
   @Enum({ items: () => Role, array: true, lazy: true })
-  roles: Role[];
+  roles: Rel<Role>[];
 
   @Property({ type: types.string, length: 255, lazy: true })
   hashedPassword: string;
@@ -52,15 +49,6 @@ export class User {
     joinColumn: 'group_id',
   })
   group: Rel<Group> | null;
-
-  @ManyToMany({
-    entity: () => Problem,
-    pivotTable: 'user_unlocked_hints',
-    joinColumn: 'problem_id',
-    inverseJoinColumn: 'user_id',
-    owner: true,
-  })
-  unlockedHints: Collection<Problem> = new Collection<Problem>(this);
 
   @Formula(
     (alias) =>
@@ -144,3 +132,5 @@ export class UserResponse {
     this.updatedAt = user.updatedAt;
   }
 }
+
+export { Role } from 'src/shared/enums/role.enum';

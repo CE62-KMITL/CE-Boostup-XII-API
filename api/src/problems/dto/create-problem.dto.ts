@@ -145,8 +145,9 @@ export class CreateProblemDto {
   })
   @IsArray()
   @IsString({ each: true })
+  @ValidateIf((_, value) => value !== null)
   @IsOptional()
-  allowedHeaders?: string[];
+  allowedHeaders?: string[] | null;
 
   @ApiPropertyOptional({
     type: 'array',

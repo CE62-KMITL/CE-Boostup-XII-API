@@ -171,17 +171,10 @@ export class SavesService {
     return new SaveResponse(save);
   }
 
-  async findOneInternal(where: FilterQuery<Save>): Promise<Save> {
-    const save = await this.savesRepository.findOne(where, {
+  async findOneInternal(where: FilterQuery<Save>): Promise<Save | null> {
+    return await this.savesRepository.findOne(where, {
       populate: ['owner', 'problem', 'code'],
     });
-    if (!save) {
-      throw new NotFoundException({
-        message: 'Save not found',
-        errors: { where: 'Save not found' },
-      });
-    }
-    return save;
   }
 
   async update(

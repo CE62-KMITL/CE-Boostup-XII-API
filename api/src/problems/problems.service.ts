@@ -145,6 +145,22 @@ export class ProblemsService implements OnModuleInit {
     if (findAllDto.publicationStatus) {
       where.publicationStatus = findAllDto.publicationStatus;
     }
+    if (findAllDto.completionStatus) {
+      switch (findAllDto.completionStatus) {
+        case CompletionStatus.Solved:
+          where.submissions = { $some: { owner: user, accepted: true } };
+          break;
+        case CompletionStatus.Attempted:
+          where.submissions = {
+            $some: { owner: user },
+            $none: { owner: user, accepted: true },
+          };
+          break;
+        case CompletionStatus.Unattempted:
+          where.submissions = { $none: { owner: user } };
+          break;
+      }
+    }
     const offset: number = (findAllDto.page - 1) * findAllDto.perPage;
     const limit: number = findAllDto.perPage;
     let orderBy: Record<string, 'asc' | 'desc'> | null = null;
@@ -183,16 +199,14 @@ export class ProblemsService implements OnModuleInit {
           },
         );
         return {
-          data: await Promise.all(
-            problems.map(
-              async (problem) =>
-                new ProblemResponse(problem, {
-                  completionStatus: await this.getCompletionStatus(
-                    completionStatuses,
-                    problem,
-                  ),
-                }),
-            ),
+          data: problems.map(
+            (problem) =>
+              new ProblemResponse(problem, {
+                completionStatus: this.getCompletionStatus(
+                  completionStatuses,
+                  problem,
+                ),
+              }),
           ),
           page: findAllDto.page,
           perPage: findAllDto.perPage,
@@ -208,16 +222,14 @@ export class ProblemsService implements OnModuleInit {
         },
       );
       return {
-        data: await Promise.all(
-          problems.map(
-            async (problem) =>
-              new ProblemResponse(problem, {
-                completionStatus: await this.getCompletionStatus(
-                  completionStatuses,
-                  problem,
-                ),
-              }),
-          ),
+        data: problems.map(
+          (problem) =>
+            new ProblemResponse(problem, {
+              completionStatus: this.getCompletionStatus(
+                completionStatuses,
+                problem,
+              ),
+            }),
         ),
         page: findAllDto.page,
         perPage: findAllDto.perPage,
@@ -254,16 +266,14 @@ export class ProblemsService implements OnModuleInit {
         },
       );
       return {
-        data: await Promise.all(
-          problems.map(
-            async (problem) =>
-              new ProblemResponse(problem, {
-                completionStatus: await this.getCompletionStatus(
-                  completionStatuses,
-                  problem,
-                ),
-              }),
-          ),
+        data: problems.map(
+          (problem) =>
+            new ProblemResponse(problem, {
+              completionStatus: this.getCompletionStatus(
+                completionStatuses,
+                problem,
+              ),
+            }),
         ),
         page: findAllDto.page,
         perPage: findAllDto.perPage,
@@ -279,16 +289,14 @@ export class ProblemsService implements OnModuleInit {
       },
     );
     return {
-      data: await Promise.all(
-        problems.map(
-          async (problem) =>
-            new ProblemResponse(problem, {
-              completionStatus: await this.getCompletionStatus(
-                completionStatuses,
-                problem,
-              ),
-            }),
-        ),
+      data: problems.map(
+        (problem) =>
+          new ProblemResponse(problem, {
+            completionStatus: this.getCompletionStatus(
+              completionStatuses,
+              problem,
+            ),
+          }),
       ),
       page: findAllDto.page,
       perPage: findAllDto.perPage,
@@ -370,6 +378,7 @@ export class ProblemsService implements OnModuleInit {
       'owner',
       'credits',
       'userSolvedCount',
+      'usersUnlockedHint',
       'createdAt',
       'updatedAt',
     ] as const;
@@ -380,7 +389,7 @@ export class ProblemsService implements OnModuleInit {
         errors: { id: 'Problem not found' },
       });
     }
-    if (user.unlockedHints.contains(problem)) {
+    if (problem.usersUnlockedHint.contains(user)) {
       this.problemsRepository.populate(problem, ['hint']);
     }
     return new ProblemResponse(problem, {
@@ -388,8 +397,8 @@ export class ProblemsService implements OnModuleInit {
     });
   }
 
-  async findOneInternal(where: FilterQuery<Problem>): Promise<Problem> {
-    const problem = await this.problemsRepository.findOne(where, {
+  async findOneInternal(where: FilterQuery<Problem>): Promise<Problem | null> {
+    return await this.problemsRepository.findOne(where, {
       populate: [
         'description',
         'input',
@@ -417,13 +426,6 @@ export class ProblemsService implements OnModuleInit {
         'updatedAt',
       ],
     });
-    if (!problem) {
-      throw new NotFoundException({
-        message: 'Problem not found',
-        errors: { where: 'Problem not found' },
-      });
-    }
-    return problem;
   }
 
   async update(
@@ -438,17 +440,20 @@ export class ProblemsService implements OnModuleInit {
         errors: { id: 'Problem not found' },
       });
     }
-    if (updateProblemDto.unlockHint) {
-      const user = await this.usersService.findOneInternal({
-        id: originUser.id,
+    const user = await this.usersService.findOneInternal({
+      id: originUser.id,
+    });
+    if (!user) {
+      throw new UnauthorizedException({
+        message: 'Invalid token',
+        errors: { token: 'Invalid token' },
       });
-      if (!user) {
-        throw new UnauthorizedException({
-          message: 'Invalid token',
-          errors: { token: 'Invalid token' },
-        });
+    }
+    if (updateProblemDto.unlockHint) {
+      if (!problem.usersUnlockedHint.isInitialized()) {
+        await problem.usersUnlockedHint.init();
       }
-      if (user.unlockedHints.contains(problem)) {
+      if (problem.usersUnlockedHint.contains(user)) {
         throw new BadRequestException({
           message: 'Hint already unlocked',
           errors: { unlockHint: 'Hint already unlocked' },
@@ -464,9 +469,9 @@ export class ProblemsService implements OnModuleInit {
         { id: user.id },
         {
           totalScoreOffset: user.totalScoreOffset - problem.hintCost,
-          unlockedHints: [...user.unlockedHints, problem],
         },
       );
+      problem.usersUnlockedHint.add(user);
     }
     if (updateProblemDto.publicationStatus) {
       switch (problem.publicationStatus) {
@@ -522,9 +527,7 @@ export class ProblemsService implements OnModuleInit {
                   errors: { publicationStatus: 'Insufficient permissions' },
                 });
               }
-              problem.reviewer = await this.usersService.findOneInternal({
-                id: originUser.id,
-              });
+              problem.reviewer = user;
               problem.reviewComment = updateProblemDto.reviewComment || null;
               break;
             default:
@@ -713,10 +716,10 @@ export class ProblemsService implements OnModuleInit {
     return CompletionStatus.Unattempted;
   }
 
-  private async getCompletionStatus(
+  private getCompletionStatus(
     completionStatuses: Record<string, CompletionStatus>,
     problem: Problem,
-  ): Promise<CompletionStatus> {
+  ): CompletionStatus {
     if (completionStatuses.hasOwnProperty(problem.id)) {
       return completionStatuses[problem.id];
     }
