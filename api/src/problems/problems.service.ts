@@ -199,16 +199,14 @@ export class ProblemsService implements OnModuleInit {
           },
         );
         return {
-          data: await Promise.all(
-            problems.map(
-              async (problem) =>
-                new ProblemResponse(problem, {
-                  completionStatus: await this.getCompletionStatus(
-                    completionStatuses,
-                    problem,
-                  ),
-                }),
-            ),
+          data: problems.map(
+            (problem) =>
+              new ProblemResponse(problem, {
+                completionStatus: this.getCompletionStatus(
+                  completionStatuses,
+                  problem,
+                ),
+              }),
           ),
           page: findAllDto.page,
           perPage: findAllDto.perPage,
@@ -224,16 +222,14 @@ export class ProblemsService implements OnModuleInit {
         },
       );
       return {
-        data: await Promise.all(
-          problems.map(
-            async (problem) =>
-              new ProblemResponse(problem, {
-                completionStatus: await this.getCompletionStatus(
-                  completionStatuses,
-                  problem,
-                ),
-              }),
-          ),
+        data: problems.map(
+          (problem) =>
+            new ProblemResponse(problem, {
+              completionStatus: this.getCompletionStatus(
+                completionStatuses,
+                problem,
+              ),
+            }),
         ),
         page: findAllDto.page,
         perPage: findAllDto.perPage,
@@ -270,16 +266,14 @@ export class ProblemsService implements OnModuleInit {
         },
       );
       return {
-        data: await Promise.all(
-          problems.map(
-            async (problem) =>
-              new ProblemResponse(problem, {
-                completionStatus: await this.getCompletionStatus(
-                  completionStatuses,
-                  problem,
-                ),
-              }),
-          ),
+        data: problems.map(
+          (problem) =>
+            new ProblemResponse(problem, {
+              completionStatus: this.getCompletionStatus(
+                completionStatuses,
+                problem,
+              ),
+            }),
         ),
         page: findAllDto.page,
         perPage: findAllDto.perPage,
@@ -295,16 +289,14 @@ export class ProblemsService implements OnModuleInit {
       },
     );
     return {
-      data: await Promise.all(
-        problems.map(
-          async (problem) =>
-            new ProblemResponse(problem, {
-              completionStatus: await this.getCompletionStatus(
-                completionStatuses,
-                problem,
-              ),
-            }),
-        ),
+      data: problems.map(
+        (problem) =>
+          new ProblemResponse(problem, {
+            completionStatus: this.getCompletionStatus(
+              completionStatuses,
+              problem,
+            ),
+          }),
       ),
       page: findAllDto.page,
       perPage: findAllDto.perPage,
@@ -720,10 +712,10 @@ export class ProblemsService implements OnModuleInit {
     return CompletionStatus.Unattempted;
   }
 
-  private async getCompletionStatus(
+  private getCompletionStatus(
     completionStatuses: Record<string, CompletionStatus>,
     problem: Problem,
-  ): Promise<CompletionStatus> {
+  ): CompletionStatus {
     if (completionStatuses.hasOwnProperty(problem.id)) {
       return completionStatuses[problem.id];
     }
