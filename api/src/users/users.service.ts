@@ -296,8 +296,8 @@ export class UsersService implements OnModuleInit {
     return new UserResponse(user);
   }
 
-  async findOneInternal(where: FilterQuery<User>): Promise<User> {
-    const user = await this.usersRepository.findOne(where, {
+  async findOneInternal(where: FilterQuery<User>): Promise<User | null> {
+    return await this.usersRepository.findOne(where, {
       populate: [
         'email',
         'roles',
@@ -312,13 +312,6 @@ export class UsersService implements OnModuleInit {
         'updatedAt',
       ],
     });
-    if (!user) {
-      throw new NotFoundException({
-        message: 'User not found',
-        errors: { where: 'User not found' },
-      });
-    }
-    return user;
   }
 
   async update(

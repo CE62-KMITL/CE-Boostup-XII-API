@@ -206,8 +206,8 @@ export class GroupsService {
     return new GroupResponse(group);
   }
 
-  async findOneInternal(where: FilterQuery<Group>): Promise<Group> {
-    const group = await this.groupsRepository.findOne(where, {
+  async findOneInternal(where: FilterQuery<Group>): Promise<Group | null> {
+    return await this.groupsRepository.findOne(where, {
       populate: [
         'description',
         'members',
@@ -216,13 +216,6 @@ export class GroupsService {
         'updatedAt',
       ],
     });
-    if (!group) {
-      throw new NotFoundException({
-        message: 'Group not found',
-        errors: { where: 'Group not found' },
-      });
-    }
-    return group;
   }
 
   async update(

@@ -18,6 +18,7 @@ import {
   UseInterceptors,
   Req,
   Query,
+  NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -123,6 +124,12 @@ export class AttachmentsController {
     id: string,
   ): Promise<StreamableFile> {
     const attachment = await this.attachmentsService.findOneInternal(id);
+    if (!attachment) {
+      throw new NotFoundException({
+        message: 'Attachment not found',
+        errors: { id: 'Attachment not found' },
+      });
+    }
     const file = createReadStream(
       join(
         this.configService.getOrThrow<string>('storages.attachments.path'),

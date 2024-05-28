@@ -118,6 +118,12 @@ export class GroupsController {
     id: string,
   ): Promise<StreamableFile> {
     const group = await this.groupsService.findOneInternal(id);
+    if (!group) {
+      throw new NotFoundException({
+        message: 'Group not found',
+        errors: { id: 'Group not found' },
+      });
+    }
     if (!group.avatarFilename) {
       throw new NotFoundException({
         message: 'Avatar not found',

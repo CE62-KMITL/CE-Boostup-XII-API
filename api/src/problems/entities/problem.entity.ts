@@ -1,4 +1,4 @@
-import { Rel } from '@mikro-orm/core';
+import { OneToMany, Rel } from '@mikro-orm/core';
 import {
   Collection,
   Entity,
@@ -16,7 +16,10 @@ import { ProblemTag } from 'src/problem-tags/entities/problem-tag.entity';
 import { CompletionStatus } from 'src/shared/enums/completion-status.enum';
 import { OptimizationLevel } from 'src/shared/enums/optimization-level.enum';
 import { PublicationStatus } from 'src/shared/enums/publication-status.enum';
-import { ProgrammingLanguage } from 'src/submissions/entities/submission.entity';
+import {
+  ProgrammingLanguage,
+  Submission,
+} from 'src/submissions/entities/submission.entity';
 import { User } from 'src/users/entities/user.entity';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -135,6 +138,12 @@ export class Problem {
     { type: types.integer, serializer: (value) => +value, lazy: true },
   )
   userSolvedCount: number;
+
+  @OneToMany({
+    entity: () => Submission,
+    mappedBy: (submission) => submission.problem,
+  })
+  submissions: Collection<Submission> = new Collection<Submission>(this);
 
   @Property({ type: types.datetime, lazy: true })
   createdAt: Date = new Date();
