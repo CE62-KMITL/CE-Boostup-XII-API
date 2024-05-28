@@ -4,6 +4,7 @@ import { ConfigConstants } from 'src/config/config-constants';
 
 export class CreateProblemTagDto {
   @ApiProperty({
+    type: 'string',
     minLength: ConfigConstants.problemTag.minNameLength,
     maxLength: ConfigConstants.problemTag.maxNameLength,
     example: 'Array',
@@ -14,6 +15,7 @@ export class CreateProblemTagDto {
   name: string;
 
   @ApiPropertyOptional({
+    type: 'string',
     maxLength: ConfigConstants.problemTag.maxDescriptionLength,
     example: 'Things involving square brackets',
   })

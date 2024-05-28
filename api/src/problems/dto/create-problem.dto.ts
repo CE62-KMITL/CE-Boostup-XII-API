@@ -5,6 +5,7 @@ import {
   ArrayMinSize,
   IsArray,
   IsEnum,
+  IsInt,
   IsNumber,
   IsOptional,
   IsString,
@@ -22,6 +23,7 @@ import { ProgrammingLanguage } from 'src/shared/enums/programming-language.enum'
 
 export class CreateProblemDto {
   @ApiProperty({
+    type: 'string',
     minLength: ConfigConstants.problem.minTitleLength,
     maxLength: ConfigConstants.problem.maxTitleLength,
     example: 'A + B Problem',
@@ -32,6 +34,7 @@ export class CreateProblemDto {
   title: string;
 
   @ApiPropertyOptional({
+    type: 'string',
     maxLength: ConfigConstants.problem.maxDescriptionLength,
     example: 'Calculate the sum of two numbers',
   })
@@ -41,6 +44,7 @@ export class CreateProblemDto {
   description?: string;
 
   @ApiPropertyOptional({
+    type: 'string',
     maxLength: ConfigConstants.problem.maxInputLength,
     example: '2 numbers separated by a space',
   })
@@ -50,6 +54,7 @@ export class CreateProblemDto {
   input?: string;
 
   @ApiPropertyOptional({
+    type: 'string',
     maxLength: ConfigConstants.problem.maxOutputLength,
     example: 'The sum of the two numbers',
   })
@@ -59,6 +64,7 @@ export class CreateProblemDto {
   output?: string;
 
   @ApiPropertyOptional({
+    type: 'string',
     maxLength: ConfigConstants.problem.maxHintLength,
     example: 'Use the + operator',
   })
@@ -67,8 +73,9 @@ export class CreateProblemDto {
   @IsOptional()
   hint?: string;
 
-  @ApiPropertyOptional({ minimum: 0, example: 100 })
+  @ApiPropertyOptional({ type: 'integer', minimum: 0, example: 100 })
   @IsNumber()
+  @IsInt()
   @Min(0)
   @ValidateIf((object) => object.hint !== undefined)
   hintCost?: number;
@@ -106,6 +113,7 @@ export class CreateProblemDto {
   exampleTestcases?: Testcase[];
 
   @ApiPropertyOptional({
+    type: 'string',
     maxLength: ConfigConstants.problem.maxStarterCodeLength,
     example:
       '#include <stdio.h>\n\nint main() {\n    int a, b;\n    scanf("%d %d", &a, &b);\n    printf("%d\\n", a + b);\n    return 0;\n}',
@@ -116,6 +124,7 @@ export class CreateProblemDto {
   starterCode?: string;
 
   @ApiProperty({
+    type: 'string',
     maxLength: ConfigConstants.problem.maxSolutionLength,
     example:
       '#include <stdio.h>\n\nint main() {\n    int a, b;\n    scanf("%d %d", &a, &b);\n    printf("%d\\n", a + b);\n    return 0;\n}',
@@ -150,6 +159,7 @@ export class CreateProblemDto {
   bannedFunctions?: string[];
 
   @ApiPropertyOptional({
+    type: 'number',
     minimum: 0,
     maximum: ConfigConstants.problem.maxTimeLimit,
     example: 0.01,
@@ -161,28 +171,33 @@ export class CreateProblemDto {
   timeLimit?: number;
 
   @ApiPropertyOptional({
+    type: 'integer',
     minimum: 0,
     maximum: ConfigConstants.problem.maxMemoryLimit,
     example: 16384,
   })
   @IsNumber()
+  @IsInt()
   @Min(0)
   @Max(ConfigConstants.problem.maxMemoryLimit)
   @IsOptional()
   memoryLimit?: number;
 
   @ApiProperty({
+    type: 'integer',
     minimum: ConfigConstants.problem.minDifficulty,
     maximum: ConfigConstants.problem.maxDifficulty,
     example: 1,
   })
   @IsNumber()
+  @IsInt()
   @Min(ConfigConstants.problem.minDifficulty)
   @Max(ConfigConstants.problem.maxDifficulty)
   difficulty: number;
 
-  @ApiProperty({ minimum: 0, example: 100 })
+  @ApiProperty({ type: 'integer', minimum: 0, example: 100 })
   @IsNumber()
+  @IsInt()
   @Min(0)
   score: number;
 
@@ -213,6 +228,7 @@ export class CreateProblemDto {
   tags?: string[];
 
   @ApiPropertyOptional({
+    type: 'string',
     maxLength: ConfigConstants.problem.maxCreditsLength,
     example: 'The great book of knowledge',
   })

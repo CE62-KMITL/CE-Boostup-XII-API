@@ -148,6 +148,7 @@ export class ProblemsService implements OnModuleInit {
     const offset: number = (findAllDto.page - 1) * findAllDto.perPage;
     const limit: number = findAllDto.perPage;
     let orderBy: Record<string, 'asc' | 'desc'> | null = null;
+    const completionStatuses = await this.getCompletionStatuses(user);
     if (
       isSomeRolesIn(originUser.roles, [Role.Staff, Role.Admin, Role.SuperAdmin])
     ) {
@@ -187,8 +188,8 @@ export class ProblemsService implements OnModuleInit {
               async (problem) =>
                 new ProblemResponse(problem, {
                   completionStatus: await this.getCompletionStatus(
+                    completionStatuses,
                     problem,
-                    user,
                   ),
                 }),
             ),
@@ -211,7 +212,10 @@ export class ProblemsService implements OnModuleInit {
           problems.map(
             async (problem) =>
               new ProblemResponse(problem, {
-                completionStatus: await this.getCompletionStatus(problem, user),
+                completionStatus: await this.getCompletionStatus(
+                  completionStatuses,
+                  problem,
+                ),
               }),
           ),
         ),
@@ -254,7 +258,10 @@ export class ProblemsService implements OnModuleInit {
           problems.map(
             async (problem) =>
               new ProblemResponse(problem, {
-                completionStatus: await this.getCompletionStatus(problem, user),
+                completionStatus: await this.getCompletionStatus(
+                  completionStatuses,
+                  problem,
+                ),
               }),
           ),
         ),
@@ -276,7 +283,10 @@ export class ProblemsService implements OnModuleInit {
         problems.map(
           async (problem) =>
             new ProblemResponse(problem, {
-              completionStatus: await this.getCompletionStatus(problem, user),
+              completionStatus: await this.getCompletionStatus(
+                completionStatuses,
+                problem,
+              ),
             }),
         ),
       ),
@@ -341,7 +351,7 @@ export class ProblemsService implements OnModuleInit {
         });
       }
       return new ProblemResponse(problem, {
-        completionStatus: await this.getCompletionStatus(problem, user),
+        completionStatus: await this.getCompletionStatusOne(problem, user),
       });
     }
     const populate = [
@@ -370,15 +380,11 @@ export class ProblemsService implements OnModuleInit {
         errors: { id: 'Problem not found' },
       });
     }
-    const userUnlockedHint = await this.usersService.findOneInternal({
-      id: originUser.id,
-      unlockedHints: { $some: problem },
-    });
-    if (userUnlockedHint) {
+    if (user.unlockedHints.contains(problem)) {
       this.problemsRepository.populate(problem, ['hint']);
     }
     return new ProblemResponse(problem, {
-      completionStatus: await this.getCompletionStatus(problem, user),
+      completionStatus: await this.getCompletionStatusOne(problem, user),
     });
   }
 
@@ -690,26 +696,50 @@ export class ProblemsService implements OnModuleInit {
     return;
   }
 
-  private async getCompletionStatus(
+  private async getCompletionStatusOne(
     problem: Problem,
     user: User,
   ): Promise<CompletionStatus> {
-    const acceptedSubmissions = await this.submissionsService.countInternal({
-      problem,
+    const submissions = await this.submissionsService.findAllInternal({
       owner: user,
-      accepted: true,
+      problem,
     });
-    if (acceptedSubmissions) {
+    if (submissions.some((submission) => submission.accepted)) {
       return CompletionStatus.Solved;
     }
-    const submissions = await this.submissionsService.countInternal({
-      problem,
-      owner: user,
-    });
-    if (submissions) {
+    if (submissions.length > 0) {
       return CompletionStatus.Attempted;
     }
     return CompletionStatus.Unattempted;
+  }
+
+  private async getCompletionStatus(
+    completionStatuses: Record<string, CompletionStatus>,
+    problem: Problem,
+  ): Promise<CompletionStatus> {
+    if (completionStatuses.hasOwnProperty(problem.id)) {
+      return completionStatuses[problem.id];
+    }
+    return CompletionStatus.Unattempted;
+  }
+
+  private async getCompletionStatuses(
+    user: User,
+  ): Promise<Record<string, CompletionStatus>> {
+    const completionStatuses: Record<string, CompletionStatus> = {};
+    const submissions = await this.submissionsService.findAllInternal({
+      owner: user,
+    });
+    for (const submission of submissions) {
+      if (submission.accepted) {
+        completionStatuses[submission.problem.id] = CompletionStatus.Solved;
+        continue;
+      }
+      if (!completionStatuses.hasOwnProperty(submission.problem.id)) {
+        completionStatuses[submission.problem.id] = CompletionStatus.Attempted;
+      }
+    }
+    return completionStatuses;
   }
 
   private async verifyTestcases(problem: Problem): Promise<void> {

@@ -4,7 +4,7 @@ import { PaginationRequestDto } from 'src/shared/dto/pagination.dto';
 import { PublicationStatus } from 'src/shared/enums/publication-status.enum';
 
 export class FindAllDto extends PaginationRequestDto {
-  @ApiPropertyOptional({ example: 'Arrary' })
+  @ApiPropertyOptional({ type: 'string', example: 'Arrary' })
   @IsString()
   @IsOptional()
   search?: string;
@@ -26,7 +26,7 @@ export class FindAllDto extends PaginationRequestDto {
   @IsOptional()
   difficulties?: string;
 
-  @ApiPropertyOptional({ example: 'Published' })
+  @ApiPropertyOptional({ example: 'Published', enum: PublicationStatus })
   @IsEnum(PublicationStatus)
   @IsOptional()
   publicationStatus?: PublicationStatus;

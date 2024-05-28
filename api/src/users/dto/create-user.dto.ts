@@ -16,6 +16,7 @@ import { Role } from 'src/shared/enums/role.enum';
 
 export class CreateUserDto {
   @ApiProperty({
+    type: 'string',
     minLength: ConfigConstants.user.minDisplayNameLength,
     maxLength: ConfigConstants.user.maxDisplayNameLength,
     example: 'John Doe',
@@ -26,6 +27,7 @@ export class CreateUserDto {
   displayName: string;
 
   @ApiProperty({
+    type: 'string',
     maxLength: ConfigConstants.user.maxEmailLength,
     example: 'example@example.com',
   })
@@ -33,14 +35,22 @@ export class CreateUserDto {
   @IsEmail()
   email: string;
 
-  @ApiProperty({ minLength: 1, example: ['User'] })
+  @ApiProperty({
+    type: 'array',
+    items: { type: 'string' },
+    minLength: 1,
+    example: ['User'],
+  })
   @IsArray()
   @ArrayMinSize(1)
   @ArrayUnique()
   @IsEnum(Role, { each: true })
   roles: Role[];
 
-  @ApiPropertyOptional({ example: '87415e9a-cc80-47e2-a9fb-ac635fce364a' })
+  @ApiPropertyOptional({
+    type: 'string',
+    example: '87415e9a-cc80-47e2-a9fb-ac635fce364a',
+  })
   @IsUUID('4')
   @IsOptional()
   group?: string;

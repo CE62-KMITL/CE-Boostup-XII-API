@@ -6,6 +6,7 @@ import { ResetPasswordDto } from './reset-password.dto';
 
 export class CreateAccountDto extends ResetPasswordDto {
   @ApiPropertyOptional({
+    type: 'string',
     minLength: ConfigConstants.user.minDisplayNameLength,
     maxLength: ConfigConstants.user.maxDisplayNameLength,
     example: 'John Doe',
