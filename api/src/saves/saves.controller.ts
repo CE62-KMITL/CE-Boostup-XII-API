@@ -62,6 +62,21 @@ export class SavesController {
     return await this.savesService.findOne(request.user, id);
   }
 
+  @Get('for-problem/:problemId')
+  async findForProblem(
+    @Req() request: AuthenticatedRequest,
+    @Param(
+      'problemId',
+      new ParseUUIDPipe({
+        version: '4',
+        errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+      }),
+    )
+    problemId: string,
+  ): Promise<SaveResponse> {
+    return await this.savesService.findForProblem(request.user, problemId);
+  }
+
   @Patch(':id')
   async update(
     @Req() request: AuthenticatedRequest,
