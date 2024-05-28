@@ -17,6 +17,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
 import { isRolesHigher, isSomeRolesIn } from 'src/auth/roles';
+import { Group } from 'src/groups/entities/group.entity';
 import { GroupsService } from 'src/groups/groups.service';
 import { assignDefined } from 'src/shared/assign-defined';
 import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
@@ -96,14 +97,17 @@ export class UsersService implements OnModuleInit {
         errors: { email: 'Email already in use' },
       });
     }
-    const group = await this.groupsService.findOneInternal({
-      id: createUserDto.group,
-    });
-    if (!group) {
-      throw new BadRequestException({
-        message: 'Group not found',
-        errors: { group: 'Group not found' },
+    let group: Group | null = null;
+    if (createUserDto.group) {
+      group = await this.groupsService.findOneInternal({
+        id: createUserDto.group,
       });
+      if (!group) {
+        throw new BadRequestException({
+          message: 'Group not found',
+          errors: { group: 'Group not found' },
+        });
+      }
     }
     if (!isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])) {
       throw new ForbiddenException({

@@ -45,8 +45,8 @@ export class User {
 
   @ManyToOne({
     entity: () => Group,
-    nullable: true,
     joinColumn: 'group_id',
+    nullable: true,
   })
   group: Rel<Group> | null;
 
@@ -90,7 +90,7 @@ export class User {
     email: string,
     roles: Role[],
     displayName: string,
-    group?: Rel<Group>,
+    group?: Rel<Group> | null,
   ) {
     this.email = email;
     this.roles = roles;
