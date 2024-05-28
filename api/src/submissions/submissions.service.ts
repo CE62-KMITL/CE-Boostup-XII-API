@@ -290,8 +290,10 @@ export class SubmissionsService implements OnModuleInit {
     return new SubmissionResponse(submission);
   }
 
-  async findOneInternal(where: FilterQuery<Submission>): Promise<Submission> {
-    const submission = await this.submissionsRepository.findOne(where, {
+  async findOneInternal(
+    where: FilterQuery<Submission>,
+  ): Promise<Submission | null> {
+    return await this.submissionsRepository.findOne(where, {
       populate: [
         'owner',
         'problem',
@@ -306,13 +308,6 @@ export class SubmissionsService implements OnModuleInit {
         'createdAt',
       ],
     });
-    if (!submission) {
-      throw new NotFoundException({
-        message: 'Submission not found',
-        errors: { where: 'Submission not found' },
-      });
-    }
-    return submission;
   }
 
   async countInternal(where: FilterQuery<Submission>): Promise<number> {

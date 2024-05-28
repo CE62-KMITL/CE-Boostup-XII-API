@@ -1,4 +1,4 @@
-import { Rel } from '@mikro-orm/core';
+import { OneToMany, Rel } from '@mikro-orm/core';
 import {
   Collection,
   Entity,
@@ -16,7 +16,10 @@ import { ProblemTag } from 'src/problem-tags/entities/problem-tag.entity';
 import { CompletionStatus } from 'src/shared/enums/completion-status.enum';
 import { OptimizationLevel } from 'src/shared/enums/optimization-level.enum';
 import { PublicationStatus } from 'src/shared/enums/publication-status.enum';
-import { ProgrammingLanguage } from 'src/submissions/entities/submission.entity';
+import {
+  ProgrammingLanguage,
+  Submission,
+} from 'src/submissions/entities/submission.entity';
 import { User } from 'src/users/entities/user.entity';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -68,10 +71,10 @@ export class Problem {
   solution: string;
 
   @Enum({ items: () => ProgrammingLanguage, lazy: true })
-  solutionLanguage: ProgrammingLanguage;
+  solutionLanguage: Rel<ProgrammingLanguage>;
 
-  @Property({ type: types.array, lazy: true })
-  allowedHeaders: string[];
+  @Property({ type: types.array, nullable: true, lazy: true })
+  allowedHeaders: string[] | null;
 
   @Property({ type: types.array, lazy: true })
   bannedFunctions: string[];
@@ -89,7 +92,7 @@ export class Problem {
   score: number;
 
   @Enum({ items: () => OptimizationLevel, lazy: true })
-  optimizationLevel: OptimizationLevel;
+  optimizationLevel: Rel<OptimizationLevel>;
 
   @ManyToMany({
     entity: () => Attachment,
@@ -121,7 +124,7 @@ export class Problem {
   credits: string;
 
   @Enum({ items: () => PublicationStatus, lazy: true })
-  publicationStatus: PublicationStatus;
+  publicationStatus: Rel<PublicationStatus>;
 
   @ManyToOne({ entity: () => User, nullable: true })
   reviewer: Rel<User> | null = null;
@@ -135,6 +138,21 @@ export class Problem {
     { type: types.integer, serializer: (value) => +value, lazy: true },
   )
   userSolvedCount: number;
+
+  @ManyToMany({
+    entity: () => User,
+    pivotTable: 'user_unlocked_hints',
+    joinColumn: 'user_id',
+    inverseJoinColumn: 'problem_id',
+    owner: true,
+  })
+  usersUnlockedHint: Collection<User> = new Collection<User>(this);
+
+  @OneToMany({
+    entity: () => Submission,
+    mappedBy: (submission) => submission.problem,
+  })
+  submissions: Collection<Submission> = new Collection<Submission>(this);
 
   @Property({ type: types.datetime, lazy: true })
   createdAt: Date = new Date();
@@ -157,7 +175,7 @@ export class ProblemResponse {
   starterCode?: string;
   solution?: string;
   solutionLanguage?: ProgrammingLanguage;
-  allowedHeaders?: string[];
+  allowedHeaders?: string[] | null;
   bannedFunctions?: string[];
   timeLimit?: number;
   memoryLimit?: number;
@@ -242,5 +260,6 @@ export class ProblemResponse {
   }
 }
 
+export { ProgrammingLanguage } from 'src/shared/enums/programming-language.enum';
 export { OptimizationLevel } from 'src/shared/enums/optimization-level.enum';
 export { PublicationStatus } from 'src/shared/enums/publication-status.enum';
