@@ -378,6 +378,7 @@ export class ProblemsService implements OnModuleInit {
       'owner',
       'credits',
       'userSolvedCount',
+      'usersUnlockedHint',
       'createdAt',
       'updatedAt',
     ] as const;
@@ -388,7 +389,7 @@ export class ProblemsService implements OnModuleInit {
         errors: { id: 'Problem not found' },
       });
     }
-    if (user.unlockedHints.contains(problem)) {
+    if (problem.usersUnlockedHint.contains(user)) {
       this.problemsRepository.populate(problem, ['hint']);
     }
     return new ProblemResponse(problem, {
@@ -449,7 +450,10 @@ export class ProblemsService implements OnModuleInit {
       });
     }
     if (updateProblemDto.unlockHint) {
-      if (user.unlockedHints.contains(problem)) {
+      if (!problem.usersUnlockedHint.isInitialized()) {
+        await problem.usersUnlockedHint.init();
+      }
+      if (problem.usersUnlockedHint.contains(user)) {
         throw new BadRequestException({
           message: 'Hint already unlocked',
           errors: { unlockHint: 'Hint already unlocked' },
@@ -465,9 +469,9 @@ export class ProblemsService implements OnModuleInit {
         { id: user.id },
         {
           totalScoreOffset: user.totalScoreOffset - problem.hintCost,
-          unlockedHints: [...user.unlockedHints, problem],
         },
       );
+      problem.usersUnlockedHint.add(user);
     }
     if (updateProblemDto.publicationStatus) {
       switch (problem.publicationStatus) {

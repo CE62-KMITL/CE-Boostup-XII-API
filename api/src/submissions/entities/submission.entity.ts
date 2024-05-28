@@ -27,7 +27,7 @@ export class Submission {
   code: string;
 
   @Enum({ items: () => ProgrammingLanguage, lazy: true })
-  language: ProgrammingLanguage;
+  language: Rel<ProgrammingLanguage>;
 
   @Property({ type: types.array, lazy: true })
   outputCodes: string[];

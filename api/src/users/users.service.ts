@@ -305,7 +305,6 @@ export class UsersService implements OnModuleInit {
         'bio',
         'group',
         'totalScoreOffset',
-        'unlockedHints',
         'lastEmailRequestedAt',
         'avatarFilename',
         'createdAt',

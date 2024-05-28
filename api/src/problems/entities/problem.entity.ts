@@ -71,7 +71,7 @@ export class Problem {
   solution: string;
 
   @Enum({ items: () => ProgrammingLanguage, lazy: true })
-  solutionLanguage: ProgrammingLanguage;
+  solutionLanguage: Rel<ProgrammingLanguage>;
 
   @Property({ type: types.array, nullable: true, lazy: true })
   allowedHeaders: string[] | null;
@@ -92,7 +92,7 @@ export class Problem {
   score: number;
 
   @Enum({ items: () => OptimizationLevel, lazy: true })
-  optimizationLevel: OptimizationLevel;
+  optimizationLevel: Rel<OptimizationLevel>;
 
   @ManyToMany({
     entity: () => Attachment,
@@ -124,7 +124,7 @@ export class Problem {
   credits: string;
 
   @Enum({ items: () => PublicationStatus, lazy: true })
-  publicationStatus: PublicationStatus;
+  publicationStatus: Rel<PublicationStatus>;
 
   @ManyToOne({ entity: () => User, nullable: true })
   reviewer: Rel<User> | null = null;
@@ -138,6 +138,15 @@ export class Problem {
     { type: types.integer, serializer: (value) => +value, lazy: true },
   )
   userSolvedCount: number;
+
+  @ManyToMany({
+    entity: () => User,
+    pivotTable: 'user_unlocked_hints',
+    joinColumn: 'user_id',
+    inverseJoinColumn: 'problem_id',
+    owner: true,
+  })
+  usersUnlockedHint: Collection<User> = new Collection<User>(this);
 
   @OneToMany({
     entity: () => Submission,
@@ -251,5 +260,6 @@ export class ProblemResponse {
   }
 }
 
+export { ProgrammingLanguage } from 'src/shared/enums/programming-language.enum';
 export { OptimizationLevel } from 'src/shared/enums/optimization-level.enum';
 export { PublicationStatus } from 'src/shared/enums/publication-status.enum';

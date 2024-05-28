@@ -208,13 +208,7 @@ export class GroupsService {
 
   async findOneInternal(where: FilterQuery<Group>): Promise<Group | null> {
     return await this.groupsRepository.findOne(where, {
-      populate: [
-        'description',
-        'members',
-        'avatarFilename',
-        'createdAt',
-        'updatedAt',
-      ],
+      populate: ['description', 'avatarFilename', 'createdAt', 'updatedAt'],
     });
   }
 
