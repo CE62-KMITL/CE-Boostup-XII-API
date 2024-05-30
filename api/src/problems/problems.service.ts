@@ -136,7 +136,10 @@ export class ProblemsService implements OnModuleInit {
     }
     if (findAllDto.tags) {
       const tags = findAllDto.tags.split(',');
-      where.tags = { $none: { id: { $nin: tags } } };
+      where.$and = [];
+      for (const tag of tags) {
+        where.$and.push({ tags: { $some: tag } });
+      }
     }
     if (findAllDto.difficulties) {
       const difficulties = findAllDto.difficulties.split(',').map(Number);
