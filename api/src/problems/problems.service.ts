@@ -134,6 +134,9 @@ export class ProblemsService implements OnModuleInit {
         where.$or.push({ number: parseInt(findAllDto.search) });
       }
     }
+    if (findAllDto.owner) {
+      where.owner = findAllDto.owner;
+    }
     if (findAllDto.tags) {
       const tags = findAllDto.tags.split(',');
       where.$and = [];
