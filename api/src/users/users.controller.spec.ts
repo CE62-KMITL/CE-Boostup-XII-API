@@ -811,4 +811,280 @@ describe('UsersController', () => {
     expect(service.remove).toHaveBeenCalledWith(authenticatedUser_, userRes.id);
 
   });
+
+  it('should call findOne and return UserResponse', async () => {
+    const authenticatedUser: AuthenticatedUser = {
+      id: '0',
+      roles: [Role.Admin],
+    };
+
+    const group_: Group = new Group();
+    group_.name = 'example';
+    group_.description = 'lorem ipsum';
+
+    const createUserDto: CreateUserDto = {
+      email: 'test@example.com',
+      displayName: 'Test User',
+      roles: [Role.User],
+      group: group_.id,
+    };
+
+    const user0 = new User(
+      createUserDto.email,
+      createUserDto.roles,
+      createUserDto.displayName,
+      group_,
+    );
+
+    const group_res: GroupResponse = new GroupResponse(group_);
+    const userRes = new UserResponse(user0);
+
+    const mockAuthenticatedReq: AuthenticatedRequest = {
+      user: authenticatedUser,
+      headers: {},
+      body: {},
+      params: {},
+      query: {},
+      method: 'GET',
+      url: '/test-url',
+    } as unknown as AuthenticatedRequest;
+
+    jest.spyOn(service['usersRepository'], 'count').mockResolvedValue(0);
+    jest.spyOn(service['entityManager'].getRepository(Group), 'findOne').mockResolvedValue(group_res);
+
+    jest.spyOn(service, 'create').mockImplementation(async (originUser = mockAuthenticatedReq.user, dto = createUserDto) => {
+      const emailExists = await service['usersRepository'].count({ email: dto.email });
+      if (emailExists) {
+        throw new BadRequestException({
+          message: 'Email already in use',
+          errors: { email: 'Email already in use' },
+        });
+      }
+      const group = await service['entityManager'].getRepository(Group).findOne({ id: dto.group });
+      if (!group) {
+        throw new BadRequestException({
+          message: 'Group not found',
+          errors: { groupId: 'Group not found' },
+        });
+      }
+      if (!isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])) {
+        throw new ForbiddenException({
+          message: 'Insufficient permissions',
+          errors: { roles: 'Insufficient permissions' },
+        });
+      }
+      if (!isRolesHigher(originUser.roles, dto.roles)) {
+        throw new ForbiddenException({
+          message: 'Insufficient permissions',
+          errors: { roles: 'Insufficient permissions' },
+        });
+      }
+      const user = new User(
+        dto.email,
+        dto.roles,
+        dto.displayName,
+        group,
+      );
+
+      user.id = user0.id;
+      user.createdAt = user0.createdAt;
+      user.updatedAt = user0.updatedAt;
+
+      await service['entityManager'].persistAndFlush(user);
+      return new UserResponse(user);
+    });
+
+    const result = await controller.create(mockAuthenticatedReq, createUserDto);
+
+    expect(result).toEqual(userRes);
+    expect(service.create).toHaveBeenCalledWith(authenticatedUser, createUserDto);
+
+    jest.spyOn(service['usersRepository'], 'findOne').mockResolvedValue(user0);
+    jest.spyOn(service, 'findOne').mockImplementation( async (originUser = mockAuthenticatedReq.user, id = userRes.id) => {
+      if (isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])) {
+        const populate = [
+          'email',
+          'roles',
+          'bio',
+          'group',
+          'totalScore',
+          'totalScoreOffset',
+          'problemSolvedCount',
+          'lastProblemSolvedAt',
+          'lastEmailRequestedAt',
+          'createdAt',
+          'updatedAt',
+        ] as const;
+        const user = await service['usersRepository'].findOne({ id }, { populate });
+        if (!user) {
+          throw new NotFoundException({
+            message: 'User not found',
+            errors: { id: 'User not found' },
+          });
+        }
+        return new UserResponse(user);
+      }
+      const populate = [
+        'bio',
+        'group',
+        'totalScore',
+        'problemSolvedCount',
+        'lastProblemSolvedAt',
+        'createdAt',
+        'updatedAt',
+      ] as const;
+      const user = await service['usersRepository'].findOne({ id }, { populate });
+      if (!user) {
+        throw new NotFoundException({
+          message: 'User not found',
+          errors: { id: 'User not found' },
+        });
+      }
+      return new UserResponse(user);
+    });
+
+    const last_result = await controller.findOne(mockAuthenticatedReq, userRes.id);
+
+    expect(last_result).toEqual(userRes);
+    expect(service.findOne).toHaveBeenCalledWith(authenticatedUser, userRes.id);
+
+  });
+
+  it('should call findOne and throw NotFoundException', async () => {
+    const authenticatedUser: AuthenticatedUser = {
+      id: '0',
+      roles: [Role.Admin],
+    };
+
+    const group_: Group = new Group();
+    group_.name = 'example';
+    group_.description = 'lorem ipsum';
+
+    const createUserDto: CreateUserDto = {
+      email: 'test@example.com',
+      displayName: 'Test User',
+      roles: [Role.User],
+      group: group_.id,
+    };
+
+    const user0 = new User(
+      createUserDto.email,
+      createUserDto.roles,
+      createUserDto.displayName,
+      group_,
+    );
+
+    const group_res: GroupResponse = new GroupResponse(group_);
+    const userRes = new UserResponse(user0);
+
+    const mockAuthenticatedReq: AuthenticatedRequest = {
+      user: authenticatedUser,
+      headers: {},
+      body: {},
+      params: {},
+      query: {},
+      method: 'GET',
+      url: '/test-url',
+    } as unknown as AuthenticatedRequest;
+
+    jest.spyOn(service['usersRepository'], 'count').mockResolvedValue(0);
+    jest.spyOn(service['entityManager'].getRepository(Group), 'findOne').mockResolvedValue(group_res);
+
+    jest.spyOn(service, 'create').mockImplementation(async (originUser = mockAuthenticatedReq.user, dto = createUserDto) => {
+      const emailExists = await service['usersRepository'].count({ email: dto.email });
+      if (emailExists) {
+        throw new BadRequestException({
+          message: 'Email already in use',
+          errors: { email: 'Email already in use' },
+        });
+      }
+      const group = await service['entityManager'].getRepository(Group).findOne({ id: dto.group });
+      if (!group) {
+        throw new BadRequestException({
+          message: 'Group not found',
+          errors: { groupId: 'Group not found' },
+        });
+      }
+      if (!isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])) {
+        throw new ForbiddenException({
+          message: 'Insufficient permissions',
+          errors: { roles: 'Insufficient permissions' },
+        });
+      }
+      if (!isRolesHigher(originUser.roles, dto.roles)) {
+        throw new ForbiddenException({
+          message: 'Insufficient permissions',
+          errors: { roles: 'Insufficient permissions' },
+        });
+      }
+      const user = new User(
+        dto.email,
+        dto.roles,
+        dto.displayName,
+        group,
+      );
+
+      user.id = user0.id;
+      user.createdAt = user0.createdAt;
+      user.updatedAt = user0.updatedAt;
+
+      await service['entityManager'].persistAndFlush(user);
+      return new UserResponse(user);
+    });
+
+    const result = await controller.create(mockAuthenticatedReq, createUserDto);
+
+    expect(result).toEqual(userRes);
+    expect(service.create).toHaveBeenCalledWith(authenticatedUser, createUserDto);
+
+    jest.spyOn(service['usersRepository'], 'findOne').mockResolvedValue(0);
+    jest.spyOn(service, 'findOne').mockImplementation( async (originUser = mockAuthenticatedReq.user, id = userRes.id) => {
+      if (isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])) {
+        const populate = [
+          'email',
+          'roles',
+          'bio',
+          'group',
+          'totalScore',
+          'totalScoreOffset',
+          'problemSolvedCount',
+          'lastProblemSolvedAt',
+          'lastEmailRequestedAt',
+          'createdAt',
+          'updatedAt',
+        ] as const;
+        const user = await service['usersRepository'].findOne({ id }, { populate });
+        if (!user) {
+          throw new NotFoundException({
+            message: 'User not found',
+            errors: { id: 'User not found' },
+          });
+        }
+        return new UserResponse(user);
+      }
+      const populate = [
+        'bio',
+        'group',
+        'totalScore',
+        'problemSolvedCount',
+        'lastProblemSolvedAt',
+        'createdAt',
+        'updatedAt',
+      ] as const;
+      const user = await service['usersRepository'].findOne({ id }, { populate });
+      if (!user) {
+        throw new NotFoundException({
+          message: 'User not found',
+          errors: { id: 'User not found' },
+        });
+      }
+      return new UserResponse(user);
+    });
+
+    expect(async () => {
+      await controller.findOne(mockAuthenticatedReq, userRes.id);
+    }).rejects.toThrow(NotFoundException);
+    expect(service.findOne).toHaveBeenCalledWith(authenticatedUser, userRes.id);
+
+  });
 });
