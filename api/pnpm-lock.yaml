@@ -129,6 +129,9 @@ importers:
       jest:
         specifier: ^29.7.0
         version: 29.7.0(@types/node@20.12.12)(ts-node@10.9.2(@types/node@20.12.12)(typescript@5.4.5))
+      jest-express:
+        specifier: ^1.12.0
+        version: 1.12.0
       prettier:
         specifier: ^3.2.5
         version: 3.2.5
@@ -2474,6 +2477,9 @@ packages:
     resolution: {integrity: sha512-DOSwCRqXirTOyheM+4d5YZOrWcdu0LNZ87ewUoywbcb2XR4wKgqiG8vNeYwhjFMbEkfju7wx2GYH0P2gevGvFw==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
 
+  jest-express@1.12.0:
+    resolution: {integrity: sha512-HVpmEtVLHgT/Wh2bGy3Fy6mXdoS0Clj7d4/cFnptw2JkCVepC3FOiboavqLYZv4x2oytpWgOqikhVr84f9CwZw==}
+
   jest-get-type@29.6.3:
     resolution: {integrity: sha512-zrteXnqYxfQh7l5FHyL38jL39di8H8rHoecLH3JNxH3BwOrBsNeabdap5e0I23lD4HHI8W5VFBZqG4Eaq5LNcw==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
@@ -2497,6 +2503,9 @@ packages:
   jest-mock@29.7.0:
     resolution: {integrity: sha512-ITOMZn+UkYS4ZFh83xYAOzWStloNzJFO2s8DWrE4lhtGD+AorgnbkiKERe4wQVBydIGPx059g6riW5Btp6Llnw==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
+
+  jest-node-http@1.0.0:
+    resolution: {integrity: sha512-WcO1nqqkgwZ4sHAJ90YGqOiFYFkDm9eP8HsBwadedlJaF2T5JHM1BmnpskHDDlB3B4JzRl6CJgOpSOAOwoRfhQ==}
 
   jest-pnp-resolver@1.2.3:
     resolution: {integrity: sha512-+3NpwQEnRoIBtx4fyhblQDPgJI0H1IEIkX7ShLUjPGA7TtUTvI1oiKi3SR4oBR0hQhQR80l4WAe5RrXBwWMA8w==}
@@ -7008,6 +7017,10 @@ snapshots:
       jest-mock: 29.7.0
       jest-util: 29.7.0
 
+  jest-express@1.12.0:
+    dependencies:
+      jest-node-http: 1.0.0
+
   jest-get-type@29.6.3: {}
 
   jest-haste-map@29.7.0:
@@ -7055,6 +7068,8 @@ snapshots:
       '@jest/types': 29.6.3
       '@types/node': 20.12.12
       jest-util: 29.7.0
+
+  jest-node-http@1.0.0: {}
 
   jest-pnp-resolver@1.2.3(jest-resolve@29.7.0):
     optionalDependencies:
