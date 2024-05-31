@@ -16,11 +16,11 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
-import { isRolesHigher, isSomeRolesIn } from 'src/auth/roles';
-import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
-import { Role } from 'src/shared/enums/role.enum';
-import { AuthenticatedUser } from 'src/shared/interfaces/authenticated-request.interface';
-import { parseSort } from 'src/shared/parse-sort';
+import { isRolesHigher, isSomeRolesIn } from '../auth/roles';
+import { PaginatedResponse } from '../shared/dto/pagination.dto';
+import { Role } from '../shared/enums/role.enum';
+import { AuthenticatedUser } from '../shared/interfaces/authenticated-request.interface';
+import { parseSort } from '../shared/parse-sort';
 
 import { Group } from '../groups/entities/group.entity';
 

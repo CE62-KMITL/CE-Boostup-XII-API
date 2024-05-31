@@ -21,10 +21,10 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
-import { Public } from 'src/auth/public.decorator';
-import { PaginatedResponse } from 'src/shared/dto/pagination.dto';
-import { Role } from 'src/shared/enums/role.enum';
-import { AuthenticatedRequest } from 'src/shared/interfaces/authenticated-request.interface';
+import { Public } from '../auth/public.decorator';
+import { PaginatedResponse } from '../shared/dto/pagination.dto';
+import { Role } from '../shared/enums/role.enum';
+import { AuthenticatedRequest } from '../shared/interfaces/authenticated-request.interface';
 
 import { Roles } from '../auth/roles.decorator';
 

@@ -7,9 +7,9 @@ import {
   MaxLength,
   ValidateIf,
 } from 'class-validator';
-import { ConfigConstants } from 'src/config/config-constants';
-import { Group } from 'src/groups/entities/group.entity';
-import { Problem } from 'src/problems/entities/problem.entity';
+import { ConfigConstants } from '../../config/config-constants';
+import { Group } from '../../groups/entities/group.entity';
+import { Problem } from '../../problems/entities/problem.entity';
 
 import { CreateUserDto } from './create-user.dto';
 

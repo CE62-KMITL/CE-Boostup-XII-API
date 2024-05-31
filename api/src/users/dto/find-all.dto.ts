@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { IsOptional, IsString, IsUUID, ValidateIf } from 'class-validator';
-import { PaginationRequestDto } from 'src/shared/dto/pagination.dto';
+import { PaginationRequestDto } from '../../shared/dto/pagination.dto';
 
 export class FindAllDto extends PaginationRequestDto {
   @ApiPropertyOptional({ example: 'John Doe' })

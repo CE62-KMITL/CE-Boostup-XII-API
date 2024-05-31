@@ -11,8 +11,8 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { ConfigConstants } from 'src/config/config-constants';
-import { Role } from 'src/shared/enums/role.enum';
+import { ConfigConstants } from '../../config/config-constants';
+import { Role } from '../../shared/enums/role.enum';
 
 export class CreateUserDto {
   @ApiProperty({
