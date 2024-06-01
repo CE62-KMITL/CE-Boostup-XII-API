@@ -36,7 +36,7 @@ export class User {
 
   @Property({
     type: types.string,
-    length: ConfigConstants.user.maxDisplayNameLength,
+    length: ConfigConstants.user.maxDisplayNameLength * 4,
   })
   displayName: string;
 

@@ -17,7 +17,7 @@ export class ProblemTag {
 
   @Property({
     type: types.string,
-    length: ConfigConstants.problemTag.maxNameLength,
+    length: ConfigConstants.problemTag.maxNameLength * 4,
     unique: true,
   })
   name: string;

@@ -39,7 +39,7 @@ export class Problem {
 
   @Property({
     type: types.string,
-    length: ConfigConstants.problem.maxTitleLength,
+    length: ConfigConstants.problem.maxTitleLength * 4,
   })
   title: string;
 
@@ -118,7 +118,7 @@ export class Problem {
 
   @Property({
     type: types.string,
-    length: ConfigConstants.problem.maxCreditsLength,
+    length: ConfigConstants.problem.maxCreditsLength * 4,
     lazy: true,
   })
   credits: string;
