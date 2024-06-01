@@ -163,7 +163,7 @@ export class CreateProblemDto {
     type: 'number',
     minimum: 0,
     maximum: ConfigConstants.problem.maxTimeLimit,
-    example: 0.01,
+    example: ConfigConstants.problem.defaultTimeLimit,
   })
   @IsNumber()
   @Min(0)
@@ -175,7 +175,7 @@ export class CreateProblemDto {
     type: 'integer',
     minimum: 0,
     maximum: ConfigConstants.problem.maxMemoryLimit,
-    example: 16384,
+    example: ConfigConstants.problem.defaultMemoryLimit,
   })
   @IsNumber()
   @IsInt()
