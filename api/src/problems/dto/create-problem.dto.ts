@@ -254,6 +254,7 @@ export const createProblemDtoDefault: Partial<CreateProblemDto> = {
   input: '',
   output: '',
   hint: '',
+  hintCost: 0,
   exampleTestcases: [],
   starterCode: '',
   allowedHeaders: [],

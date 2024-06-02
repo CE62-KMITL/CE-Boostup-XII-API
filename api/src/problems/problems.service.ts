@@ -713,6 +713,9 @@ export class ProblemsService implements OnModuleInit {
       owner: user,
       problem,
     });
+    for (const submission of submissions) {
+      console.log(submission);
+    }
     if (submissions.some((submission) => submission.accepted)) {
       return CompletionStatus.Solved;
     }
