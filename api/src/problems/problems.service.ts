@@ -67,6 +67,9 @@ export class ProblemsService implements OnModuleInit {
     createProblemDto: CreateProblemDto,
   ): Promise<ProblemResponse> {
     assignDefault(createProblemDto, createProblemDtoDefault);
+    if (!createProblemDto.hint) {
+      createProblemDto.hintCost = 0;
+    }
     const user = await this.usersService.findOneInternal({ id: originUser.id });
     if (!user) {
       throw new UnauthorizedException({
@@ -395,7 +398,7 @@ export class ProblemsService implements OnModuleInit {
         errors: { id: 'Problem not found' },
       });
     }
-    if (problem.usersUnlockedHint.contains(user)) {
+    if (problem.hintCost === 0 || problem.usersUnlockedHint.contains(user)) {
       this.problemsRepository.populate(problem, ['hint']);
     }
     return new ProblemResponse(problem, {
@@ -459,7 +462,7 @@ export class ProblemsService implements OnModuleInit {
       if (!problem.usersUnlockedHint.isInitialized()) {
         await problem.usersUnlockedHint.init();
       }
-      if (problem.usersUnlockedHint.contains(user)) {
+      if (problem.hintCost === 0 || problem.usersUnlockedHint.contains(user)) {
         throw new BadRequestException({
           message: 'Hint already unlocked',
           errors: { unlockHint: 'Hint already unlocked' },
