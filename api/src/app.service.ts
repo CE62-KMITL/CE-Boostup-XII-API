@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { AxiosResponse } from 'axios';
 import { Observable } from 'rxjs';
 
@@ -10,10 +11,14 @@ import {
 
 @Injectable()
 export class AppService {
-  constructor(private readonly compilerService: CompilerService) {}
+  constructor(
+    private readonly compilerService: CompilerService,
+    private readonly configService: ConfigService,
+  ) {}
 
   getRoot(): string {
-    return 'Swagger UI is available at <a href="/api">/api</a>';
+    const urlPrefix = this.configService.getOrThrow<string>('url.prefix');
+    return `Swagger UI is available at <a href="${urlPrefix}/docs">${urlPrefix}/docs</a>`;
   }
 
   compileAndRun(

@@ -15,6 +15,9 @@ async function bootstrap(): Promise<void> {
   });
   const configService = app.get(ConfigService);
 
+  const urlPrefix = configService.getOrThrow<string>('url.prefix');
+  app.setGlobalPrefix(urlPrefix);
+
   app.getHttpAdapter().getInstance().disable('x-powered-by');
 
   const allowedOrigins =
@@ -55,7 +58,7 @@ async function bootstrap(): Promise<void> {
     .setVersion('0.0.2')
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  SwaggerModule.setup(`${urlPrefix}/docs`, app, document);
 
   const mikroOrm = app.get(MikroORM);
   await mikroOrm.getSchemaGenerator().ensureDatabase();
