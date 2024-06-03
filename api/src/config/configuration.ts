@@ -5,6 +5,9 @@ export default () => ({
   CorsAllowedOrigins: process.env.CORS_ALLOWED_ORIGINS
     ? process.env.CORS_ALLOWED_ORIGINS.split(/, */)
     : ['*'],
+  url: {
+    prefix: process.env.URL_PREFIX || '',
+  },
   database: {
     host: process.env.MARIADB_HOST || 'mariadb',
     port: process.env.MARIADB_PORT ? +process.env.MARIADB_PORT : 3306,
