@@ -91,13 +91,14 @@ export class User {
     roles: Role[],
     displayName: string,
     group?: Rel<Group> | null,
+    hashedPassword?: string,
   ) {
     this.email = email;
     this.roles = roles;
     this.displayName = displayName;
     this.group = group || null;
     this.bio = '';
-    this.hashedPassword = '';
+    this.hashedPassword = hashedPassword ?? '';
   }
 }
 

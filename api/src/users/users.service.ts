@@ -121,11 +121,16 @@ export class UsersService implements OnModuleInit {
         errors: { roles: 'Insufficient permissions' },
       });
     }
+    let hashedPassword = '';
+    if (createUserDto.password) {
+      hashedPassword = await this.hashPassword(createUserDto.password);
+    }
     const user = new User(
       createUserDto.email,
       createUserDto.roles,
       createUserDto.displayName,
       group,
+      hashedPassword,
     );
     await this.entityManager.persistAndFlush(user);
     return new UserResponse(user);
@@ -347,6 +352,22 @@ export class UsersService implements OnModuleInit {
       }
       user.group = group;
       delete updateUserDto.group;
+    }
+    if (updateUserDto.roles) {
+      if (!isSomeRolesIn(originUser.roles, [Role.Admin, Role.SuperAdmin])) {
+        await this.entityManager.flush();
+        throw new ForbiddenException({
+          message: 'Insufficient permissions',
+          errors: { roles: 'Insufficient permissions' },
+        });
+      }
+      if (!isRolesHigher(originUser.roles, updateUserDto.roles)) {
+        await this.entityManager.flush();
+        throw new ForbiddenException({
+          message: 'Insufficient permissions',
+          errors: { roles: 'Insufficient permissions' },
+        });
+      }
     }
     if (
       id !== originUser.id &&
