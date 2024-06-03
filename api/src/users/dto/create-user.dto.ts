@@ -7,6 +7,7 @@ import {
   IsEnum,
   IsOptional,
   IsString,
+  IsStrongPassword,
   IsUUID,
   MaxLength,
   MinLength,
@@ -54,4 +55,21 @@ export class CreateUserDto {
   @IsUUID('4')
   @IsOptional()
   group?: string;
+
+  @ApiPropertyOptional({
+    type: 'string',
+    minLength: ConfigConstants.user.minPasswordLength,
+    maxLength: ConfigConstants.user.maxPasswordLength,
+    example: 'P@ssw0rd!',
+  })
+  @MaxLength(ConfigConstants.user.maxPasswordLength)
+  @IsStrongPassword({
+    minLength: ConfigConstants.user.minPasswordLength,
+    minLowercase: 1,
+    minUppercase: 1,
+    minNumbers: 1,
+    minSymbols: 1,
+  })
+  @IsOptional()
+  password?: string;
 }
