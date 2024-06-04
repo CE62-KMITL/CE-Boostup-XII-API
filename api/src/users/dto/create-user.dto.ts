@@ -29,7 +29,7 @@ export class CreateUserDto {
   @ApiProperty({
     type: 'string',
     maxLength: ConfigConstants.user.maxEmailLength,
-    example: 'example@example.com',
+    example: 'admin@example.com',
   })
   @MaxLength(ConfigConstants.user.maxEmailLength)
   @IsEmail()
