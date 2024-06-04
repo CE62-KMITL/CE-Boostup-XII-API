@@ -19,7 +19,7 @@ export class Group {
 
   @Property({
     type: types.string,
-    length: ConfigConstants.group.maxNameLength,
+    length: ConfigConstants.group.maxNameLength * 4,
     unique: true,
   })
   name: string;

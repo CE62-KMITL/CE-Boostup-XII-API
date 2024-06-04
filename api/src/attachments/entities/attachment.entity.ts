@@ -49,12 +49,12 @@ export class AttachmentResponse {
   };
   createdAt?: Date;
 
-  constructor(attachment: Attachment) {
+  constructor(attachment: Attachment, urlPrefix: string) {
     this.id = attachment.id;
     this.name = attachment.name;
     this.type = attachment.type;
     this.size = attachment.size;
-    this.url = attachment.url;
+    this.url = urlPrefix + attachment.url;
     this.owner = attachment.owner
       ? { id: attachment.owner.id, displayName: attachment.owner.displayName }
       : undefined;

@@ -2,12 +2,10 @@ import { ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import {
   IsOptional,
   IsString,
-  IsStrongPassword,
   Matches,
   MaxLength,
   ValidateIf,
 } from 'class-validator';
-import { ConfigConstants } from 'src/config/config-constants';
 import { Group } from 'src/groups/entities/group.entity';
 
 import { CreateUserDto } from './create-user.dto';
@@ -30,23 +28,6 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   )
   @IsOptional()
   avatar?: string;
-
-  @ApiPropertyOptional({
-    type: 'string',
-    minLength: ConfigConstants.user.minPasswordLength,
-    maxLength: ConfigConstants.user.maxPasswordLength,
-    example: 'P@ssw0rd!',
-  })
-  @MaxLength(ConfigConstants.user.maxPasswordLength)
-  @IsStrongPassword({
-    minLength: ConfigConstants.user.minPasswordLength,
-    minLowercase: 1,
-    minUppercase: 1,
-    minNumbers: 1,
-    minSymbols: 1,
-  })
-  @IsOptional()
-  password?: string;
 
   @ApiPropertyOptional({ type: 'string', example: 'P@ssw0rd!' })
   @ValidateIf((object) => object.password !== undefined)

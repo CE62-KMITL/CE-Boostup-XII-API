@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsOptional, IsString, Matches } from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsUUID, Matches } from 'class-validator';
 import { PaginationRequestDto } from 'src/shared/dto/pagination.dto';
 import { CompletionStatus } from 'src/shared/enums/completion-status.enum';
 import { PublicationStatus } from 'src/shared/enums/publication-status.enum';
@@ -9,6 +9,14 @@ export class FindAllDto extends PaginationRequestDto {
   @IsString()
   @IsOptional()
   search?: string;
+
+  @ApiPropertyOptional({
+    type: 'string',
+    example: 'f6cd1537-ec46-4f9e-986c-ace31fa9a451',
+  })
+  @IsUUID('4')
+  @IsOptional()
+  owner?: string;
 
   @ApiPropertyOptional({
     type: 'string',

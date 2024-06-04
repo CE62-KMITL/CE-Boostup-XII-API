@@ -53,7 +53,7 @@ export class Submission {
 
 export class SubmissionResponse {
   id: string;
-  owner?: User;
+  owner?: { id: string; displayName: string };
   problem?: { id: string; title: string };
   code?: string;
   language?: ProgrammingLanguage;
@@ -67,7 +67,9 @@ export class SubmissionResponse {
 
   constructor(submission: Submission) {
     this.id = submission.id;
-    this.owner = submission.owner;
+    this.owner = submission.owner
+      ? { id: submission.owner.id, displayName: submission.owner.displayName }
+      : undefined;
     this.problem = submission.problem
       ? { id: submission.problem.id, title: submission.problem.title }
       : undefined;
