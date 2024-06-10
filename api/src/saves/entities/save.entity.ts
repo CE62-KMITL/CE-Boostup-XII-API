@@ -1,4 +1,4 @@
-import { Rel } from '@mikro-orm/core';
+import { Enum, Rel } from '@mikro-orm/core';
 import {
   Entity,
   ManyToOne,
@@ -6,7 +6,10 @@ import {
   Property,
   types,
 } from '@mikro-orm/mariadb';
-import { Problem } from 'src/problems/entities/problem.entity';
+import {
+  Problem,
+  ProgrammingLanguage,
+} from 'src/problems/entities/problem.entity';
 import { User } from 'src/users/entities/user.entity';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -24,6 +27,9 @@ export class Save {
   @Property({ type: types.text, lazy: true })
   code: string;
 
+  @Enum({ items: () => ProgrammingLanguage, nullable: true, lazy: true })
+  language: ProgrammingLanguage;
+
   @Property({ type: types.datetime, lazy: true })
   createdAt: Date = new Date();
 
@@ -36,6 +42,7 @@ export class SaveResponse {
   owner?: { id: string; displayName: string };
   problem?: { id: string; title: string };
   code?: string;
+  language?: ProgrammingLanguage;
   createdAt?: Date;
   updatedAt?: Date;
 
@@ -48,6 +55,7 @@ export class SaveResponse {
       ? { id: save.problem.id, title: save.problem.title }
       : undefined;
     this.code = save.code;
+    this.language = save.language;
     this.createdAt = save.createdAt;
     this.updatedAt = save.updatedAt;
   }

@@ -27,6 +27,7 @@ WORKDIR /app
 COPY --from=build --chown=node:node /app/dist ./dist
 COPY --from=build --chown=node:node /app/node_modules ./node_modules
 COPY --chown=node:node .env .env
+COPY --chown=node:node logo.avif logo.avif
 
 USER node
 
