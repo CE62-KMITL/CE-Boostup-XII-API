@@ -352,10 +352,10 @@ export class SubmissionsService implements OnModuleInit {
       const resultCode = result.code || ResultCode.CE;
       return {
         outputCodes: Array.from({ length: testcases.length }, () => resultCode),
-        compilationTime: result.compilationTime,
-        compilationMemory: result.compilationMemory,
-        executionTime: result.totalExecutionTime,
-        executionMemory: result.maxExecutionMemory,
+        compilationTime: result.compilationTime ?? 0,
+        compilationMemory: result.compilationMemory ?? 0,
+        executionTime: result.totalExecutionTime ?? 0,
+        executionMemory: result.maxExecutionMemory ?? 0,
       };
     }
     const outputCodes: ResultCode[] = [];
@@ -373,10 +373,10 @@ export class SubmissionsService implements OnModuleInit {
     }
     return {
       outputCodes,
-      compilationTime: result.compilationTime,
-      compilationMemory: result.compilationMemory,
-      executionTime: result.totalExecutionTime,
-      executionMemory: result.maxExecutionMemory,
+      compilationTime: result.compilationTime ?? 0,
+      compilationMemory: result.compilationMemory ?? 0,
+      executionTime: result.totalExecutionTime ?? 0,
+      executionMemory: result.maxExecutionMemory ?? 0,
     };
   }
 }
