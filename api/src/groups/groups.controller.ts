@@ -32,6 +32,7 @@ import { FindAllDto } from './dto/find-all.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { GroupResponse } from './entities/group.entity';
 import { GroupsService } from './groups.service';
+import { FallbackDto } from './dto/fallback.dto';
 
 @ApiBearerAuth()
 @ApiTags('groups')
@@ -116,6 +117,7 @@ export class GroupsController {
       }),
     )
     id: string,
+    @Query() fallbackDto: FallbackDto,
   ): Promise<StreamableFile> {
     const group = await this.groupsService.findOneInternal(id);
     if (!group) {
@@ -124,11 +126,22 @@ export class GroupsController {
         errors: { id: 'Group not found' },
       });
     }
-    if (!group.avatarFilename) {
+    if (
+      !group.avatarFilename &&
+      fallbackDto.fallback.toLowerCase() === 'false'
+    ) {
       throw new NotFoundException({
         message: 'Avatar not found',
         errors: { id: 'Avatar not found' },
       });
+    }
+    if (!group.avatarFilename) {
+      const file = createReadStream('logo.avif');
+      res.set({
+        'Content-Type': `image/avif`,
+        'Content-Disposition': 'inline',
+      });
+      return new StreamableFile(file);
     }
     const file = createReadStream(
       join(
