@@ -29,11 +29,11 @@ import { AuthenticatedRequest } from 'src/shared/interfaces/authenticated-reques
 import { Roles } from '../auth/roles.decorator';
 
 import { CreateUserDto } from './dto/create-user.dto';
+import { FallbackDto } from './dto/fallback.dto';
 import { FindAllDto } from './dto/find-all.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserResponse } from './entities/user.entity';
 import { UsersService } from './users.service';
-import { FallbackDto } from './dto/fallback.dto';
 
 @ApiBearerAuth()
 @ApiTags('users')
