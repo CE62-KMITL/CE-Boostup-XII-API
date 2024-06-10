@@ -33,6 +33,7 @@ import { FindAllDto } from './dto/find-all.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserResponse } from './entities/user.entity';
 import { UsersService } from './users.service';
+import { FallbackDto } from './dto/fallback.dto';
 
 @ApiBearerAuth()
 @ApiTags('users')
@@ -128,6 +129,7 @@ export class UsersController {
       }),
     )
     id: string,
+    @Query() fallbackDto: FallbackDto,
   ): Promise<StreamableFile> {
     const user = await this.usersService.findOneInternal({ id });
     if (!user) {
@@ -136,11 +138,22 @@ export class UsersController {
         errors: { id: 'User not found' },
       });
     }
-    if (!user.avatarFilename) {
+    if (
+      !user.avatarFilename &&
+      fallbackDto.fallback.toLowerCase() === 'false'
+    ) {
       throw new NotFoundException({
         message: 'Avatar not found',
         errors: { id: 'Avatar not found' },
       });
+    }
+    if (!user.avatarFilename) {
+      const file = createReadStream('logo.avif');
+      res.set({
+        'Content-Type': `image/avif`,
+        'Content-Disposition': 'inline',
+      });
+      return new StreamableFile(file);
     }
     const file = createReadStream(
       join(
