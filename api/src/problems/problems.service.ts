@@ -481,6 +481,7 @@ export class ProblemsService implements OnModuleInit {
         },
       );
       problem.usersUnlockedHint.add(user);
+      delete updateProblemDto.unlockHint;
     }
     if (updateProblemDto.publicationStatus) {
       switch (problem.publicationStatus) {
@@ -625,6 +626,10 @@ export class ProblemsService implements OnModuleInit {
       }
       problem.publicationStatus = updateProblemDto.publicationStatus;
       delete updateProblemDto.publicationStatus;
+    }
+    if (Object.keys(updateProblemDto).length === 0) {
+      await this.entityManager.flush();
+      return await this.findOne(originUser, id);
     }
     if (
       problem.owner.id !== originUser.id &&
