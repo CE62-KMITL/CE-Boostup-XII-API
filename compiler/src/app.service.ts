@@ -157,8 +157,15 @@ export class AppService implements OnModuleInit {
         }
       }
       const outputLines = compilationOutputWithHeaders.split('\n');
+      let firstHeaderLine: number | undefined = outputLines.findIndex((line) =>
+        line.startsWith('.'),
+      );
+      if (firstHeaderLine === -1) {
+        firstHeaderLine = undefined;
+      }
       let lastHeaderLine: number | undefined = outputLines.findIndex(
-        (line) => !line.startsWith('.'),
+        (line, i) =>
+          !line.startsWith('.') && i >= (firstHeaderLine ?? Infinity),
       );
       if (lastHeaderLine === -1) {
         lastHeaderLine = undefined;
@@ -171,11 +178,31 @@ export class AppService implements OnModuleInit {
       if (firstIncludeGuardWarningLine === -1) {
         firstIncludeGuardWarningLine = undefined;
       }
+      let lastIncludeGuardWarningLine: number | undefined =
+        outputLines.findIndex(
+          (line, i) =>
+            !line.startsWith('/') &&
+            i >= (firstIncludeGuardWarningLine ?? Infinity),
+        );
+      if (lastIncludeGuardWarningLine === -1) {
+        lastIncludeGuardWarningLine = undefined;
+      }
       let compilationOutput =
-        outputLines
-          .slice(lastHeaderLine, firstIncludeGuardWarningLine)
-          .join('\n') + '\n';
-      if (compilationOutput === '\n') {
+        outputLines.slice(0, firstHeaderLine).join('\n') + '\n';
+      if (
+        lastHeaderLine !== undefined &&
+        firstIncludeGuardWarningLine !== undefined
+      ) {
+        compilationOutput +=
+          outputLines
+            .slice(lastHeaderLine, firstIncludeGuardWarningLine)
+            .join('\n') + '\n';
+      }
+      if (lastIncludeGuardWarningLine !== undefined) {
+        compilationOutput +=
+          outputLines.slice(lastIncludeGuardWarningLine).join('\n') + '\n';
+      }
+      if (compilationOutput.trim() === '\n') {
         compilationOutput = '';
       }
       if (compilationExitCode !== 0) {
