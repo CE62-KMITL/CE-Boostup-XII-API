@@ -14,6 +14,18 @@ import { ResultCode } from './enums/result-code.enum';
 import { WarningLevel } from './enums/warning-level.enum';
 import { ExecutionResult, Executor } from './executor';
 
+function trim(str: string, ch: string): string {
+  let start = 0;
+  while (start < str.length && str[start] === ch) {
+    start++;
+  }
+  let end = str.length - 1;
+  while (end >= 0 && str[end] === ch) {
+    end--;
+  }
+  return str.slice(start, end + 1);
+}
+
 @Injectable()
 export class AppService implements OnModuleInit {
   constructor(private readonly configService: ConfigService) {
@@ -204,6 +216,8 @@ export class AppService implements OnModuleInit {
       }
       if (!compilationOutput.trim()) {
         compilationOutput = '';
+      } else {
+        compilationOutput = trim(compilationOutput, '\n') + '\n';
       }
       if (compilationExitCode !== 0) {
         const bannedFunctionMatches = compilationOutput.matchAll(
