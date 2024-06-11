@@ -1,6 +1,12 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsEnum, IsString, IsUUID, MaxLength } from 'class-validator';
+import {
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+} from 'class-validator';
 import { ConfigConstants } from 'src/config/config-constants';
 import { ProgrammingLanguage } from 'src/shared/enums/programming-language.enum';
 
@@ -22,11 +28,12 @@ export class CreateSaveDto {
   @MaxLength(ConfigConstants.save.maxCodeLength)
   code: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     type: 'string',
     example: 'C++17',
   })
   @Transform(({ value }) => value.toLowerCase())
   @IsEnum(ProgrammingLanguage)
-  language: ProgrammingLanguage;
+  @IsOptional()
+  language?: ProgrammingLanguage;
 }

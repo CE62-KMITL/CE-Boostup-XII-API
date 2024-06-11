@@ -28,7 +28,7 @@ export class Save {
   code: string;
 
   @Enum({ items: () => ProgrammingLanguage, nullable: true, lazy: true })
-  language: ProgrammingLanguage;
+  language: ProgrammingLanguage | null;
 
   @Property({ type: types.datetime, lazy: true })
   createdAt: Date = new Date();
@@ -55,7 +55,7 @@ export class SaveResponse {
       ? { id: save.problem.id, title: save.problem.title }
       : undefined;
     this.code = save.code;
-    this.language = save.language;
+    this.language = save.language ?? undefined;
     this.createdAt = save.createdAt;
     this.updatedAt = save.updatedAt;
   }

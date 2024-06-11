@@ -28,11 +28,11 @@ import { Role } from 'src/shared/enums/role.enum';
 import { AuthenticatedRequest } from 'src/shared/interfaces/authenticated-request.interface';
 
 import { CreateGroupDto } from './dto/create-group.dto';
+import { FallbackDto } from './dto/fallback.dto';
 import { FindAllDto } from './dto/find-all.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { GroupResponse } from './entities/group.entity';
 import { GroupsService } from './groups.service';
-import { FallbackDto } from './dto/fallback.dto';
 
 @ApiBearerAuth()
 @ApiTags('groups')

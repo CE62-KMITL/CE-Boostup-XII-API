@@ -58,7 +58,7 @@ export class SavesService {
     save.owner = user;
     save.problem = problem;
     save.code = createSaveDto.code;
-    save.language = createSaveDto.language;
+    save.language = createSaveDto.language ?? null;
     await this.entityManager.persistAndFlush(save);
     return new SaveResponse(save);
   }
