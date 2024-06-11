@@ -14,6 +14,18 @@ import { ResultCode } from './enums/result-code.enum';
 import { WarningLevel } from './enums/warning-level.enum';
 import { ExecutionResult, Executor } from './executor';
 
+function trim(str: string, ch: string): string {
+  let start = 0;
+  while (start < str.length && str[start] === ch) {
+    start++;
+  }
+  let end = str.length - 1;
+  while (end >= 0 && str[end] === ch) {
+    end--;
+  }
+  return str.slice(start, end + 1);
+}
+
 @Injectable()
 export class AppService implements OnModuleInit {
   constructor(private readonly configService: ConfigService) {
@@ -181,8 +193,8 @@ export class AppService implements OnModuleInit {
       let lastIncludeGuardWarningLine: number | undefined =
         outputLines.findIndex(
           (line, i) =>
-            !line.startsWith('/') &&
-            i >= (firstIncludeGuardWarningLine ?? Infinity),
+            (!line.startsWith('/') || line.endsWith(':')) &&
+            i > (firstIncludeGuardWarningLine ?? Infinity),
         );
       if (lastIncludeGuardWarningLine === -1) {
         lastIncludeGuardWarningLine = undefined;
@@ -202,8 +214,10 @@ export class AppService implements OnModuleInit {
         compilationOutput +=
           outputLines.slice(lastIncludeGuardWarningLine).join('\n') + '\n';
       }
-      if (compilationOutput.trim() === '\n') {
+      if (!compilationOutput.trim()) {
         compilationOutput = '';
+      } else {
+        compilationOutput = trim(compilationOutput, '\n') + '\n';
       }
       if (compilationExitCode !== 0) {
         const bannedFunctionMatches = compilationOutput.matchAll(
