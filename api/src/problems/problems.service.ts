@@ -626,6 +626,7 @@ export class ProblemsService implements OnModuleInit {
       }
       problem.publicationStatus = updateProblemDto.publicationStatus;
       delete updateProblemDto.publicationStatus;
+      delete updateProblemDto.reviewComment;
     }
     if (Object.keys(updateProblemDto).length === 0) {
       await this.entityManager.flush();
