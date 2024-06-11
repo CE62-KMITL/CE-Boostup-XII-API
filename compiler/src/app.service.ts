@@ -181,8 +181,8 @@ export class AppService implements OnModuleInit {
       let lastIncludeGuardWarningLine: number | undefined =
         outputLines.findIndex(
           (line, i) =>
-            !line.startsWith('/') &&
-            i >= (firstIncludeGuardWarningLine ?? Infinity),
+            (!line.startsWith('/') || line.endsWith(':')) &&
+            i > (firstIncludeGuardWarningLine ?? Infinity),
         );
       if (lastIncludeGuardWarningLine === -1) {
         lastIncludeGuardWarningLine = undefined;
@@ -202,7 +202,7 @@ export class AppService implements OnModuleInit {
         compilationOutput +=
           outputLines.slice(lastIncludeGuardWarningLine).join('\n') + '\n';
       }
-      if (compilationOutput.trim() === '\n') {
+      if (!compilationOutput.trim()) {
         compilationOutput = '';
       }
       if (compilationExitCode !== 0) {
