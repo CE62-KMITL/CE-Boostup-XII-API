@@ -190,7 +190,7 @@ export class AppService implements OnModuleInit {
       let compilationOutput =
         outputLines.slice(0, firstHeaderLine).join('\n') + '\n';
       if (
-        lastHeaderLine !== undefined &&
+        lastHeaderLine !== undefined ||
         firstIncludeGuardWarningLine !== undefined
       ) {
         compilationOutput +=
