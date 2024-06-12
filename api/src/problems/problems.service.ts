@@ -325,6 +325,12 @@ export class ProblemsService implements OnModuleInit {
       });
     }
     const checkProblem = await this.findOneInternal({ id });
+    if (!checkProblem) {
+      throw new NotFoundException({
+        message: 'Problem not found',
+        errors: { id: 'Problem not found' },
+      });
+    }
     if (
       originUser.id === checkProblem.owner.id ||
       isSomeRolesIn(originUser.roles, [
