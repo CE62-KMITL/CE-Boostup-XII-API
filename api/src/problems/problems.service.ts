@@ -324,7 +324,9 @@ export class ProblemsService implements OnModuleInit {
         errors: { token: 'Invalid token' },
       });
     }
+    const checkProblem = await this.findOneInternal({ id });
     if (
+      originUser.id === checkProblem.owner.id ||
       isSomeRolesIn(originUser.roles, [
         Role.Reviewer,
         Role.Admin,
