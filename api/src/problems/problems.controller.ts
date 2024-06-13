@@ -62,7 +62,6 @@ export class ProblemsController {
     return await this.problemsService.findOne(request.user, id);
   }
 
-  @Roles(Role.Staff, Role.Admin)
   @Patch(':id')
   async update(
     @Req() request: AuthenticatedRequest,
