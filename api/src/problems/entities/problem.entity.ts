@@ -202,7 +202,7 @@ export class ProblemResponse {
 
   constructor(
     problem: Problem,
-    extra: { completionStatus?: CompletionStatus } = {},
+    extra: { completionStatus?: CompletionStatus; removeHint?: boolean } = {},
   ) {
     this.id = problem.id;
     this.number = problem.number;
@@ -210,7 +210,7 @@ export class ProblemResponse {
     this.description = problem.description;
     this.input = problem.input;
     this.output = problem.output;
-    this.hint = problem.hint;
+    this.hint = extra.removeHint ? undefined : problem.hint;
     this.hintCost = problem.hintCost;
     this.testcases = problem.testcases;
     this.exampleTestcases = problem.exampleTestcases;

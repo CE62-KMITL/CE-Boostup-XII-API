@@ -383,6 +383,7 @@ export class ProblemsService implements OnModuleInit {
       'description',
       'input',
       'output',
+      'hint',
       'hintCost',
       'exampleTestcases',
       'starterCode',
@@ -406,11 +407,11 @@ export class ProblemsService implements OnModuleInit {
         errors: { id: 'Problem not found' },
       });
     }
-    if (problem.hintCost === 0 || problem.usersUnlockedHint.contains(user)) {
-      this.problemsRepository.populate(problem, ['hint']);
-    }
+    const hint =
+      problem.hintCost === 0 || problem.usersUnlockedHint.contains(user);
     return new ProblemResponse(problem, {
       completionStatus: await this.getCompletionStatusOne(problem, user),
+      removeHint: !hint,
     });
   }
 
@@ -470,13 +471,7 @@ export class ProblemsService implements OnModuleInit {
       if (!problem.usersUnlockedHint.isInitialized()) {
         await problem.usersUnlockedHint.init();
       }
-      if (problem.hintCost === 0 || problem.usersUnlockedHint.contains(user)) {
-        throw new BadRequestException({
-          message: 'Hint already unlocked',
-          errors: { unlockHint: 'Hint already unlocked' },
-        });
-      }
-      if (parseIntOptional(user.totalScore) < problem.hintCost) {
+      if (parseIntOptional(user.totalScore ?? 0) < problem.hintCost) {
         throw new BadRequestException({
           message: 'Insufficient score',
           errors: { unlockHint: 'Insufficient score' },

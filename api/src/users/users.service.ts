@@ -410,14 +410,17 @@ export class UsersService implements OnModuleInit {
       );
       delete updateUserDto.avatar;
     }
-    if (updateUserDto.password) {
+    if (updateUserDto.password || updateUserDto.email) {
       if (
         !updateUserDto.oldPassword &&
         !isSomeRolesIn(originUser.roles, [Role.SuperAdmin])
       ) {
+        await this.entityManager.flush();
         throw new BadRequestException({
-          message: 'Old password is required when changing password',
-          errors: { oldPassword: 'Old password is required changing password' },
+          message: 'Old password is required when changing password or email',
+          errors: {
+            oldPassword: 'Old password is required changing password or email',
+          },
         });
       }
       if (
@@ -428,14 +431,31 @@ export class UsersService implements OnModuleInit {
           ))) &&
         !isSomeRolesIn(originUser.roles, [Role.SuperAdmin])
       ) {
+        await this.entityManager.flush();
         throw new BadRequestException({
           message: 'Old password is incorrect',
           errors: { oldPassword: 'Old password is incorrect' },
         });
       }
-      user.hashedPassword = await this.hashPassword(updateUserDto.password);
+      if (updateUserDto.email) {
+        const emailExists = await this.usersRepository.count({
+          email: updateUserDto.email,
+        });
+        if (emailExists) {
+          await this.entityManager.flush();
+          throw new BadRequestException({
+            message: 'Email already in use',
+            errors: { email: 'Email already in use' },
+          });
+        }
+        user.email = updateUserDto.email;
+      }
+      if (updateUserDto.password) {
+        user.hashedPassword = await this.hashPassword(updateUserDto.password);
+      }
       delete updateUserDto.oldPassword;
       delete updateUserDto.password;
+      delete updateUserDto.email;
     }
     assignDefined(user, updateUserDto);
     await this.entityManager.flush();
