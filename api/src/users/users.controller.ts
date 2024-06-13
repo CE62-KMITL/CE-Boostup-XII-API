@@ -58,7 +58,6 @@ export class UsersController {
     return await this.usersService.create(request.user, createUserDto);
   }
 
-  @Roles(Role.User, Role.Staff, Role.Admin)
   @Get()
   async findAll(
     @Req() request: AuthenticatedRequest,
@@ -67,7 +66,6 @@ export class UsersController {
     return await this.usersService.findAll(request.user, findAllDto);
   }
 
-  @Roles(Role.User, Role.Staff)
   @Get(':id')
   async findOne(
     @Req() request: AuthenticatedRequest,
@@ -83,7 +81,6 @@ export class UsersController {
     return await this.usersService.findOne(request.user, id);
   }
 
-  @Roles(Role.User, Role.Staff, Role.Admin)
   @Patch(':id')
   async update(
     @Req() request: AuthenticatedRequest,

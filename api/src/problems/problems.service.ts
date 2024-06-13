@@ -471,7 +471,7 @@ export class ProblemsService implements OnModuleInit {
       if (!problem.usersUnlockedHint.isInitialized()) {
         await problem.usersUnlockedHint.init();
       }
-      if (parseIntOptional(user.totalScore ?? 0) < problem.hintCost) {
+      if (user.totalScore < problem.hintCost) {
         throw new BadRequestException({
           message: 'Insufficient score',
           errors: { unlockHint: 'Insufficient score' },

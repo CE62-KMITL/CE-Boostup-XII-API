@@ -134,7 +134,7 @@ export class Problem {
 
   @Formula(
     (alias) =>
-      `(SELECT COUNT(DISTINCT \`owner_id\`) FROM \`submission\` WHERE \`submission\`.\`problem_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1)`,
+      `(SELECT IFNULL(COUNT(DISTINCT \`owner_id\`), 0) FROM \`submission\` WHERE \`submission\`.\`problem_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1)`,
     { type: types.integer, serializer: (value) => +value, lazy: true },
   )
   userSolvedCount: number;
