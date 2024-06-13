@@ -515,7 +515,7 @@ export class ProblemsService implements OnModuleInit {
               errors: { id: 'Insufficient permissions' },
             });
           }
-          problem.reviewComment = updateProblemDto.reviewComment || null;
+          problem.reviewComment = null;
           await this.verifyTestcases(problem);
           break;
         case PublicationStatus.AwaitingApproval:
