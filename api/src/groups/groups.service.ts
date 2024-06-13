@@ -47,6 +47,36 @@ export class GroupsService {
     const group = new Group();
     group.name = createGroupDto.name;
     group.description = createGroupDto.description || '';
+    if (createGroupDto.avatar) {
+      const matches = createGroupDto.avatar.match(
+        /^data:image\/(png|jpg|jpeg|webp|avif|gif|bmp);base64,((?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}==|[A-Za-z0-9+\/]{3}=)?)$/,
+      );
+      if (matches?.length !== 3) {
+        throw new BadRequestException({
+          message: 'Invalid base64 image',
+          errors: { avatar: 'Invalid base64 image' },
+        });
+      }
+      const [, fileExt, fileData] = matches;
+      const filename = `${group.id}.${fileExt}`;
+      if (group.avatarFilename) {
+        await fs.unlink(
+          join(
+            this.configService.getOrThrow<string>('storages.avatars.path'),
+            group.avatarFilename,
+          ),
+        );
+      }
+      group.avatarFilename = filename;
+      await fs.writeFile(
+        join(
+          this.configService.getOrThrow<string>('storages.avatars.path'),
+          filename,
+        ),
+        fileData,
+        'base64',
+      );
+    }
     await this.entityManager.persistAndFlush(group);
     return new GroupResponse(group);
   }
