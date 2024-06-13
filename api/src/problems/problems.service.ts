@@ -324,7 +324,15 @@ export class ProblemsService implements OnModuleInit {
         errors: { token: 'Invalid token' },
       });
     }
+    const checkProblem = await this.findOneInternal({ id });
+    if (!checkProblem) {
+      throw new NotFoundException({
+        message: 'Problem not found',
+        errors: { id: 'Problem not found' },
+      });
+    }
     if (
+      originUser.id === checkProblem.owner.id ||
       isSomeRolesIn(originUser.roles, [
         Role.Reviewer,
         Role.Admin,
@@ -507,6 +515,7 @@ export class ProblemsService implements OnModuleInit {
               errors: { id: 'Insufficient permissions' },
             });
           }
+          problem.reviewComment = updateProblemDto.reviewComment || null;
           await this.verifyTestcases(problem);
           break;
         case PublicationStatus.AwaitingApproval:
