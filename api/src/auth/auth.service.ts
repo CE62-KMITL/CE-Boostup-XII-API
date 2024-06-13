@@ -7,15 +7,25 @@ import { TooManyRequestsException } from 'src/shared/exceptions/too-many-request
 import { UpdateUserInternalDto } from 'src/users/dto/update-user.dto';
 import { UserResponse } from 'src/users/entities/user.entity';
 import { UsersService } from 'src/users/users.service';
+import wcmatch from 'wildcard-match';
 
 @Injectable()
 export class AuthService {
+  allowOrigins: RegExp[];
+
   constructor(
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
     private readonly usersService: UsersService,
     private readonly mailService: MailService,
-  ) {}
+  ) {
+    const allowedOriginStrings =
+      this.configService.getOrThrow<string[]>('CorsAllowedOrigins');
+    const allowedOriginMatchers = allowedOriginStrings.map((origin) =>
+      wcmatch(origin, { separator: false }),
+    );
+    this.allowOrigins = allowedOriginMatchers.map((matcher) => matcher.regexp);
+  }
 
   async login(
     email: string,
@@ -57,6 +67,12 @@ export class AuthService {
       throw new TooManyRequestsException({
         message: 'Email request cooldown',
         errors: { request: 'Email request cooldown' },
+      });
+    }
+    if (!this.allowOrigins.some((origin) => origin.test(siteUrl))) {
+      throw new BadRequestException({
+        message: 'Invalid site URL',
+        errors: { siteUrl: 'Invalid site URL' },
       });
     }
     const payload = { id: user.id, type: 'create_account' };
@@ -148,6 +164,12 @@ export class AuthService {
       throw new TooManyRequestsException({
         message: 'Email request cooldown',
         errors: { request: 'Email request cooldown' },
+      });
+    }
+    if (!this.allowOrigins.some((origin) => origin.test(siteUrl))) {
+      throw new BadRequestException({
+        message: 'Invalid site URL',
+        errors: { siteUrl: 'Invalid site URL' },
       });
     }
     const payload = { id: user.id, type: 'reset_password' };
