@@ -11,7 +11,6 @@ import {
 import { ConfigConstants } from 'src/config/config-constants';
 import { Group } from 'src/groups/entities/group.entity';
 import { Role } from 'src/shared/enums/role.enum';
-import { parseIntOptional } from 'src/shared/parse-int-optional';
 import { v4 as uuidv4 } from 'uuid';
 
 @Entity()
@@ -52,27 +51,27 @@ export class User {
 
   @Formula(
     (alias) =>
-      `(SELECT SUM(\`score\`) + ${alias}.\`total_score_offset\` FROM \`problem\` WHERE \`problem\`.\`id\` IN (SELECT DISTINCT \`problem_id\` FROM \`submission\` WHERE \`submission\`.\`owner_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1) AND \`problem\`.\`publication_status\` = 'Published')`,
+      `(SELECT IFNULL(SUM(\`score\`), 0) + ${alias}.\`total_score_offset\` FROM \`problem\` WHERE \`problem\`.\`id\` IN (SELECT DISTINCT \`problem_id\` FROM \`submission\` WHERE \`submission\`.\`owner_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1) AND \`problem\`.\`publication_status\` = 'Published')`,
     { type: types.integer, lazy: true },
   )
-  totalScore: number | null;
+  totalScore: number;
 
   @Property({ type: types.integer, lazy: true })
   totalScoreOffset: number = 0;
 
   @Formula(
     (alias) =>
-      `(SELECT COUNT(DISTINCT \`submission\`.\`problem_id\`) FROM \`submission\` INNER JOIN \`problem\` ON \`submission\`.\`problem_id\` = \`problem\`.\`id\` WHERE \`submission\`.\`owner_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1 AND \`problem\`.\`publication_status\` = 'Published')`,
+      `(SELECT IFNULL(COUNT(DISTINCT \`submission\`.\`problem_id\`), 0) FROM \`submission\` INNER JOIN \`problem\` ON \`submission\`.\`problem_id\` = \`problem\`.\`id\` WHERE \`submission\`.\`owner_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1 AND \`problem\`.\`publication_status\` = 'Published')`,
     { type: types.integer, lazy: true },
   )
-  problemSolvedCount: number | null;
+  problemSolvedCount: number;
 
   @Formula(
     (alias) =>
       `(SELECT MAX(\`submission\`.\`created_at\`) FROM \`submission\` INNER JOIN \`problem\` ON \`submission\`.\`problem_id\` = \`problem\`.\`id\` WHERE \`submission\`.\`owner_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1 AND \`problem\`.\`publication_status\` = 'Published')`,
     { type: types.datetime, lazy: true },
   )
-  lastProblemSolvedAt: Date;
+  lastProblemSolvedAt: Date | null;
 
   @Property({ type: types.datetime, nullable: true, lazy: true })
   lastEmailRequestedAt: Date | null = null;
@@ -125,9 +124,9 @@ export class UserResponse {
     this.group = user.group
       ? { id: user.group.id, name: user.group.name }
       : null;
-    this.totalScore = parseIntOptional(user.totalScore);
-    this.problemSolvedCount = parseIntOptional(user.problemSolvedCount);
-    this.lastProblemSolvedAt = user.lastProblemSolvedAt;
+    this.totalScore = user.totalScore;
+    this.problemSolvedCount = user.problemSolvedCount;
+    this.lastProblemSolvedAt = user.lastProblemSolvedAt ?? undefined;
     this.lastEmailRequestedAt = user.lastEmailRequestedAt || undefined;
     this.createdAt = user.createdAt;
     this.updatedAt = user.updatedAt;

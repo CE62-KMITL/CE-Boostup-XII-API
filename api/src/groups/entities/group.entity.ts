@@ -8,7 +8,6 @@ import {
   types,
 } from '@mikro-orm/mariadb';
 import { ConfigConstants } from 'src/config/config-constants';
-import { parseIntOptional } from 'src/shared/parse-int-optional';
 import { User } from 'src/users/entities/user.entity';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -32,45 +31,45 @@ export class Group {
 
   @Formula(
     (alias) =>
-      `(SELECT COUNT(*) FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`)`,
+      `(SELECT IFNULL(COUNT(*), 0) FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`)`,
     { type: types.integer, lazy: true },
   )
-  memberCount: number | null;
+  memberCount: number;
 
   @Formula(
     (alias) =>
-      `(SELECT SUM(\`score\` * (SELECT COUNT(DISTINCT \`owner_id\`) FROM \`submission\` WHERE \`submission\`.\`problem_id\` = \`problem\`.\`id\` AND \`submission\`.\`owner_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1)) + (SELECT SUM(\`total_score_offset\`) FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) FROM \`problem\` WHERE \`problem\`.\`publication_status\` = 'Published')`,
+      `(SELECT IFNULL(SUM(\`score\` * (SELECT IFNULL(COUNT(DISTINCT \`owner_id\`), 0) FROM \`submission\` WHERE \`submission\`.\`problem_id\` = \`problem\`.\`id\` AND \`submission\`.\`owner_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1)), 0) + (SELECT IFNULL(SUM(\`total_score_offset\`), 0) FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) FROM \`problem\` WHERE \`problem\`.\`publication_status\` = 'Published')`,
     { type: types.integer, lazy: true },
   )
-  totalScore: number | null;
+  totalScore: number;
 
   @Formula(
     (alias) =>
-      `(SELECT SUM(\`score\`) FROM \`problem\` WHERE \`problem\`.\`id\` IN (SELECT DISTINCT \`problem_id\` FROM \`submission\` WHERE \`submission\`.\`owner_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1) AND \`problem\`.\`publication_status\` = 'Published')`,
+      `(SELECT IFNULL(SUM(\`score\`), 0) FROM \`problem\` WHERE \`problem\`.\`id\` IN (SELECT DISTINCT \`problem_id\` FROM \`submission\` WHERE \`submission\`.\`owner_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1) AND \`problem\`.\`publication_status\` = 'Published')`,
     { type: types.integer, lazy: true },
   )
-  uniqueTotalScore: number | null;
+  uniqueTotalScore: number;
 
   @Formula(
     (alias) =>
-      `(SELECT COUNT(DISTINCT \`submission\`.\`problem_id\`, \`submission\`.\`owner_id\`) FROM \`submission\` INNER JOIN \`problem\` ON \`submission\`.\`problem_id\` = \`problem\`.\`id\` WHERE \`submission\`.\`owner_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1 AND \`problem\`.\`publication_status\` = 'Published')`,
+      `(SELECT IFNULL(COUNT(DISTINCT \`submission\`.\`problem_id\`, \`submission\`.\`owner_id\`), 0) FROM \`submission\` INNER JOIN \`problem\` ON \`submission\`.\`problem_id\` = \`problem\`.\`id\` WHERE \`submission\`.\`owner_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1 AND \`problem\`.\`publication_status\` = 'Published')`,
     { type: types.integer, lazy: true },
   )
-  problemSolvedCount: number | null;
+  problemSolvedCount: number;
 
   @Formula(
     (alias) =>
-      `(SELECT COUNT(DISTINCT \`submission\`.\`problem_id\`) FROM \`submission\` INNER JOIN \`problem\` ON \`submission\`.\`problem_id\` = \`problem\`.\`id\` WHERE \`submission\`.\`owner_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1 AND \`problem\`.\`publication_status\` = 'Published')`,
+      `(SELECT IFNULL(COUNT(DISTINCT \`submission\`.\`problem_id\`), 0) FROM \`submission\` INNER JOIN \`problem\` ON \`submission\`.\`problem_id\` = \`problem\`.\`id\` WHERE \`submission\`.\`owner_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1 AND \`problem\`.\`publication_status\` = 'Published')`,
     { type: types.integer, lazy: true },
   )
-  uniqueProblemSolvedCount: number | null;
+  uniqueProblemSolvedCount: number;
 
   @Formula(
     (alias) =>
       `(SELECT MAX(\`submission\`.\`created_at\`) FROM \`submission\` INNER JOIN \`problem\` ON \`submission\`.\`problem_id\` = \`problem\`.\`id\` WHERE \`submission\`.\`owner_id\` IN (SELECT \`id\` FROM \`user\` WHERE \`user\`.\`group_id\` = ${alias}.\`id\`) AND \`submission\`.\`accepted\` = 1 AND \`problem\`.\`publication_status\` = 'Published')`,
     { type: types.datetime, lazy: true },
   )
-  lastProblemSolvedAt: Date;
+  lastProblemSolvedAt: Date | null;
 
   @Property({ type: types.string, length: 255, nullable: true, lazy: true })
   avatarFilename: string | null = null;
@@ -107,14 +106,12 @@ export class GroupResponse {
             displayName: user.displayName,
           }))
         : undefined;
-    this.memberCount = parseIntOptional(group.memberCount);
-    this.totalScore = parseIntOptional(group.totalScore);
-    this.uniqueTotalScore = parseIntOptional(group.uniqueTotalScore);
-    this.problemSolvedCount = parseIntOptional(group.problemSolvedCount);
-    this.uniqueProblemSolvedCount = parseIntOptional(
-      group.uniqueProblemSolvedCount,
-    );
-    this.lastProblemSolvedAt = group.lastProblemSolvedAt;
+    this.memberCount = group.memberCount;
+    this.totalScore = group.totalScore;
+    this.uniqueTotalScore = group.uniqueTotalScore;
+    this.problemSolvedCount = group.problemSolvedCount;
+    this.uniqueProblemSolvedCount = group.uniqueProblemSolvedCount;
+    this.lastProblemSolvedAt = group.lastProblemSolvedAt ?? undefined;
     this.createdAt = group.createdAt;
     this.updatedAt = group.updatedAt;
   }
