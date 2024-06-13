@@ -411,15 +411,22 @@ export class UsersService implements OnModuleInit {
       delete updateUserDto.avatar;
     }
     if (updateUserDto.password) {
-      if (!updateUserDto.oldPassword) {
+      if (
+        !updateUserDto.oldPassword &&
+        !isSomeRolesIn(originUser.roles, [Role.SuperAdmin])
+      ) {
         throw new BadRequestException({
           message: 'Old password is required when changing password',
           errors: { oldPassword: 'Old password is required changing password' },
         });
       }
       if (
-        !user.hashedPassword ||
-        !(await argon2.verify(user.hashedPassword, updateUserDto.oldPassword))
+        (!user.hashedPassword ||
+          !(await argon2.verify(
+            user.hashedPassword,
+            updateUserDto.oldPassword ?? '',
+          ))) &&
+        !isSomeRolesIn(originUser.roles, [Role.SuperAdmin])
       ) {
         throw new BadRequestException({
           message: 'Old password is incorrect',
