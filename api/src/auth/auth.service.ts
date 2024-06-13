@@ -69,7 +69,8 @@ export class AuthService {
         errors: { request: 'Email request cooldown' },
       });
     }
-    if (!this.allowOrigins.some((origin) => origin.test(siteUrl))) {
+    const siteOrigin = new URL(siteUrl).origin;
+    if (!this.allowOrigins.some((origin) => origin.test(siteOrigin))) {
       throw new BadRequestException({
         message: 'Invalid site URL',
         errors: { siteUrl: 'Invalid site URL' },
@@ -166,7 +167,8 @@ export class AuthService {
         errors: { request: 'Email request cooldown' },
       });
     }
-    if (!this.allowOrigins.some((origin) => origin.test(siteUrl))) {
+    const siteOrigin = new URL(siteUrl).origin;
+    if (!this.allowOrigins.some((origin) => origin.test(siteOrigin))) {
       throw new BadRequestException({
         message: 'Invalid site URL',
         errors: { siteUrl: 'Invalid site URL' },
