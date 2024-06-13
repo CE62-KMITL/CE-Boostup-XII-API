@@ -49,16 +49,16 @@ export class AuthService {
         errors: { email: 'User already exists' },
       });
     }
-    if (
-      user.lastEmailRequestedAt &&
-      Date.now() - user.lastEmailRequestedAt.getTime() <
-        ms(this.configService.getOrThrow<string>('auth.mailRequestCooldown'))
-    ) {
-      throw new TooManyRequestsException({
-        message: 'Email request cooldown',
-        errors: { request: 'Email request cooldown' },
-      });
-    }
+    // if (
+    //   user.lastEmailRequestedAt &&
+    //   Date.now() - user.lastEmailRequestedAt.getTime() <
+    //     ms(this.configService.getOrThrow<string>('auth.mailRequestCooldown'))
+    // ) {
+    //   throw new TooManyRequestsException({
+    //     message: 'Email request cooldown',
+    //     errors: { request: 'Email request cooldown' },
+    //   });
+    // }
     const payload = { id: user.id, type: 'create_account' };
     const token = await this.jwtService.signAsync(payload, {
       expiresIn: this.configService.getOrThrow<string>(
@@ -70,7 +70,7 @@ export class AuthService {
       { id: user.id },
       { lastEmailRequestedAt: new Date() },
     );
-    await this.mailService.sendAccountCreationEmail(user.email, url);
+    await this.mailService.sendAccountCreationEmail(user.email, user.displayName, url);
     return { message: 'Email sent' };
   }
 
@@ -140,16 +140,16 @@ export class AuthService {
         errors: { email: 'User not found' },
       });
     }
-    if (
-      user.lastEmailRequestedAt &&
-      Date.now() - user.lastEmailRequestedAt.getTime() <
-        ms(this.configService.getOrThrow<string>('auth.mailRequestCooldown'))
-    ) {
-      throw new TooManyRequestsException({
-        message: 'Email request cooldown',
-        errors: { request: 'Email request cooldown' },
-      });
-    }
+    // if (
+    //   user.lastEmailRequestedAt &&
+    //   Date.now() - user.lastEmailRequestedAt.getTime() <
+    //     ms(this.configService.getOrThrow<string>('auth.mailRequestCooldown'))
+    // ) {
+    //   throw new TooManyRequestsException({
+    //     message: 'Email request cooldown',
+    //     errors: { request: 'Email request cooldown' },
+    //   });
+    // }
     const payload = { id: user.id, type: 'reset_password' };
     const token = await this.jwtService.signAsync(payload, {
       expiresIn: this.configService.getOrThrow<string>(
@@ -161,7 +161,7 @@ export class AuthService {
       { id: user.id },
       { lastEmailRequestedAt: new Date() },
     );
-    await this.mailService.sendPasswordResetEmail(user.email, url);
+    await this.mailService.sendPasswordResetEmail(user.email, user.displayName, url);
     return { message: 'Email sent' };
   }
 
