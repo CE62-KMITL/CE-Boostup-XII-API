@@ -445,7 +445,6 @@ export class UsersService implements OnModuleInit {
           id: { $ne: id },
           email: updateUserDto.email,
         });
-        console.log(emailExists);
         if (emailExists) {
           await this.entityManager.flush();
           throw new BadRequestException({
