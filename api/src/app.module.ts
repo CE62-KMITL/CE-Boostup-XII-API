@@ -68,8 +68,8 @@ import { UsersModule } from './users/users.module';
       useFactory: (configService: ConfigService) => ({
         transport: {
           host: configService.getOrThrow<string>('mail.smtpHost'),
-          // port: configService.getOrThrow<number>('mail.smtpPort'),
-          // secure: true,
+          port: configService.getOrThrow<number>('mail.smtpPort'),
+          secure: true,
           auth: {
             user: configService.getOrThrow<string>('mail.smtpUser'),
             pass: configService.getOrThrow<string>('mail.smtpPassword'),
