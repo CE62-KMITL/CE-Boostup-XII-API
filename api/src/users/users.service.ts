@@ -368,6 +368,8 @@ export class UsersService implements OnModuleInit {
           errors: { roles: 'Insufficient permissions' },
         });
       }
+      user.roles = updateUserDto.roles;
+      delete updateUserDto.roles;
     }
     if (
       id !== originUser.id &&
