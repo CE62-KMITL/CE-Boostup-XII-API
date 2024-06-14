@@ -16,7 +16,11 @@ export class MailService {
     private readonly mailerService: MailerService,
   ) {}
 
-  async sendAccountCreationEmail(email: string, url: string): Promise<void> {
+  async sendAccountCreationEmail(
+    email: string,
+    name: string,
+    url: string,
+  ): Promise<void> {
     if (this.configService.getOrThrow<boolean>('mail.mock.enabled')) {
       const webhook = new Webhook(
         this.configService.getOrThrow<string>('mail.mock.discordWebhookUrl'),
@@ -33,6 +37,7 @@ export class MailService {
         template: 'create-account',
         context: {
           url,
+          name,
         },
       });
     } catch (error) {
@@ -45,7 +50,11 @@ export class MailService {
     }
   }
 
-  async sendPasswordResetEmail(email: string, url: string): Promise<void> {
+  async sendPasswordResetEmail(
+    email: string,
+    name: string,
+    url: string,
+  ): Promise<void> {
     if (this.configService.getOrThrow<boolean>('mail.mock.enabled')) {
       const webhook = new Webhook(
         this.configService.getOrThrow<string>('mail.mock.discordWebhookUrl'),
@@ -60,6 +69,7 @@ export class MailService {
         template: 'reset-password',
         context: {
           url,
+          name,
         },
       });
     } catch (error) {

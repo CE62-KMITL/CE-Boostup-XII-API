@@ -87,7 +87,11 @@ export class AuthService {
       { id: user.id },
       { lastEmailRequestedAt: new Date() },
     );
-    await this.mailService.sendAccountCreationEmail(user.email, url);
+    await this.mailService.sendAccountCreationEmail(
+      user.email,
+      user.displayName,
+      url,
+    );
     return { message: 'Email sent' };
   }
 
@@ -185,7 +189,11 @@ export class AuthService {
       { id: user.id },
       { lastEmailRequestedAt: new Date() },
     );
-    await this.mailService.sendPasswordResetEmail(user.email, url);
+    await this.mailService.sendPasswordResetEmail(
+      user.email,
+      user.displayName,
+      url,
+    );
     return { message: 'Email sent' };
   }
 
