@@ -439,9 +439,10 @@ export class UsersService implements OnModuleInit {
       }
       if (updateUserDto.email) {
         const emailExists = await this.usersRepository.count({
-          id: { $ne: originUser.id },
+          id: { $ne: id },
           email: updateUserDto.email,
         });
+        console.log(emailExists);
         if (emailExists) {
           await this.entityManager.flush();
           throw new BadRequestException({
