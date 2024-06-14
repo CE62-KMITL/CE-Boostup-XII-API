@@ -313,6 +313,7 @@ export class UsersService implements OnModuleInit {
         'hashedPassword',
         'bio',
         'group',
+        'totalScore',
         'totalScoreOffset',
         'lastEmailRequestedAt',
         'avatarFilename',

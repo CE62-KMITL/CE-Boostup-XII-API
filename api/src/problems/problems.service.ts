@@ -468,10 +468,17 @@ export class ProblemsService implements OnModuleInit {
       if (!problem.usersUnlockedHint.isInitialized()) {
         await problem.usersUnlockedHint.init();
       }
+      console.log(user.totalScore);
       if (user.totalScore < problem.hintCost) {
         throw new BadRequestException({
           message: 'Insufficient score',
           errors: { unlockHint: 'Insufficient score' },
+        });
+      }
+      if (problem.usersUnlockedHint.contains(user)) {
+        throw new BadRequestException({
+          message: 'Hint already unlocked',
+          errors: { unlockHint: 'Hint already unlocked' },
         });
       }
       await this.usersService.updateInternal(
