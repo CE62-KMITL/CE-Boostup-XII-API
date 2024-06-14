@@ -439,6 +439,7 @@ export class UsersService implements OnModuleInit {
       }
       if (updateUserDto.email) {
         const emailExists = await this.usersRepository.count({
+          id: { $ne: originUser.id },
           email: updateUserDto.email,
         });
         if (emailExists) {

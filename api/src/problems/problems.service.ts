@@ -324,15 +324,12 @@ export class ProblemsService implements OnModuleInit {
         errors: { token: 'Invalid token' },
       });
     }
-    const checkProblem = await this.findOneInternal({ id });
-    if (!checkProblem) {
-      throw new NotFoundException({
-        message: 'Problem not found',
-        errors: { id: 'Problem not found' },
-      });
-    }
+    const userOwnProblem = await this.problemsRepository.count({
+      id,
+      owner: user,
+    });
     if (
-      originUser.id === checkProblem.owner.id ||
+      userOwnProblem ||
       isSomeRolesIn(originUser.roles, [
         Role.Reviewer,
         Role.Admin,
