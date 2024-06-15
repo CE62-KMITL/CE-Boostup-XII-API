@@ -108,6 +108,7 @@ export class AppService implements OnModuleInit {
       code,
       compileAndRunDto.bannedFunctions,
       includeCount,
+      isCpp,
     );
     const executableFilePath = join(
       this.configService.getOrThrow<string>('storages.temporary.path'),
@@ -221,7 +222,7 @@ export class AppService implements OnModuleInit {
       }
       if (compilationExitCode !== 0) {
         const bannedFunctionMatches = compilationOutput.matchAll(
-          /error: static assertion failed: "Function (.*?) is not allowed\."/gm,
+          /error: static assertion failed: "?Function (.*?) is not allowed\."?/gm,
         );
         const bannedFunctions = Array.from(
           bannedFunctionMatches,
@@ -354,15 +355,22 @@ export class AppService implements OnModuleInit {
     code: string,
     bannedFunctions: string[],
     insertAt: number,
+    isCpp: boolean,
   ): string {
     if (bannedFunctions.length === 0) {
       return code;
     }
     const bannedFunctionLines: string[] = [];
     for (const bannedFunction of bannedFunctions) {
-      bannedFunctionLines.push(
-        `#define ${bannedFunction}(...) _Static_assert(0, "Function ${bannedFunction} is not allowed.")`,
-      );
+      if (isCpp) {
+        bannedFunctionLines.push(
+          `#define ${bannedFunction}(...) static_assert(0, "Function ${bannedFunction} is not allowed.")`,
+        );
+      } else {
+        bannedFunctionLines.push(
+          `#define ${bannedFunction}(...) _Static_assert(0, "Function ${bannedFunction} is not allowed.")`,
+        );
+      }
     }
     const codeLines = code.split('\n');
     return (
