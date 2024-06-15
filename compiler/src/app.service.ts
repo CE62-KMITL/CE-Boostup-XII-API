@@ -222,7 +222,7 @@ export class AppService implements OnModuleInit {
       }
       if (compilationExitCode !== 0) {
         const bannedFunctionMatches = compilationOutput.matchAll(
-          /error: static assertion failed: "?Function (.*?) is not allowed\."?/gm,
+          /static assertion failed: "?Function (.*?) is not allowed\."?/gm,
         );
         const bannedFunctions = Array.from(
           bannedFunctionMatches,
