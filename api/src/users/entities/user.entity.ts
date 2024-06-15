@@ -1,4 +1,4 @@
-import { Rel } from '@mikro-orm/core';
+import { Cascade, Collection, OneToMany, Rel } from '@mikro-orm/core';
 import {
   Entity,
   Enum,
@@ -8,9 +8,14 @@ import {
   Property,
   types,
 } from '@mikro-orm/mariadb';
+import { Attachment } from 'src/attachments/entities/attachment.entity';
 import { ConfigConstants } from 'src/config/config-constants';
 import { Group } from 'src/groups/entities/group.entity';
+import { ProblemTag } from 'src/problem-tags/entities/problem-tag.entity';
+import { Problem } from 'src/problems/entities/problem.entity';
+import { Save } from 'src/saves/entities/save.entity';
 import { Role } from 'src/shared/enums/role.enum';
+import { Submission } from 'src/submissions/entities/submission.entity';
 import { v4 as uuidv4 } from 'uuid';
 
 @Entity()
@@ -78,6 +83,41 @@ export class User {
 
   @Property({ type: types.string, length: 255, nullable: true, lazy: true })
   avatarFilename: string | null = null;
+
+  @OneToMany({
+    entity: () => Problem,
+    mappedBy: (problem) => problem.owner,
+    cascade: [Cascade.ALL],
+  })
+  problems: Collection<Problem> = new Collection<Problem>(this);
+
+  @OneToMany({
+    entity: () => ProblemTag,
+    mappedBy: (problemTag) => problemTag.owner,
+    cascade: [Cascade.ALL],
+  })
+  problemTags: Collection<ProblemTag> = new Collection<ProblemTag>(this);
+
+  @OneToMany({
+    entity: () => Submission,
+    mappedBy: (submission) => submission.owner,
+    cascade: [Cascade.ALL],
+  })
+  submissions: Collection<Submission> = new Collection<Submission>(this);
+
+  @OneToMany({
+    entity: () => Save,
+    mappedBy: (save) => save.owner,
+    cascade: [Cascade.ALL],
+  })
+  saves: Collection<Save> = new Collection<Save>(this);
+
+  @OneToMany({
+    entity: () => Attachment,
+    mappedBy: (attachment) => attachment.owner,
+    cascade: [Cascade.ALL],
+  })
+  attachments: Collection<Attachment> = new Collection<Attachment>(this);
 
   @Property({ type: types.datetime, lazy: true })
   createdAt: Date = new Date();

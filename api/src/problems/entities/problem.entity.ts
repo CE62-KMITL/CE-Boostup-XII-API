@@ -1,4 +1,4 @@
-import { OneToMany, Rel } from '@mikro-orm/core';
+import { Cascade, OneToMany, Rel } from '@mikro-orm/core';
 import {
   Collection,
   Entity,
@@ -13,6 +13,7 @@ import {
 import { Attachment } from 'src/attachments/entities/attachment.entity';
 import { ConfigConstants } from 'src/config/config-constants';
 import { ProblemTag } from 'src/problem-tags/entities/problem-tag.entity';
+import { Save } from 'src/saves/entities/save.entity';
 import { CompletionStatus } from 'src/shared/enums/completion-status.enum';
 import { OptimizationLevel } from 'src/shared/enums/optimization-level.enum';
 import { PublicationStatus } from 'src/shared/enums/publication-status.enum';
@@ -134,7 +135,7 @@ export class Problem {
 
   @Formula(
     (alias) =>
-      `(SELECT IFNULL(COUNT(DISTINCT \`owner_id\`), 0) FROM \`submission\` WHERE \`submission\`.\`problem_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1)`,
+      `(SELECT IFNULL(COUNT(DISTINCT \`submission\`.\`owner_id\`), 0) FROM \`submission\` INNER JOIN \`user\` ON \`submission\`.\`owner_id\` = \`user\`.\`id\` WHERE \`user\`.\`roles\` = 'User' AND \`submission\`.\`problem_id\` = ${alias}.\`id\` AND \`submission\`.\`accepted\` = 1)`,
     { type: types.integer, serializer: (value) => +value, lazy: true },
   )
   userSolvedCount: number;
@@ -151,8 +152,16 @@ export class Problem {
   @OneToMany({
     entity: () => Submission,
     mappedBy: (submission) => submission.problem,
+    cascade: [Cascade.ALL],
   })
   submissions: Collection<Submission> = new Collection<Submission>(this);
+
+  @OneToMany({
+    entity: () => Save,
+    mappedBy: (save) => save.problem,
+    cascade: [Cascade.ALL],
+  })
+  saves: Collection<Save> = new Collection<Save>(this);
 
   @Property({ type: types.datetime, lazy: true })
   createdAt: Date = new Date();

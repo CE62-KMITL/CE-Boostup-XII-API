@@ -73,10 +73,7 @@ export class AttachmentsService implements OnModuleInit {
     attachment.size = file.size;
     attachment.owner = user;
     await this.entityManager.persistAndFlush(attachment);
-    return new AttachmentResponse(
-      attachment,
-      this.configService.getOrThrow<string>('url.prefix'),
-    );
+    return new AttachmentResponse(attachment);
   }
 
   async findAll(
@@ -113,11 +110,7 @@ export class AttachmentsService implements OnModuleInit {
           });
         return {
           data: attachments.map(
-            (attachment) =>
-              new AttachmentResponse(
-                attachment,
-                this.configService.getOrThrow<string>('url.prefix'),
-              ),
+            (attachment) => new AttachmentResponse(attachment),
           ),
           page: findAllDto.page,
           perPage: findAllDto.perPage,
@@ -132,11 +125,7 @@ export class AttachmentsService implements OnModuleInit {
         });
       return {
         data: attachments.map(
-          (attachment) =>
-            new AttachmentResponse(
-              attachment,
-              this.configService.getOrThrow<string>('url.prefix'),
-            ),
+          (attachment) => new AttachmentResponse(attachment),
         ),
         page: findAllDto.page,
         perPage: findAllDto.perPage,
@@ -157,11 +146,7 @@ export class AttachmentsService implements OnModuleInit {
         });
       return {
         data: attachments.map(
-          (attachment) =>
-            new AttachmentResponse(
-              attachment,
-              this.configService.getOrThrow<string>('url.prefix'),
-            ),
+          (attachment) => new AttachmentResponse(attachment),
         ),
         page: findAllDto.page,
         perPage: findAllDto.perPage,
@@ -177,13 +162,7 @@ export class AttachmentsService implements OnModuleInit {
       },
     );
     return {
-      data: attachments.map(
-        (attachment) =>
-          new AttachmentResponse(
-            attachment,
-            this.configService.getOrThrow<string>('url.prefix'),
-          ),
-      ),
+      data: attachments.map((attachment) => new AttachmentResponse(attachment)),
       page: findAllDto.page,
       perPage: findAllDto.perPage,
       total: count,
@@ -206,10 +185,7 @@ export class AttachmentsService implements OnModuleInit {
           errors: { id: 'Attachment not found' },
         });
       }
-      return new AttachmentResponse(
-        attachment,
-        this.configService.getOrThrow<string>('url.prefix'),
-      );
+      return new AttachmentResponse(attachment);
     }
     const populate = ['owner'] as const;
     const attachment = await this.attachmentsRepository.findOne(
@@ -222,10 +198,7 @@ export class AttachmentsService implements OnModuleInit {
         errors: { id: 'Attachment not found' },
       });
     }
-    return new AttachmentResponse(
-      attachment,
-      this.configService.getOrThrow<string>('url.prefix'),
-    );
+    return new AttachmentResponse(attachment);
   }
 
   async findOneInternal(
