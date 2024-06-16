@@ -383,16 +383,9 @@ export class UsersService implements OnModuleInit {
       });
     }
     if (updateUserDto.avatar) {
-      const matches = updateUserDto.avatar.match(
-        /^data:image\/(png|jpg|jpeg|webp|avif|gif|bmp);base64,((?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}==|[A-Za-z0-9+\/]{3}=)?)$/,
-      );
-      if (matches?.length !== 3) {
-        throw new BadRequestException({
-          message: 'Invalid base64 image',
-          errors: { avatar: 'Invalid base64 image' },
-        });
-      }
-      const [, fileExt, fileData] = matches;
+      const separatorIndex = updateUserDto.avatar.indexOf(';');
+      const fileExt = updateUserDto.avatar.slice(11, separatorIndex);
+      const fileData = updateUserDto.avatar.slice(separatorIndex + 7);
       const filename = `${id}.${fileExt}`;
       if (user.avatarFilename) {
         await fs.unlink(
@@ -525,6 +518,15 @@ export class UsersService implements OnModuleInit {
   async validatePassword(email: string, password: string): Promise<User> {
     const user = await this.findOneInternal({ email });
     if (!user) {
+      throw new BadRequestException({
+        message: 'Invalid email or password',
+        errors: {
+          email: 'Potentially invalid email',
+          password: 'Potentially invalid password',
+        },
+      });
+    }
+    if (!user.hashedPassword) {
       throw new BadRequestException({
         message: 'Invalid email or password',
         errors: {

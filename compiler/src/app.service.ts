@@ -81,10 +81,16 @@ export class AppService implements OnModuleInit {
     const isCpp = compileAndRunDto.language.includes('++');
     const compiler = isCpp ? 'g++' : 'gcc';
     const codeFilename = isCpp ? 'code.cpp' : 'code.c';
-    const warningString =
-      compileAndRunDto.warningLevel === WarningLevel.Default
-        ? ''
-        : `-W${compileAndRunDto.warningLevel}`;
+    const warningStrings: string[] = [];
+    if (compileAndRunDto.warningLevel === WarningLevel.All) {
+      warningStrings.push('-Wall');
+    }
+    if (compileAndRunDto.warningLevel === WarningLevel.Extra) {
+      warningStrings.push('-Wextra');
+    }
+    if (compileAndRunDto.warningLevel === WarningLevel.Pedantic) {
+      warningStrings.push('-Wpedantic');
+    }
     const compilationWallTimeLimit = Math.max(
       compileAndRunDto.compilationTimeLimit *
         this.configService.getOrThrow<number>(
@@ -128,7 +134,7 @@ export class AppService implements OnModuleInit {
           `-fdiagnostics-color=${compileAndRunDto.formattedDiagnostic ? 'always' : 'never'}`,
           `-fdiagnostics-urls=${compileAndRunDto.formattedDiagnostic ? 'always' : 'never'}`,
           `--std=${compileAndRunDto.language}`,
-          `${warningString}`,
+          ...warningStrings,
           `-${compileAndRunDto.optimizationLevel}`,
           `-march=${this.configService.getOrThrow<string>('compiler.march')}`,
           `-mtune=${this.configService.getOrThrow<string>('compiler.mtune')}`,
