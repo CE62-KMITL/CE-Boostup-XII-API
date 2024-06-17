@@ -8,7 +8,7 @@ function trimEnd(str: string, ch: string): string {
 
 export function compareOutput(output: string, expectedOutput: string): boolean {
   return (
-    trimEnd(output.replaceAll('\r\n', '\n'), '\n') ===
-    trimEnd(expectedOutput.replaceAll('\r\n', '\n'), '\n')
+    trimEnd(output.replaceAll('\r\n', '\n').replace(/ +\n/g, '\n'), '\n') ===
+    trimEnd(expectedOutput.replaceAll('\r\n', '\n').replace(/ +\n/g, '\n'), '\n')
   );
 }
