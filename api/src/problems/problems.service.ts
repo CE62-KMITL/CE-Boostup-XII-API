@@ -122,8 +122,8 @@ export class ProblemsService implements OnModuleInit {
     originUser: AuthenticatedUser,
     findAllDto: FindAllDto,
   ): Promise<PaginatedResponse<ProblemResponse>> {
-    console.log('start'); // TODO: Remove
-    let start = performance.now(); // TODO: Remove
+    // console.log('start'); // TODO: Remove
+    // let start = performance.now(); // TODO: Remove
     const user = await this.usersService.findOneInternal({ id: originUser.id });
     if (!user) {
       throw new UnauthorizedException({
@@ -131,8 +131,8 @@ export class ProblemsService implements OnModuleInit {
         errors: { token: 'Invalid token' },
       });
     }
-    console.log('get user took', performance.now() - start); // TODO: Remove
-    start = performance.now(); // TODO: Remove
+    // console.log('get user took', performance.now() - start); // TODO: Remove
+    // start = performance.now(); // TODO: Remove
     const where: FilterQuery<Problem> = {};
     if (findAllDto.search) {
       where.$or = [{ title: { $like: `%${findAllDto.search}%` } }];
@@ -176,11 +176,11 @@ export class ProblemsService implements OnModuleInit {
     const offset: number = (findAllDto.page - 1) * findAllDto.perPage;
     const limit: number = findAllDto.perPage;
     let orderBy: Record<string, 'asc' | 'desc'> | null = null;
-    console.log('conditions build took', performance.now() - start); // TODO: Remove
-    start = performance.now(); // TODO: Remove
+    // console.log('conditions build took', performance.now() - start); // TODO: Remove
+    // start = performance.now(); // TODO: Remove
     const completionStatuses = await this.getCompletionStatuses(user);
-    console.log('get completion statuses took', performance.now() - start); // TODO: Remove
-    start = performance.now(); // TODO: Remove
+    // console.log('get completion statuses took', performance.now() - start); // TODO: Remove
+    // start = performance.now(); // TODO: Remove
     if (
       isSomeRolesIn(originUser.roles, [Role.Staff, Role.Admin, Role.SuperAdmin])
     ) {
@@ -204,8 +204,8 @@ export class ProblemsService implements OnModuleInit {
           'updatedAt',
         ]);
       }
-      console.log('sort parsing took', performance.now() - start); // TODO: Remove
-      start = performance.now(); // TODO: Remove
+      // console.log('sort parsing took', performance.now() - start); // TODO: Remove
+      // start = performance.now(); // TODO: Remove
       if (orderBy) {
         const [problems, count] = await this.problemsRepository.findAndCount(
           where,
@@ -216,7 +216,7 @@ export class ProblemsService implements OnModuleInit {
             orderBy,
           },
         );
-        console.log('find and count took', performance.now() - start); // TODO: Remove
+        // console.log('find and count took', performance.now() - start); // TODO: Remove
         return {
           data: problems.map(
             (problem) =>
@@ -240,7 +240,7 @@ export class ProblemsService implements OnModuleInit {
           limit,
         },
       );
-      console.log('find and count took', performance.now() - start); // TODO: Remove
+      // console.log('find and count took', performance.now() - start); // TODO: Remove
       return {
         data: problems.map(
           (problem) =>
@@ -740,7 +740,7 @@ export class ProblemsService implements OnModuleInit {
       user.id,
       problem.id,
     );
-    console.log('submissions', submissions); // TODO: Remove
+    // console.log('submissions', submissions); // TODO: Remove
     if (submissions.some((submission) => submission.accepted)) {
       return CompletionStatus.Solved;
     }
