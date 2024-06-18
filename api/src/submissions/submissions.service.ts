@@ -237,7 +237,7 @@ export class SubmissionsService implements OnModuleInit {
     accepted?: boolean,
   ): Promise<Submission[]> {
     const queryBuilder = this.submissionsRepository.createQueryBuilder();
-    queryBuilder.select(['owner.id', 'problem.id', 'accepted'], true);
+    queryBuilder.select(['owner_id', 'problem_id', 'accepted'], true);
     if (owner) {
       queryBuilder.where({ owner });
     }
