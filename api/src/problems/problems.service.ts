@@ -724,10 +724,10 @@ export class ProblemsService implements OnModuleInit {
     problem: Problem,
     user: User,
   ): Promise<CompletionStatus> {
-    const submissions = await this.submissionsService.findAllInternal({
-      owner: user,
-      problem,
-    });
+    const submissions = await this.submissionsService.findAllInternal(
+      user.id,
+      problem.id,
+    );
     if (submissions.some((submission) => submission.accepted)) {
       return CompletionStatus.Solved;
     }
@@ -751,9 +751,7 @@ export class ProblemsService implements OnModuleInit {
     user: User,
   ): Promise<Record<string, CompletionStatus>> {
     const completionStatuses: Record<string, CompletionStatus> = {};
-    const submissions = await this.submissionsService.findAllInternal({
-      owner: user,
-    });
+    const submissions = await this.submissionsService.findAllInternal(user.id);
     for (const submission of submissions) {
       if (submission.accepted) {
         completionStatuses[submission.problem.id] = CompletionStatus.Solved;

@@ -231,20 +231,24 @@ export class SubmissionsService implements OnModuleInit {
     };
   }
 
-  async findAllInternal(where: FilterQuery<Submission>): Promise<Submission[]> {
-    return this.submissionsRepository.find(where, {
-      populate: [
-        'code',
-        'language',
-        'outputCodes',
-        'accepted',
-        'compilationTime',
-        'compilationMemory',
-        'executionTime',
-        'executionMemory',
-        'createdAt',
-      ],
-    });
+  async findAllInternal(
+    owner?: string,
+    problem?: string,
+    accepted?: boolean,
+  ): Promise<Submission[]> {
+    const queryBuilder = this.submissionsRepository.createQueryBuilder();
+    queryBuilder.select(['owner.id', 'problem.id', 'accepted'], true);
+    if (owner) {
+      queryBuilder.where({ owner });
+    }
+    if (problem) {
+      queryBuilder.where({ problem });
+    }
+    if (accepted !== undefined) {
+      queryBuilder.where({ accepted });
+    }
+    const resultList = await queryBuilder.getResult();
+    return resultList;
   }
 
   async findOne(
