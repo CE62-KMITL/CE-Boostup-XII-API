@@ -740,6 +740,7 @@ export class ProblemsService implements OnModuleInit {
       user.id,
       problem.id,
     );
+    console.log('submissions', submissions); // TODO: Remove
     if (submissions.some((submission) => submission.accepted)) {
       return CompletionStatus.Solved;
     }
