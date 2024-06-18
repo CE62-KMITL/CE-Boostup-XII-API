@@ -249,6 +249,7 @@ export class SubmissionsService implements OnModuleInit {
     if (accepted !== undefined) {
       where.accepted = accepted;
     }
+    queryBuilder.where(where);
     const resultList = await queryBuilder.getResult();
     return resultList;
   }
