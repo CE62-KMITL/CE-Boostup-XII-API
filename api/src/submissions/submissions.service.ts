@@ -2,6 +2,7 @@ import {
   EntityManager,
   EntityRepository,
   FilterQuery,
+  QBFilterQuery,
 } from '@mikro-orm/mariadb';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import {
@@ -238,14 +239,15 @@ export class SubmissionsService implements OnModuleInit {
   ): Promise<Submission[]> {
     const queryBuilder = this.submissionsRepository.createQueryBuilder();
     queryBuilder.select(['id', 'owner_id', 'problem_id', 'accepted'], true);
+    const where: QBFilterQuery<Submission> = {};
     if (owner) {
-      queryBuilder.where({ owner });
+      where.owner = owner;
     }
     if (problem) {
-      queryBuilder.where({ problem });
+      where.problem = problem;
     }
     if (accepted !== undefined) {
-      queryBuilder.where({ accepted });
+      where.accepted = accepted;
     }
     const resultList = await queryBuilder.getResult();
     return resultList;
