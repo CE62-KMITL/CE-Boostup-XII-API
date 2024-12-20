@@ -11,7 +11,9 @@ The `compiler` folder contains the internal compiler and executer service, this 
 ## Deployment
 
 ### Configuration
-There are 2 required configuration files: `api/.env` and `compiler/.env` both file have a `.env.example` counterpart for example configuration. You need to add those 2 configuration files first before proceeding with the deployment. More configuration details can be found in the `README.md` file in both the `api` and `compiler` folder.
+There are 3 required configuration files: `.env`, `api/.env` and `compiler/.env` all files have a `.env.example` counterpart for example configuration. You need to add those 3 configuration files first before proceeding with the deployment. More configuration details can be found in the `README.md` file in both the `api` and `compiler` folder.
+
+The `.env` file on the project's root is for initializing the MariaDB database, these settings have to be the same as the ones in `/api/.env` otherwise the API server will not be able to connect to the database.
 
 You may also want to change the resource limits for the compiler service in `docker-compose.yaml` and the database buffer pool size in `api/mariadb.cnf` if your machine have less than 8GB of RAM.
 
