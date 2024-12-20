@@ -1,4 +1,5 @@
 # CE Boostup XII Internal Compiler Server
+The compiler server is built with NestJS and Isolate as the sandbox. The source code is in the `compiler/src` folder. The `config` folder contains code related to configuration and the rest of the code is mostly in `app.controller.ts` and `app.service.ts`, since there isn't any resources, there are no resource specific folders.
 
 
 ## Running a Development Server

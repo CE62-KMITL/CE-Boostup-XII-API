@@ -1,4 +1,5 @@
 # CE Boostup XII REST API Server
+The API server is built with NestJS and MariaDB as the database. The source code is in the `api/src` folder separated into resources. The `config` folder contains code related to configuration and the `shared` folder contains shared utilitiy codes.
 
 
 ## Running a Development Server
