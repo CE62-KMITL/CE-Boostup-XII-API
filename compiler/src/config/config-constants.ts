@@ -3,7 +3,7 @@ import { LogLevel } from '@nestjs/common';
 export const ConfigConstants = {
   logLevels: ['fatal', 'error', 'warn', 'log', 'verbose'] as LogLevel[], //, 'debug'],
   isolate: {
-    box_root: '/var/local/lib/isolate/',
+    boxRoot: '/var/local/lib/isolate/',
     baseCommandTimeout: 3000,
   },
   compiler: {

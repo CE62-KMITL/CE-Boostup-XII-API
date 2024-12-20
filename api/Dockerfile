@@ -3,7 +3,7 @@ FROM node:20-alpine AS base
 RUN npm i -g pnpm
 
 
-FROM base as dependencies
+FROM base AS dependencies
 
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./

@@ -3,7 +3,7 @@ FROM node:20-bookworm-slim AS base
 RUN npm i -g pnpm
 
 
-FROM base as dependencies
+FROM base AS dependencies
 
 RUN apt-get update && apt-get install --no-install-recommends -y git ca-certificates && rm -rf /var/lib/apt/lists/*
 

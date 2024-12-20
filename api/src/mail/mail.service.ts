@@ -41,8 +41,8 @@ export class MailService {
         },
       });
     } catch (error) {
-      console.error('Error sending account creation email:');
-      console.error(error);
+      this.logger.error('Error sending account creation email:');
+      this.logger.error(error);
       throw new InternalServerErrorException({
         message: 'Error sending account creation email',
         errors: { email: 'Error sending account creation email' },
@@ -73,8 +73,8 @@ export class MailService {
         },
       });
     } catch (error) {
-      console.error('Error sending password reset email:');
-      console.error(error);
+      this.logger.error('Error sending password reset email:');
+      this.logger.error(error);
       throw new InternalServerErrorException({
         message: 'Error sending password reset email',
         errors: { email: 'Error sending password reset email' },

@@ -30,7 +30,7 @@ function trim(str: string, ch: string): string {
 export class AppService implements OnModuleInit {
   constructor(private readonly configService: ConfigService) {
     this.executor = new Executor(
-      ConfigConstants.isolate.box_root,
+      ConfigConstants.isolate.boxRoot,
       this.configService.getOrThrow<number>('isolate.boxCount'),
       join(
         this.configService.getOrThrow<string>('storages.temporary.path'),

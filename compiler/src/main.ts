@@ -16,6 +16,7 @@ async function bootstrap(): Promise<void> {
     new ValidationPipe({
       transform: true,
       transformOptions: { enableImplicitConversion: true },
+      forbidUnknownValues: true,
       errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
     }),
   );

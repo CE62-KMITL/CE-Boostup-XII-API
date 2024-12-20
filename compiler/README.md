@@ -1,73 +1,53 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# CE Boostup XII Internal Compiler Server
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Running a Development Server
 
-## Description
+### Intalling Dependencies
+If this is the first time you're running the server, first install the dependencies using the command `pnpm install`
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+### Starting the Server
+Use the command `pnpm run start:dev` to start a development server in watch mode, the server will automatically reload when it detects a file change
 
-## Installation
+You can also use the command `pnpm run start:prod` to start a development server in production mode, this allow to test code that may behave differently in development and production mode, so far this code base does not contains code with such behavior
 
-```bash
-$ pnpm install
-```
 
-## Running the app
+## Configurations
 
-```bash
-# development
-$ pnpm run start
+### .env
+key : description (type)
+  - TEMPORARY_STORAGE_LOCATION : The folder to use to store temporary files such as compiled executables, also update the Docker volumes when changing this setting (string)
+  - ISOLATE_BOX_COUNT : The amount of Isolate sandox to use, higher box counts mean more code can be executed in parallel, also update `isolate.conf` when changing this setting (number)
+  - WALL_TIME_LIMIT_MULTIPLIER, WALL_TIME_LIMIT_OFFSET : The default wall clock (realtime) time limit = user time limit * multiplier + offet, the reason for a wall clock time limit is to prevent sleeping programs from comsuming all the sandboxes and never releasing them since they don't use the CPU and thus never reach the normal time limit (number)
+  - GCC_MARCH : Set GCC's -march flag to this value (string)
+  - GCC_MTUNE : Set GCC's -mtune flag to this value (string)
 
-# watch mode
-$ pnpm run start:dev
+### Configuration File
+The configuratin file is located at `compiler/config/config-constants.ts`. This is separate from `.env` configs because some configuration need to be known at compile time or are not intended to be changed often.
 
-# production mode
-$ pnpm run start:prod
-```
+key : description (type)
 
-## Test
+\<Loggin Section\>
+  - logLevels : List of log levels to be enabled, from `fatal, error, warn, log, verbose, debug` (string[])
 
-```bash
-# unit tests
-$ pnpm run test
+\<Isolate Section\>
+  - isolate.boxRoot : The root directory for Isolate sandboxes (string)
+  - isolate.baseCommandTimeout : The amount of time dedicated to Isolate commands in milliseconds, this will be added to wall clock timeout of a command execution and used as a timeout for the operation (number)
 
-# e2e tests
-$ pnpm run test:e2e
+\<Compiler Section\>
+  - compiler.maxCodeLength : The maximum code length that can be submitted (number)
+  - compiler.defaultTimeLimit : The default time limit for the compiler in seconds (number)
+  - compiler.defaultMemoryLimit : The default memory limit for the compiler in bytes (number)
+  - compiler.maxTimeLimit : The maximum time limit for the compiler in seconds (number)
+  - compiler.maxMemoryLimit : The maximum memory limit for the compiler in bytes (number)
+  - compiler.maxExecutableSize: The maximum size for the compiled executable in bytes (number)
 
-# test coverage
-$ pnpm run test:cov
-```
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](LICENSE).
+\<Executor Section\>
+  - executor.maxInputCount: The maximum input/testcases count for the executor (number)
+  - executor.maxInputSize: The maximum input size for the executor in bytes (number)
+  - executor.maxOutputSize: The maximum output size for the executor in bytes (number)
+  - executor.maxOpenFiles : The maximum number of files the executable is allowed to open, the minimum for this is 4 (stdin, stdout, stderr, libc.so.6) (number)
+  - executor.defaultTimeLimit: The default time limit for the execution of the compiled code in seconds (number)
+  - executor.defaultMemoryLimit: The default memory limit for the execution of the compiled code in bytes (number)
+  - executor.maxTimeLimit: The maximum time limit for the execution of the compiled code in seconds (number)
+  - executor.maxMemoryLimit: The maximum memory limit for the execution of the compiled code in bytes (number)

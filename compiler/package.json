@@ -77,5 +77,21 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
+  },
+  "pnpm": {
+    "overrides": {
+      "micromatch@<4.0.8": ">=4.0.8",
+      "webpack@>=5.0.0-alpha.0 <5.94.0": ">=5.94.0",
+      "body-parser@<1.20.3": ">=1.20.3",
+      "path-to-regexp@>=2.0.0 <3.3.0": ">=3.3.0",
+      "path-to-regexp@<0.1.10": ">=0.1.10",
+      "cookie@<0.7.0": ">=0.7.0",
+      "send@<0.19.0": ">=0.19.0",
+      "serve-static@<1.16.0": ">=1.16.0",
+      "express@<4.20.0": ">=4.20.0",
+      "cross-spawn@<6.0.6": ">=6.0.6",
+      "cross-spawn@>=7.0.0 <7.0.5": ">=7.0.5",
+      "path-to-regexp@<0.1.12": ">=0.1.12"
+    }
   }
 }

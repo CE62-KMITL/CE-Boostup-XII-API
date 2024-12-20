@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
-  title: CE Boostup XII - OpenAPI 3.0
-  description: Swagger UI for CE Boostup XII API. All patch endpoints are for partial updates, only fields that need to be updated should be included in the request body. All endpoints that require authentication should include the `Authorization` header with the value `Bearer $(token)` and may return 401 and 403 errors.
+  title: CE Boostup XII - OUT OF DATE
+  description: (OUT OF DATE) Swagger UI for CE Boostup XII API. All patch endpoints are for partial updates, only fields that need to be updated should be included in the request body. All endpoints that require authentication should include the `Authorization` header with the value `Bearer $(token)` and may return 401 and 403 errors.
   version: 0.0.1
 servers:
   - url: https://api.ceboostup.com
