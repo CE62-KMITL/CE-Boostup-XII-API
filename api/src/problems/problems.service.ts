@@ -512,6 +512,7 @@ export class ProblemsService implements OnModuleInit {
               errors: { id: 'Insufficient permissions' },
             });
           }
+          problem.reviewer = null;
           problem.reviewComment = null;
           await this.verifyTestcases(problem);
           break;
