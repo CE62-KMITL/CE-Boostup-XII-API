@@ -24,10 +24,10 @@ FROM base AS deploy
 RUN apk add --update curl && rm -rf /var/cache/apk/*
 
 WORKDIR /app
-COPY --from=build --chown=node:node /app/dist ./dist
-COPY --from=build --chown=node:node /app/node_modules ./node_modules
-COPY --chown=node:node .env .env
 COPY --chown=node:node logo.avif logo.avif
+COPY --from=build --chown=node:node /app/node_modules ./node_modules
+COPY --from=build --chown=node:node /app/dist ./dist
+COPY --chown=node:node .env .env
 
 USER node
 
