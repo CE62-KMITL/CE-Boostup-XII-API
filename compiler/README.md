@@ -5,12 +5,14 @@ The compiler server is built with NestJS and Isolate as the sandbox. The source 
 ## Running a Development Server
 
 ### Intalling Dependencies
-If this is the first time you're running the server, first install the dependencies using the command `pnpm install`
+If this is the first time you're running the server, first install the dependencies using the command `pnpm install`.
 
 ### Starting the Server
-Use the command `pnpm run start:dev` to start a development server in watch mode, the server will automatically reload when it detects a file change
+Use the command `pnpm run start:dev` to start a development server in watch mode, the server will automatically reload when it detects a file change.
 
-You can also use the command `pnpm run start:prod` to start a development server in production mode, this allow to test code that may behave differently in development and production mode, so far this code base does not contains code with such behavior
+You can also use the command `pnpm run start:prod` to start a development server in production mode, this allow to test code that may behave differently in development and production mode, so far this code base does not contains code with such behavior.
+
+After starting the server, the swagger UI will be available at `/api`.
 
 
 ## Configurations
@@ -19,7 +21,7 @@ You can also use the command `pnpm run start:prod` to start a development server
 key : description (type)
   - TEMPORARY_STORAGE_LOCATION : The folder to use to store temporary files such as compiled executables, also update the Docker volumes when changing this setting (string)
   - ISOLATE_BOX_COUNT : The amount of Isolate sandox to use, higher box counts mean more code can be executed in parallel, also update `isolate.conf` when changing this setting (number)
-  - WALL_TIME_LIMIT_MULTIPLIER, WALL_TIME_LIMIT_OFFSET : The default wall clock (realtime) time limit = user time limit * multiplier + offet, the reason for a wall clock time limit is to prevent sleeping programs from comsuming all the sandboxes and never releasing them since they don't use the CPU and thus never reach the normal time limit (number)
+  - WALL_TIME_LIMIT_MULTIPLIER, WALL_TIME_LIMIT_OFFSET : The default wall clock (realtime) time limit = max(user_time_limit * multiplier, user_time_limit + offset), the reason for a wall clock time limit is to prevent sleeping programs from comsuming all the sandboxes and never releasing them since they don't use the CPU and thus never reach the normal time limit, wall time limit is higher because the program may not get to use the CPU all the time since the CPU is shared among multiple programs (number)
   - GCC_MARCH : Set GCC's -march flag to this value (string)
   - GCC_MTUNE : Set GCC's -mtune flag to this value (string)
 

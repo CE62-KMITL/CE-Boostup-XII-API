@@ -126,12 +126,11 @@ export class Executor {
       fullCommandList.push('--run');
       fullCommandList.push('-b');
       fullCommandList.push(box.toString());
-      if (options.processLimit) {
-        fullCommandList.push('-p');
-        fullCommandList.push(options.processLimit.toFixed(0));
-      }
       if (options.processLimit === null) {
         fullCommandList.push('-p');
+      } else if (options.processLimit !== undefined) {
+        fullCommandList.push('-p');
+        fullCommandList.push(options.processLimit.toFixed(0));
       }
       if (options.inheritEnvironment) {
         fullCommandList.push('-e');
@@ -141,7 +140,7 @@ export class Executor {
       fullCommandList.push('output.txt');
       fullCommandList.push('-M');
       fullCommandList.push(metadataFilePath);
-      if (options.stdin) {
+      if (options.stdin !== undefined) {
         try {
           await fs.writeFile(
             join(this.boxesRoot, box.toString(), 'box', 'stdin.txt'),
@@ -160,23 +159,23 @@ export class Executor {
         fullCommandList.push('-i');
         fullCommandList.push('stdin.txt');
       }
-      if (options.memoryLimit) {
+      if (options.memoryLimit !== undefined) {
         fullCommandList.push('-m');
         fullCommandList.push(Math.round(options.memoryLimit / 1024).toFixed(0));
       }
-      if (options.timeLimit) {
+      if (options.timeLimit !== undefined) {
         fullCommandList.push('-t');
         fullCommandList.push(options.timeLimit.toFixed(3));
       }
-      if (options.wallTimeLimit) {
+      if (options.wallTimeLimit !== undefined) {
         fullCommandList.push('-w');
         fullCommandList.push(options.wallTimeLimit.toFixed(3));
       }
-      if (options.openFilesLimit) {
+      if (options.openFilesLimit !== undefined) {
         fullCommandList.push('-n');
         fullCommandList.push(options.openFilesLimit.toFixed(0));
       }
-      if (options.fileSizeLimit) {
+      if (options.fileSizeLimit !== undefined) {
         fullCommandList.push('-f');
         fullCommandList.push(
           Math.ceil(options.fileSizeLimit / 1024).toFixed(0),
@@ -186,7 +185,7 @@ export class Executor {
       fullCommandList.push(command);
       const fullCommand = fullCommandList.join(' ');
       let commandTimeout = ConfigConstants.isolate.baseCommandTimeout;
-      if (options.timeLimit) {
+      if (options.timeLimit !== undefined) {
         commandTimeout =
           ConfigConstants.isolate.baseCommandTimeout +
           Math.max(
@@ -195,7 +194,7 @@ export class Executor {
           ) *
             1000;
       }
-      if (options.wallTimeLimit) {
+      if (options.wallTimeLimit !== undefined) {
         commandTimeout =
           ConfigConstants.isolate.baseCommandTimeout +
           options.wallTimeLimit * 1000;
