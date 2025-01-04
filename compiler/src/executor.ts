@@ -138,7 +138,7 @@ export class Executor {
       }
       fullCommandList.push('--stderr-to-stdout');
       fullCommandList.push('-o');
-      fullCommandList.push('output.txt');
+      fullCommandList.push('stdout.txt');
       fullCommandList.push('-M');
       fullCommandList.push(metadataFilePath);
       if (options.stdin) {
@@ -233,7 +233,7 @@ export class Executor {
         this.boxesRoot,
         box.toString(),
         'box',
-        'output.txt',
+        'stdout.txt',
       );
       let output = '';
       try {

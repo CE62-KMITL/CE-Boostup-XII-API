@@ -119,7 +119,7 @@ export class AppService implements OnModuleInit {
     const executableFilePath = join(
       this.configService.getOrThrow<string>('storages.temporary.path'),
       'executables',
-      `out-${requestId}.o`,
+      `submission-${requestId}`,
     );
     try {
       const {
@@ -141,13 +141,13 @@ export class AppService implements OnModuleInit {
           `${codeFilename}`,
           '-H',
           '-o',
-          'out.o',
+          'submission',
           '-lm',
         ],
         -requestId,
         {
           inputTexts: [{ name: codeFilename, text: code }],
-          outputFiles: [{ name: 'out.o', path: executableFilePath }],
+          outputFiles: [{ name: 'submission', path: executableFilePath }],
           processLimit: null,
           inheritEnvironment: true,
           memoryLimit: compileAndRunDto.compilationMemoryLimit,
@@ -163,7 +163,7 @@ export class AppService implements OnModuleInit {
           const header = headerMatch[1];
           if (!compileAndRunDto.allowedHeaders.includes(header)) {
             return new CompileAndRunResponse({
-              compilerOutput: `Prepreprocessor: Fatal error: Header ${header} is not allowed\nCompilation terminated.\nExited with error status 1\n`,
+              compilerOutput: `PostValidator: Fatal error: Header ${header} is not allowed\nCompilation terminated.\nExited with error status 1\n`,
               compilationTime: compilationMetadata.time
                 ? +compilationMetadata.time
                 : undefined,
@@ -236,7 +236,7 @@ export class AppService implements OnModuleInit {
         );
         if (bannedFunctions.length > 0) {
           return new CompileAndRunResponse({
-            compilerOutput: `Prepreprocessor: Fatal error: Function ${bannedFunctions[0]} is not allowed\nCompilation terminated.\nExited with error status 1\n`,
+            compilerOutput: `PostValidator: Fatal error: Function ${bannedFunctions[0]} is not allowed\nCompilation terminated.\nExited with error status 1\n`,
             compilationTime: compilationMetadata.time
               ? +compilationMetadata.time
               : undefined,
@@ -286,9 +286,9 @@ export class AppService implements OnModuleInit {
       const executableSize = (await fs.stat(executableFilePath)).size;
       const rawOutputs = await Promise.all(
         compileAndRunDto.inputs.map((input) =>
-          this.executor.execute('out.o', -requestId, {
+          this.executor.execute('submission', -requestId, {
             stdin: input,
-            inputFiles: [{ name: 'out.o', path: executableFilePath }],
+            inputFiles: [{ name: 'submission', path: executableFilePath }],
             memoryLimit: compileAndRunDto.memoryLimit,
             timeLimit: compileAndRunDto.timeLimit,
             wallTimeLimit: wallTimeLimit,
