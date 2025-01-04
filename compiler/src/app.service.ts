@@ -163,7 +163,7 @@ export class AppService implements OnModuleInit {
           const header = headerMatch[1];
           if (!compileAndRunDto.allowedHeaders.includes(header)) {
             return new CompileAndRunResponse({
-              compilerOutput: `PostValidator: Fatal error: Header ${header} is not allowed\nCompilation terminated.\nExited with error status 1\n`,
+              compilerOutput: `PostValidator: Fatal error: Header '${header}' is not allowed\nCompilation terminated.\nExited with error status 1\n`,
               compilationTime: compilationMetadata.time
                 ? +compilationMetadata.time
                 : undefined,
@@ -228,7 +228,7 @@ export class AppService implements OnModuleInit {
       }
       if (compilationExitCode !== 0) {
         const bannedFunctionMatches = compilationOutput.matchAll(
-          /static assertion failed: "?Function (.*?) is not allowed\."?/gm,
+          /static assertion failed: "?Function \\?'(.*?)'\\? is not allowed\."?/gm,
         );
         const bannedFunctions = Array.from(
           bannedFunctionMatches,
@@ -236,7 +236,7 @@ export class AppService implements OnModuleInit {
         );
         if (bannedFunctions.length > 0) {
           return new CompileAndRunResponse({
-            compilerOutput: `PostValidator: Fatal error: Function ${bannedFunctions[0]} is not allowed\nCompilation terminated.\nExited with error status 1\n`,
+            compilerOutput: `PostValidator: Fatal error: Function '${bannedFunctions[0]}' is not allowed\nCompilation terminated.\nExited with error status 1\n`,
             compilationTime: compilationMetadata.time
               ? +compilationMetadata.time
               : undefined,
@@ -370,11 +370,11 @@ export class AppService implements OnModuleInit {
     for (const bannedFunction of bannedFunctions) {
       if (isCpp) {
         bannedFunctionLines.push(
-          `#define ${bannedFunction}(...) static_assert(0, "Function ${bannedFunction} is not allowed.")`,
+          `#define ${bannedFunction}(...) static_assert(0, "Function '${bannedFunction}' is not allowed.")`,
         );
       } else {
         bannedFunctionLines.push(
-          `#define ${bannedFunction}(...) _Static_assert(0, "Function ${bannedFunction} is not allowed.")`,
+          `#define ${bannedFunction}(...) _Static_assert(0, "Function '${bannedFunction}' is not allowed.")`,
         );
       }
     }
