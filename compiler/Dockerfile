@@ -45,8 +45,8 @@ COPY isolate.conf /usr/local/etc/isolate
 RUN chmod 644 /usr/local/etc/isolate
 
 WORKDIR /app
-COPY --from=build --chown=node:node /app/dist ./dist
 COPY --from=build --chown=node:node /app/node_modules ./node_modules
+COPY --from=build --chown=node:node /app/dist ./dist
 COPY ./.env .env
 
 USER node

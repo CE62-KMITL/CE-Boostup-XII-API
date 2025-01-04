@@ -5,12 +5,14 @@ The API server is built with NestJS and MariaDB as the database. The source code
 ## Running a Development Server
 
 ### Intalling Dependencies
-If this is the first time you're running the server, first install the dependencies using the command `pnpm install`
+If this is the first time you're running the server, first install the dependencies using the command `pnpm install`.
 
 ### Starting the Server
-Use the command `pnpm run start:dev` to start a development server in watch mode, the server will automatically reload when it detects a file change
+Use the command `pnpm run start:dev` to start a development server in watch mode, the server will automatically reload when it detects a file change.
 
-You can also use the command `pnpm run start:prod` to start a development server in production mode, this allow to test code that may behave differently in development and production mode, so far this code base does not contains code with such behavior
+You can also use the command `pnpm run start:prod` to start a development server in production mode, this allow to test code that may behave differently in development and production mode, so far this code base does not contains code with such behavior.
+
+After starting the server, the swagger UI will be available at `/docs`.
 
 
 ## Configurations
