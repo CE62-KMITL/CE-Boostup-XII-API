@@ -342,7 +342,7 @@ export class AppService implements OnModuleInit {
     const includeLines: string[] = [];
     const codeLines: string[] = [];
     for (const line of code.split('\n')) {
-      if (line.trim().startsWith('#include')) {
+      if (line.match(/^\s*#\s*include/)) {
         includeLines.push(line);
         continue;
       }
