@@ -17,7 +17,7 @@ RUN pnpm install --frozen-lockfile
 
 FROM base AS build
 
-RUN apt-get update && apt-get install --no-install-recommends -y make gcc pkg-config libcap-dev libsystemd-dev libc6-dev && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install --no-install-recommends -y gcc make libc6-dev libcap-dev libsystemd-dev pkg-config && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /isolate-src
 COPY --from=dependencies /isolate-src .
@@ -33,7 +33,7 @@ RUN pnpm prune --prod
 
 FROM base AS deploy
 
-RUN apt-get update && apt-get install --no-install-recommends -y gcc g++ wget && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install --no-install-recommends -y gcc g++ libc6-dev wget && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /
 RUN mkdir -p /usr/local/etc
