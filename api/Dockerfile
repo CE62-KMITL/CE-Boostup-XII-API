@@ -13,8 +13,8 @@ RUN pnpm install --frozen-lockfile
 FROM base AS build
 
 WORKDIR /app
-COPY . .
 COPY --from=dependencies /app/node_modules ./node_modules
+COPY . .
 RUN pnpm run build
 RUN pnpm prune --prod
 
