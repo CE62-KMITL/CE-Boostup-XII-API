@@ -6,7 +6,7 @@ import {
   HttpStatus,
   Post,
 } from '@nestjs/common';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { AxiosResponse } from 'axios';
 import { Observable } from 'rxjs';
@@ -29,6 +29,7 @@ export class AppController {
     return this.appService.getRoot();
   }
 
+  @ApiTags('compiler')
   @ApiBearerAuth()
   @Throttle(ConfigConstants.secondaryRateLimits.compileAndRun)
   @HttpCode(HttpStatus.OK)
@@ -37,5 +38,13 @@ export class AppController {
     @Body() compileAndRunDto: CompileAndRunDto,
   ): Observable<AxiosResponse<CompileAndRunResponse>> {
     return this.appService.compileAndRun(compileAndRunDto);
+  }
+
+  @ApiTags('compiler')
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @Get('compiler-status')
+  getCompilerStatus(): Observable<AxiosResponse> {
+    return this.appService.getCompilerStatus();
   }
 }

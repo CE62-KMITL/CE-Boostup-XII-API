@@ -22,9 +22,9 @@ export class AppController {
     return this.appService.getRoot();
   }
 
-  @Get('box-statuses')
-  async getBoxStatuses(): Promise<{ total: number; available: number[] }> {
-    return await this.appService.getBoxStatuses();
+  @Get('boxes-status')
+  async getBoxesStatus(): Promise<{ total: number; available: number[] }> {
+    return await this.appService.getBoxesStatus();
   }
 
   @HttpCode(HttpStatus.OK)

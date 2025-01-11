@@ -43,7 +43,7 @@ export class Executor {
   private readonly logger = new Logger(Executor.name);
   private readonly semaphore: Semaphore;
 
-  async getBoxStatuses(): Promise<{ total: number; available: number[] }> {
+  async getBoxesStatus(): Promise<{ total: number; available: number[] }> {
     return { total: this.boxCount, available: this.availableBoxes };
   }
 

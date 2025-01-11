@@ -190,3 +190,13 @@ export class CompileAndRunResponse {
     this.outputs = outputs;
   }
 }
+
+export class CompilerStatusResponse {
+  total: number;
+  available: number[];
+
+  constructor({ total, available }: CompilerStatusResponse) {
+    this.total = total;
+    this.available = available;
+  }
+}

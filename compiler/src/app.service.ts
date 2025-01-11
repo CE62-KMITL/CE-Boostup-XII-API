@@ -66,8 +66,8 @@ export class AppService implements OnModuleInit {
     return 'Swagger UI is available at <a href="/api">/api</a>';
   }
 
-  async getBoxStatuses(): Promise<{ total: number; available: number[] }> {
-    const { total, available } = await this.executor.getBoxStatuses();
+  async getBoxesStatus(): Promise<{ total: number; available: number[] }> {
+    const { total, available } = await this.executor.getBoxesStatus();
     return {
       total,
       available: available.toSorted((a, b) => a - b),

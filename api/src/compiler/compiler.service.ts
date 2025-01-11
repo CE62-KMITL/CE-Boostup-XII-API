@@ -11,6 +11,7 @@ import { ResultCode } from 'src/shared/enums/result-code.enum';
 import {
   CompileAndRunDto,
   CompileAndRunResponse,
+  CompilerStatusResponse,
 } from './dto/compile-and-run.dto';
 
 @Injectable()
@@ -54,6 +55,21 @@ export class CompilerService {
     compileAndRunDto: CompileAndRunDto,
   ): Observable<AxiosResponse<CompileAndRunResponse>> {
     return this.httpService.post('compile-and-run', compileAndRunDto).pipe(
+      map((response) => response.data),
+      catchError((error) => {
+        if (error.response) {
+          throw new HttpException(error.response.data, error.response.status);
+        } else {
+          throw new ServiceUnavailableException({
+            message: 'Compiler service is unavailable',
+          });
+        }
+      }),
+    );
+  }
+
+  getCompilerStatusStream(): Observable<AxiosResponse<CompilerStatusResponse>> {
+    return this.httpService.get('boxes-status').pipe(
       map((response) => response.data),
       catchError((error) => {
         if (error.response) {

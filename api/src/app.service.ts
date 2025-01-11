@@ -7,6 +7,7 @@ import { CompilerService } from './compiler/compiler.service';
 import {
   CompileAndRunDto,
   CompileAndRunResponse,
+  CompilerStatusResponse,
 } from './compiler/dto/compile-and-run.dto';
 
 @Injectable()
@@ -25,5 +26,9 @@ export class AppService {
     compileAndRunDto: CompileAndRunDto,
   ): Observable<AxiosResponse<CompileAndRunResponse>> {
     return this.compilerService.compileAndRunStream(compileAndRunDto);
+  }
+
+  getCompilerStatus(): Observable<AxiosResponse<CompilerStatusResponse>> {
+    return this.compilerService.getCompilerStatusStream();
   }
 }
