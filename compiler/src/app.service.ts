@@ -80,7 +80,7 @@ export class AppService implements OnModuleInit {
     const requestId = this.requestId++;
     const isCpp = compileAndRunDto.language.includes('++');
     const compiler = isCpp ? 'g++' : 'gcc';
-    const codeFilename = isCpp ? 'code.cpp' : 'code.c';
+    const codeFilename = isCpp ? 'submission.cpp' : 'submission.c';
     const warningStrings: string[] = [];
     if (compileAndRunDto.warningLevel === WarningLevel.All) {
       warningStrings.push('-Wall');
@@ -107,15 +107,18 @@ export class AppService implements OnModuleInit {
       compileAndRunDto.timeLimit +
         this.configService.getOrThrow<number>('executor.wallTimeLimitOffset'),
     );
-    const hoistResult = this.hoistIncludes(compileAndRunDto.code);
-    let code = hoistResult.code;
-    const includeCount = hoistResult.includeCount;
-    code = this.addBannendFunctionAsserts(
-      code,
-      compileAndRunDto.bannedFunctions,
-      includeCount,
-      isCpp,
-    );
+    let code = compileAndRunDto.code;
+    if (compileAndRunDto.bannedFunctions.length > 0) {
+      const { codeLines, includeCount } = this.hoistIncludes(
+        code.split(/\r\n|\r|\n/),
+      );
+      code = this.addBannendFunctionAsserts(
+        codeLines,
+        compileAndRunDto.bannedFunctions,
+        includeCount,
+        isCpp,
+      ).join('\n');
+    }
     const executableFilePath = join(
       this.configService.getOrThrow<string>('storages.temporary.path'),
       'executables',
@@ -338,10 +341,13 @@ export class AppService implements OnModuleInit {
     }
   }
 
-  private hoistIncludes(code: string): { code: string; includeCount: number } {
+  private hoistIncludes(codeLines: string[]): {
+    codeLines: string[];
+    includeCount: number;
+  } {
     const includeLines: string[] = [];
-    const codeLines: string[] = [];
-    for (const line of code.split('\n')) {
+    const nonIncludeLines: string[] = [];
+    for (const line of codeLines) {
       if (line.match(/^\s*#\s*include/)) {
         includeLines.push(line);
         continue;
@@ -349,22 +355,22 @@ export class AppService implements OnModuleInit {
       if (line.trim() === '') {
         continue;
       }
-      codeLines.push(line);
+      nonIncludeLines.push(line);
     }
     return {
-      code: includeLines.join('\n') + '\n\n' + codeLines.join('\n') + '\n',
+      codeLines: includeLines.concat([''], nonIncludeLines),
       includeCount: includeLines.length,
     };
   }
 
   private addBannendFunctionAsserts(
-    code: string,
+    codeLines: string[],
     bannedFunctions: string[],
     insertAt: number,
     isCpp: boolean,
-  ): string {
+  ): string[] {
     if (bannedFunctions.length === 0) {
-      return code;
+      return codeLines;
     }
     const bannedFunctionLines: string[] = [];
     for (const bannedFunction of bannedFunctions) {
@@ -378,14 +384,9 @@ export class AppService implements OnModuleInit {
         );
       }
     }
-    const codeLines = code.split('\n');
-    return (
-      codeLines.slice(0, insertAt).join('\n') +
-      '\n\n' +
-      bannedFunctionLines.join('\n') +
-      '\n' +
-      codeLines.slice(insertAt).join('\n')
-    );
+    return codeLines
+      .slice(0, insertAt)
+      .concat([''], bannedFunctionLines, codeLines.slice(insertAt));
   }
 
   private processOutput(
