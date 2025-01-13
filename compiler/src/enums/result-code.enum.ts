@@ -4,6 +4,7 @@ export enum ResultCode {
   RE = 'RE', // Runtime Error
   HNA = 'HNA', // Header Not Allowed
   FNA = 'FNA', // Function Not Allowed
+  DNA = 'DNA', // Directive Not Allowed
   COLE = 'COLE', // Compilation Output Limit Exceeded
   CTLE = 'CTLE', // Compilation Time Limit Exceeded
   CMLE = 'CMLE', // Compilation Memory Limit Exceeded

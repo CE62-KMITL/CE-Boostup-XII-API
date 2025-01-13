@@ -109,15 +109,25 @@ export class AppService implements OnModuleInit {
     );
     let code = compileAndRunDto.code;
     if (compileAndRunDto.bannedFunctions.length > 0) {
-      const { codeLines, includeCount } = this.hoistIncludes(
-        code.split(/\r\n|\r|\n/),
-      );
-      code = this.addBannendFunctionAsserts(
-        codeLines,
-        compileAndRunDto.bannedFunctions,
-        includeCount,
-        isCpp,
-      ).join('\n');
+      try {
+        const { codeLines, includeCount } = this.hoistIncludes(
+          code.split(/\r\n|\r|\n/),
+        );
+        code = this.addBannendFunctionAsserts(
+          codeLines,
+          compileAndRunDto.bannedFunctions,
+          includeCount,
+          isCpp,
+        ).join('\n');
+      } catch (e) {
+        if (e.message !== "'undef' directive is not allowed") {
+          throw e;
+        }
+        return new CompileAndRunResponse({
+          compilerOutput: `PreValidator: Fatal error: Preprocessor directive 'undef' is not allowed\nCompilation terminated.\nExited with error status 1\n`,
+          code: ResultCode.DNA,
+        });
+      }
     }
     const executableFilePath = join(
       this.configService.getOrThrow<string>('storages.temporary.path'),
@@ -351,6 +361,9 @@ export class AppService implements OnModuleInit {
       if (line.match(/^\s*#\s*include/)) {
         includeLines.push(line);
         continue;
+      }
+      if (line.match(/^\s*#\s*undef/)) {
+        throw new Error("'undef' directive is not allowed");
       }
       if (line.trim() === '') {
         continue;
